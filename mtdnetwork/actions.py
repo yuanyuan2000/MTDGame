@@ -1,5 +1,6 @@
 import mtdnetwork.exceptions as exceptions
 import mtdnetwork.constants as constants
+import networkx as nx
 
 class ActionCheck:
 
@@ -49,7 +50,7 @@ class Action:
 
     def __init__(self, action_manager, result, time_to_complete, failed_fn, failed_fn_args, host_instance = None, check_ports = False, 
                     check_ip = False, check_path = False, check_services = False, check_os = False,
-                    check_users = False, check_network_ips = False):
+                    check_users = False, check_network_ips = False, check_network_paths = False):
         """
         Initialises an Action that checks if a change has occurred that would block the action.
 
@@ -81,6 +82,12 @@ class Action:
                 checks if the OS and OS version have not changed on the host_instance
             check_users:
                 checks if the users have not been changed on the host_instance
+            check_network_ips:
+                checks if the IP addresses on the hacker visible network have not changed
+            check_network_paths:
+                checks if the paths on the hacker visible network have not changed
+                NOTE: uses a techinically incorrect implementation but it is good enough!
+                      see the documentation for ActionManager().check_network_paths() for more information
         """
         if (check_ports or check_ip or check_path or check_services or check_os or check_users) and host_instance == None:
             raise exceptions.NoHostProvidedError
@@ -139,6 +146,12 @@ class Action:
         if check_network_ips:
             checks.append(ActionCheck(
                 self.action_manager.check_network_ip_addresses,
+                exceptions.HostIPChangeError
+            ))
+
+        if check_network_paths:
+            checks.append(ActionCheck(
+                self.action_manager.check_network_paths,
                 exceptions.PathToHostChangeError
             ))
 
@@ -303,9 +316,21 @@ class ActionManager:
 
         return sorted(ip_addresses)
 
+    def check_network_paths(self):
+        """
+        Checks if the paths on the hacker visible network are the same.
+
+        NOTE
+        This method is a bit of a hacky solution and isn't technically correct since it is
+        just testing ismorphism and not actually if paths are the same. It is close enough though
+        for this simulation but do consider changing this implementation
+        """
+        visible_network = self.network.get_hacker_visible_graph(self.hacker.compromised_hosts)
+        return nx.weisfeiler_lehman_graph_hash(visible_network)
+
     def create_action(self, result, time_to_complete, failed_fn=constants.nothing, failed_fn_args=[], host_instance = None, check_ports = False, 
                         check_ip = False, check_path = False, check_services = False, check_os = False,
-                        check_users = False, check_network_ips = False):
+                        check_users = False, check_network_ips = False, check_network_paths = False):
         """
         Creates an Action that can be blocked by a network reconfiguration.
 
@@ -332,6 +357,12 @@ class ActionManager:
                 checks if the OS and OS version have not changed on the host_instance
             check_users:
                 checks if the users have not been changed on the host_instance
+            check_network_ips:
+                checks if the IP addresses on the hacker visible network have not changed
+            check_network_paths:
+                checks if the paths on the hacker visible network have not changed
+                NOTE: uses a techinically incorrect implementation but it is good enough!
+                      see the documentation for ActionManager().check_network_paths() for more information
 
         Returns:
             an Action instance which the hacker will use to check if the Action has completed or
@@ -340,6 +371,7 @@ class ActionManager:
         
         return Action(self, result, time_to_complete, host_instance, failed_fn, failed_fn_args, check_ports = check_ports, 
                         check_ip = check_ip, check_path = check_path, check_services = check_services,
-                        check_os = check_os, check_users = check_users, check_network_ips = check_network_ips)
+                        check_os = check_os, check_users = check_users, check_network_ips = check_network_ips,
+                        check_network_paths = check_network_paths)
 
         

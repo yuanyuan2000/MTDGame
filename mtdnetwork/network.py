@@ -402,7 +402,12 @@ class Network:
                     if not ex_node in compromised_hosts
         ]
 
-        raise NotImplementedError("NEED TO RETURN ACTION AFTER SCAN!")
+        self.action_manager.create_action(
+            uncompromised_hosts,
+            scan_time,
+            check_network_ips = True,
+            check_network_paths = True
+        )
 
     def get_neighbors(self, host_id):
         """
