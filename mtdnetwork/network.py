@@ -409,6 +409,59 @@ class Network:
             check_network_paths = True
         )
 
+    def get_shortest_distance_from_exposed_or_pivot(self, host_id, pivot_host_id=-1, graph=None):
+        if host_id in self.exposed_endpoints:
+            return 0
+        if graph == None:
+            graph = self.graph
+        shortest_distance = self.get_path_from_exposed(host_id, graph=graph)[1]
+        if pivot_host_id >= 0:
+            try:
+                path = nx.shortest_path(graph, host_id, pivot_host_id)
+                path_len = len(path)
+
+                if path_len < shortest_distance:
+                    shortest_distance = path_len
+            except:
+                pass
+
+        return shortest_distance
+
+    def sort_by_distance_from_exposed_and_pivot_host(self, host_stack, compromised_hosts, pivot_host_id=-1):
+        """
+        Sorts the Host Stack by the shortest number of hops to reach the target hosts.
+
+        Parameters:
+            host_stack:
+                a list of host IDs the attacker wants to attack
+            compromised_hosts:
+                a list of host IDs the hacker has compromised
+            pivot_host_id:
+                the ID of the host that is compromised that the hacker is using to pivot from.
+                if None then it only sorts by the exposed endpoints
+        """
+
+        visible_network = self.get_hacker_visible_graph(compromised_hosts)
+
+        non_exposed_endpoints = [
+            host_id
+                for host_id in host_stack
+                    if not host_id in self.exposed_endpoints
+        ]
+
+        return sorted(
+            non_exposed_endpoints,
+            key = lambda host_id : self.get_shortest_distance_from_exposed_or_pivot(
+                host_id, 
+                pivot_host_id=pivot_host_id, 
+                graph=visible_network
+            )
+        ) + [
+            host_id
+                for host_id in self.exposed_endpoints
+                    if host_id in host_stack
+        ]
+
     def get_neighbors(self, host_id):
         """
         Returns the neighbours for a host.

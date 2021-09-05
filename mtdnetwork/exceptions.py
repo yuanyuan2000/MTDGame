@@ -8,6 +8,11 @@ class NoHostProvidedError(Exception):
         self.message = "You need to provide a host instance when doing an action on a host!"
         super().__init__(self.message)
 
+class NoHostFoundError(Exception):
+    def __init__(self):
+        self.message = "No suitable host was found!"
+        super().__init__(self.message)
+
 class ActionBlockedError(Exception):
     def __init__(self, blocked_action_exceptions):
         """

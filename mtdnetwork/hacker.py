@@ -27,6 +27,7 @@ class Hacker:
 
         self.curr_time = 0
 
+        self.pivot_host_id = -1
         self.curr_host_id = -1
         self.curr_host = None
         self.curr_ports = []
@@ -91,7 +92,24 @@ class Hacker:
             self.curr_host.os_type,
             self.curr_host.os_version
         ))
-    
+
+    def set_next_pivot_host(self):
+        """
+        Sets the next host that the Hacker will pivot from to compromise other hosts
+
+        The pivot host needs to be a compromised host that the hacker can access
+        """
+        neighbors = list(self.network.get_neighbors(self.curr_host_id))
+        if self.pivot_host_id in neighbors:
+            return
+
+        for n in neighbors:
+            if n in self.compromised_hosts:
+                self.pivot_host_id = n
+                return
+
+        self.pivot_host_id = -1
+
     def get_mtd_penality_discount(self, blocked_exceptions):
         """
         Gets the discount for the MTD blocked action penality depending on how many times the adversary has 
@@ -184,6 +202,7 @@ class Hacker:
         Starts the Network enumeration stage.
         """
         if not self.done:
+            self.pivot_host_id = -1
             self.logger.info("SCANNING NETWORK FOR HOSTS")
             self.action = self.network.scan(self.compromised_hosts)
             self.action.set_trigger_time(self.curr_time)
@@ -231,10 +250,25 @@ class Hacker:
         TODO: Sort host_stack by distance from exposed endpoints AND previous compromised host
         """
         if len(self.host_stack) > 0:
+            self.host_stack = self.network.sort_by_distance_from_exposed_and_pivot_host(
+                self.host_stack, 
+                self.compromised_hosts, 
+                pivot_host_id=self.pivot_host_id
+            )
             self.curr_host_id = self.host_stack.pop(0)
             self.curr_host = self.network.get_host(self.curr_host_id)
             self.curr_ports = []
             self.curr_vulns = []
+            hop_time = int(constants.HACKER_HOP_TIME*self.network.get_shortest_distance_from_exposed_or_pivot(
+                self.curr_host_id,
+                pivot_host_id = self.pivot_host_id,
+                graph = self.network.get_hacker_visible_graph(self.compromised_hosts)
+            )) - 1
+            if hop_time < 0:
+                hop_time = 0
+            # Add the time it takes to move a position to attack the target host
+            self.curr_time += hop_time
+            self.set_next_pivot_host()
 
             self.action = self.curr_host.is_compromised()
             self.action.set_trigger_time(self.curr_time)
@@ -255,6 +289,7 @@ class Hacker:
         if already_compromised:
             self.debug_log("AUTO COMPROMISE")
             self.update_progress_state()
+            self.pivot_host_id = self.curr_host_id
             self.start_host_enum()
         else:
             self.start_port_scan()
@@ -301,6 +336,7 @@ class Hacker:
             self.log_host_result("USER REUSED PASS COMPROMISE")
             self.update_progress_state()
             self.start_scan_for_neighbors()
+            self.pivot_host_id = self.curr_host_id
             self.total_reuse_pass_compromise += 1
         else:
             self.find_vulns()
@@ -343,6 +379,7 @@ class Hacker:
             self.log_host_result("VULN COMPROMISE")
             self.update_progress_state()
             self.start_scan_for_neighbors()
+            self.pivot_host_id = self.curr_host_id
             self.total_vuln_compromise += 1
         else:
             self.brute_force_users()
@@ -369,6 +406,7 @@ class Hacker:
             self.log_host_result("PASSWORD SPRAY USER COMPROMISE")
             self.update_progress_state()
             self.start_scan_for_neighbors()
+            self.pivot_host_id = self.curr_host_id
             self.total_brute_force_compromise += 1
         else:
             self.start_host_enum()
