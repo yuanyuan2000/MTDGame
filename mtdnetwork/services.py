@@ -1,4 +1,4 @@
-import random, logging
+import random, logging, os
 import mtdnetwork.constants as constants
 import mtdnetwork.data as simdata
 import importlib.resources as pkg_resources
@@ -115,7 +115,7 @@ class Vulnerability:
         """
         if not isinstance(other, Vulnerability):
             return False
-        return other.id == self.i
+        return other.id == self.id
 
 class Service:
 
@@ -143,23 +143,25 @@ class Service:
         """
         return Service(self.name, self.version, [v for v in self.vulnerabilities])
     
-    def get_vulns(self, roa_threshold=None):
+    def get_vulns(self, roa_threshold=0):
         """
         Returns:
             the top X vulnerabilities in terms of RoA of the service that have not been exploited yet
         """
-        if roa_threshold == None:
-            return self.vulnerabilities
-        return [v for v in self.vulnerabilities if v.roa() > roa_threshold][:constants.SERVICE_TOP_X_VULNS_TO_RETURN]
+        return [
+            v 
+                for v in self.vulnerabilities  
+                    if v.roa() > roa_threshold and not v.is_exploited()
+        ][:constants.SERVICE_TOP_X_VULNS_TO_RETURN]
     
     def is_exploited(self):
         self.exploit_value = 0
-        for vuln in self.get_vulns():
+        for vuln in self.vulnerabilities:
             if vuln.exploited:
                 self.exploit_value += vuln.impact
-        return self.exploit_value > Service.COMPROMISED_THRESHOLD
+        return self.exploit_value > constants.SERVICE_COMPROMISED_THRESHOLD
     
-    def total_exploit_time(self, roa_threshold=None):
+    def total_exploit_time(self, roa_threshold=0):
         time = 0
         if roa_threshold == None:
             for vuln in self.vulnerabilities:
@@ -170,8 +172,8 @@ class Service:
                     time += vuln.exploit_time()
         return time
     
-    def discover_vuln_time(self, roa_threshold=None):
-        return len(self.get_vulns(roa_threshold=roa_threshold))*Service.DISCOVER_EACH_VULN_TIME
+    def discover_vuln_time(self, roa_threshold=0):
+        return len(self.get_vulns(roa_threshold=roa_threshold))*constants.SERVICE_DISCOVER_EACH_VULN_TIME
 
     def get_highest_roa_vuln(self):
         vuln_len = len(self.get_vulns())
@@ -303,8 +305,6 @@ class ServicesGenerator:
                     vuln_patch_dist = self.vuln_patch_mean + random.randint(-self.vuln_patch_range, self.vuln_patch_range)
                     vulns[vuln_patch_dist] = Vulnerability(
                         can_have_os_dependency=can_have_os_depend_vuln, 
-                        os_dependent_chance=self.os_dependent_vuln_chance,
-                        dependent_chance=self.dependent_vuln_chance,
                         os_list=os_list
                     )
             
@@ -315,8 +315,6 @@ class ServicesGenerator:
                     vuln_patch_dist = self.vuln_patch_mean + random.randint(-self.vuln_patch_range, self.vuln_patch_range)
                     vulns[sv_index+vuln_patch_dist] = Vulnerability(
                         can_have_os_dependency=can_have_os_depend_vuln, 
-                        os_dependent_chance=self.os_dependent_vuln_chance,
-                        dependent_chance=self.dependent_vuln_chance,
                         os_list=os_list
                     )
                     
@@ -332,4 +330,4 @@ class ServicesGenerator:
                     self.os_services[os_name][os_version][service] = service_versions
 
     def get_service_name_list():
-        return pkg_resources.read_text(simdata, "word.txt").splitlines()
+        return pkg_resources.read_text(simdata, "words.txt").splitlines()

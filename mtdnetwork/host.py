@@ -44,7 +44,6 @@ class Host:
         self.os_version = os_version
         self.ip = host_ip
         self.host_id = host_id
-        self.set_host_users(users_list)
         self.network = network
         self.p_u_compromise = False
         self.total_users = 0
@@ -60,6 +59,20 @@ class Host:
             prob_strogatz_rewire
         )
         self.setup_network(service_generator)
+        self.set_host_users(users_list)
+
+    def setup_network(self, service_generator, keep_ports = False):
+        port_addresses = []
+        for node_id in range(self.total_nodes):
+            if node_id == self.target_node:
+                continue
+            if not keep_ports:
+                node_port = Host.get_random_port(existing_ports=port_addresses)
+                self.graph.nodes[node_id]["port"] = node_port
+            self.graph.nodes[node_id]["service"] = service_generator.get_random_service(
+                self.os_type, 
+                self.os_version
+            )
 
     def revert_compromised(self):
         """
@@ -157,7 +170,7 @@ class Host:
         test_time = len(compromised_users)*constants.HOST_USER_COMPROMISE_TIME
         attempt_users = [username for username in self.users.keys() if username in compromised_users]
 
-        if random.random() < constants.HOST_PROB_MAX_USER_COMPROMISE*len(attempt_users)/self.total_users:
+        if random.random() < constants.HOST_MAX_PROB_FOR_USER_COMPROMISE*len(attempt_users)/self.total_users:
             self.set_compromised()
             return self.action_manager.create_action(
                 True,
@@ -260,7 +273,7 @@ class Host:
             reverse=True
         )
 
-    def port_scan(self, compromised_hosts=[]):
+    def port_scan(self):
         port_numbers_dict = nx.get_node_attributes(self.graph, "port")
         services = nx.get_node_attributes(self.graph, "service")
         port_numbers = []
@@ -299,7 +312,7 @@ class Host:
             check_os = True
         )
 
-    def get_vulns(self, discovered_service_ports, ignore_services=[], roa_threshold=None):
+    def get_vulns(self, discovered_service_ports, ignore_services=[], roa_threshold=0):
         """
         Gets the possible vulnerabilities on the Host based on the discovered port numbers
 
@@ -359,20 +372,15 @@ class Host:
 
         services = self.get_services(just_exploited=True)
 
-        exploited_new_service = False
         for service_id in services:
             if not service_id in self.compromised_services:
                 self.compromised_services.append(service_id)
-                exploited_new_service = True
                 self.colour_map[service_id] = "red"
             if self.target_node in list(self.graph.neighbors(service_id)):
                 self.set_compromised()
 
         return self.action_manager.create_action(
-            {
-                "exploited new service" : exploited_new_service,
-                "compromised" : self.compromised
-            },
+            self.compromised,
             exploit_time,
             failed_fn = self.revert_compromised,
             host_instance = self,
@@ -391,7 +399,7 @@ class Host:
             an action that returns a list a neighboring host ids
         """
         neighbors = list(self.network.graph.neighbors(self.host_id))
-        scan_time = constants.HOST_HOST_DISCOVER_TIME*len(neighbors)
+        scan_time = constants.NETWORK_HOST_DISCOVER_TIME*len(neighbors)
 
         return self.action_manager.create_action(
             neighbors,

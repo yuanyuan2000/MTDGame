@@ -35,7 +35,7 @@ class ActionCheck:
         """
         Calls the check function and returns the result of it.
         """
-        return self.check_fn(self, *self.check_args, **self.check_kwargs)
+        return self.check_fn(*self.check_args, **self.check_kwargs)
 
     def check(self):
         """
@@ -98,6 +98,9 @@ class Action:
         self.trigger_time = time_to_complete
         self.failed_fn = failed_fn
         self.failed_fn_args = failed_fn_args
+        self.complete_fn = constants.nothing
+        self.complete_fn_args = []
+        self.complete_fn_kwargs = {}
 
         checks = []
 
@@ -157,6 +160,31 @@ class Action:
 
         self.checks = checks
 
+    def set_complete_fn(self, complete_fn, complete_fn_args=[], complete_fn_kwargs={}):
+        """
+        Sets the function with arguments that is executed when an action is completed
+
+        Parameters:
+            complete_fn:
+                the function that is called when the Action is complete
+            complete_fn_args:
+                the positional arguments for complete_fn
+            complete_fn_kwargs:
+                the keyword arguments for complete_fn
+        """
+        self.complete_fn = complete_fn
+        self.complete_fn_args = complete_fn_args
+        self.complete_fn_kwargs = complete_fn_kwargs
+
+    def call_complete_fn(self):
+        """
+        Executes the complete function.
+
+        Returns:
+            returns the result from executing the compelte function
+        """
+        return self.complete_fn(*self.complete_fn_args, **self.complete_fn_kwargs)
+
     def set_trigger_time(self, curr_time):
         """
         Sets the time when the completion of the Action will be triggered
@@ -209,20 +237,9 @@ class Action:
 
 class ActionManager:
 
-    def __init__(self):
-        self.network = None
-        self.hacker = None
-
-    def register_network(self, network):
-        """
-        Registers a network that it will monitor for changes when an action is occurring.
-
-        Parameters:
-            network:
-                the network to monitor during the simulation
-        """
+    def __init__(self, network):
         self.network = network
-        network.register_action_manager(self)
+        self.hacker = None
 
     def register_hacker(self, hacker):
         """
@@ -233,7 +250,6 @@ class ActionManager:
                 the hacker to monitor
         """
         self.hacker = hacker
-        hacker.register_action_manager(self)
 
     def check_ports_on_host(self, host_instance):
         """
@@ -310,7 +326,7 @@ class ActionManager:
         visible_network = self.network.get_hacker_visible_graph(self.hacker.compromised_hosts)
 
         ip_addresses = [
-            self.network.get_host(visible_node_id).get_ip()
+            self.network.get_host(visible_node_id).ip
                 for visible_node_id in visible_network.nodes
         ]
 
@@ -368,8 +384,7 @@ class ActionManager:
             an Action instance which the hacker will use to check if the Action has completed or
             it has been blocked.
         """
-        
-        return Action(self, result, time_to_complete, host_instance, failed_fn, failed_fn_args, check_ports = check_ports, 
+        return Action(self, result, time_to_complete, failed_fn, failed_fn_args, host_instance = host_instance, check_ports = check_ports, 
                         check_ip = check_ip, check_path = check_path, check_services = check_services,
                         check_os = check_os, check_users = check_users, check_network_ips = check_network_ips,
                         check_network_paths = check_network_paths)

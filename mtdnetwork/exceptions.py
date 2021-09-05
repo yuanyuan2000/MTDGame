@@ -21,6 +21,9 @@ class ActionBlockedError(Exception):
         self.blocked_action_reasons = blocked_action_exceptions
         super().__init__(self.message)
 
+    def get_blocking_actions(self):
+        return self.blocked_action_reasons
+
 class PortsOnHostChangeError(Exception):
     def __init__(self):
         self.message = "Ports on a host have changed!"

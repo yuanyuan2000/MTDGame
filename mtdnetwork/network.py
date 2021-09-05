@@ -1,9 +1,11 @@
+from mtdnetwork.actions import ActionManager
 import networkx as nx
 import importlib.resources as pkg_resources
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import random
+import os
 import mtdnetwork.constants as constants
 import mtdnetwork.services as services
 from mtdnetwork.host import Host
@@ -42,10 +44,17 @@ class Network:
         self.exposed_endpoints = [i for i in range(total_endpoints)]
         self.service_generator = services.ServicesGenerator()
         self.mtd_strategies = []
-        self.action_manager = None
+        self.action_manager = ActionManager(self)
         self.setup_users(users_to_nodes_ratio, prob_user_reuse_pass, int(1/users_to_nodes_ratio))
         self.gen_graph(total_subnets = total_subnets, layers = total_layers)
         self.setup_network()
+
+    def get_action_manager(self):
+        """
+        Returns:
+            the ActionManager for the network
+        """
+        return self.action_manager
 
     def setup_users(self, user_to_nodes_ratio, prob_user_reuse_pass, users_per_host):
         """
@@ -231,7 +240,8 @@ class Network:
                 node_ip,
                 random.choices(self.users_list, k=self.users_per_host),
                 self,
-                self.service_generator
+                self.service_generator,
+                self.action_manager
             )
 
     def set_mtd_trigger_time(self, curr_time):
@@ -255,16 +265,6 @@ class Network:
         if len(self.mtd_strategies) == 0:
             self.set_mtd_trigger_time(0)
         self.mtd_strategies.append(mtd_strategy(self))
-
-    def register_action_manager(self, action_manager):
-        """
-        Sets the action manager that the network will use when creating new actions
-
-        Parameters:
-            action_manager:
-                the ActionManager instance that manages actions during the simulation.
-        """
-        self.action_manager = action_manager
 
     def step(self, curr_time):
         """
@@ -402,7 +402,7 @@ class Network:
                     if not ex_node in compromised_hosts
         ]
 
-        self.action_manager.create_action(
+        return self.action_manager.create_action(
             uncompromised_hosts,
             scan_time,
             check_network_ips = True,
