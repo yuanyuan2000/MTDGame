@@ -1,6 +1,9 @@
 from mtdnetwork.mtd import *
 
-class HostShuffle(MTD):
+class HostTopologyShuffle(MTD):
+    """
+    Swaps hosts in the network.
+    """
 
     def __init__(self, network):
         self.logger = logging.getLogger("mtd:hostshuffle")
@@ -17,9 +20,14 @@ class HostShuffle(MTD):
         hosts = self.network.get_hosts()
         host_id_list = list(hosts.keys())
         hacker = self.network.get_action_manager().get_hacker()
+        seen = []
 
         for host_id, host_instance in hosts.items():
+            if host_id in seen:
+                continue
             other_host_id = self.random_different_host_id(host_id, host_id_list)
+            if other_host_id in seen:
+                continue
             other_host_instance = hosts[other_host_id]
 
             host_instance.host_id = other_host_id
@@ -28,4 +36,7 @@ class HostShuffle(MTD):
             self.network.graph.nodes[host_id]["host"] = other_host_instance
             self.network.graph.nodes[other_host_id]["host"] = host_instance
 
-            hacker.swap_host_ids_in_compromised(host_id, other_host_id)
+            seen.append(host_id)
+            seen.append(other_host_id)
+
+            hacker.swap_hosts_in_compromised_hosts(host_id, other_host_id)

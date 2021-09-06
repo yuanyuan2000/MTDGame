@@ -1,4 +1,4 @@
-import random
+import random, uuid
 import networkx as nx
 import mtdnetwork.constants as constants
 
@@ -48,6 +48,7 @@ class Host:
         self.p_u_compromise = False
         self.total_users = 0
         self.action_manager = action_manager
+        self.uuid = str(uuid.uuid4())
 
         self.total_services = random.randint(constants.HOST_SERVICES_MIN, constants.HOST_SERVICES_MAX)
         # +1 for the target service node the adversary needs to be adjacent inorder to compromise the host
@@ -60,6 +61,11 @@ class Host:
         )
         self.setup_network(service_generator)
         self.set_host_users(users_list)
+    
+    def __eq__(self, other):
+        if not isinstance(other, Host):
+            return False
+        return other.uuid == self.uuid
 
     def setup_network(self, service_generator, keep_ports = False):
         port_addresses = []

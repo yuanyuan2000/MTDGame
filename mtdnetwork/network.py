@@ -41,12 +41,14 @@ class Network:
             random.seed(seed)
         self.total_nodes = total_nodes
         self.total_endpoints = total_endpoints
+        self.total_subnets = total_subnets
+        self.layers = total_layers
         self.exposed_endpoints = [i for i in range(total_endpoints)]
         self.service_generator = services.ServicesGenerator()
         self.mtd_strategies = []
         self.action_manager = ActionManager(self)
         self.setup_users(users_to_nodes_ratio, prob_user_reuse_pass, int(1/users_to_nodes_ratio))
-        self.gen_graph(total_subnets = total_subnets, layers = total_layers)
+        self.gen_graph()
         self.setup_network()
 
     def get_service_generator(self):
@@ -54,6 +56,28 @@ class Network:
 
     def get_hosts(self):
         return dict(nx.get_node_attributes(self.graph, "host"))
+
+    def get_subnets(self):
+        return dict(nx.get_node_attributes(self.graph, "subnet"))
+
+    def get_layers(self):
+        return dict(nx.get_node_attributes(self.graph, "layer"))
+
+    def get_unique_subnets(self):
+        subnets = self.get_subnets()
+        layers = self.get_layers()
+
+        layer_subnets = {}
+
+        for host_id, subnet_id in subnets.items():
+            layer_id = layers[host_id]
+
+            if not layer_id in layer_subnets:
+                layer_subnets[layer_id] = {}
+
+            layer_subnets[layer_id][subnet_id] = layer_subnets[layer_id].get(subnet_id, []) + [host_id]
+
+        return layer_subnets
 
     def get_action_manager(self):
         """
@@ -89,16 +113,14 @@ class Network:
         
         self.users_per_host = users_per_host
 
-    def gen_graph(self, min_nodes_per_subnet=3, total_subnets=10, 
-                    max_subnets_per_layer=5, subnet_m_ratio=0.2, prob_inter_layer_edge=0.4, layers=3):
+    def gen_graph(self, min_nodes_per_subnet=3, max_subnets_per_layer=5, subnet_m_ratio=0.2, 
+                    prob_inter_layer_edge=0.4):
         """
         Generates a network of subnets using the Barabasi-Albert Random Graph model.
 
         Parameters:
             min_nodes_per_subnet:
                 minimum number of computer nodes for each subnet
-            total_subnets:
-                total subnets in the network.
             max_subnets_per_layer:
                 the maximum number of subnets per layer
             subnet_m_ratio:
@@ -106,19 +128,17 @@ class Network:
                 m is the number of edges to attach from a new node to existing nodes
             prob_inter_layer_edge:
                 probability that a node connects to a different layer in the network.
-            layers:
-                how many layers from the exposed endpoints there should be
         """
         # Decide the number of subnets for each layer of the network
         subnets_per_layer = []
-        while len(subnets_per_layer) < layers:
+        while len(subnets_per_layer) < self.layers:
             if len(subnets_per_layer) == 0: subnets_per_layer.append(1)
             l_subnets = random.randint(1, max_subnets_per_layer)
-            if total_subnets - (sum(subnets_per_layer) + l_subnets) > layers - len(subnets_per_layer):
+            if self.total_subnets - (sum(subnets_per_layer) + l_subnets) > self.layers - len(subnets_per_layer):
                 subnets_per_layer.append(l_subnets)
         
-        while sum(subnets_per_layer) < total_subnets:
-            s_index = random.randint(1,layers-1)
+        while sum(subnets_per_layer) < self.total_subnets:
+            s_index = random.randint(1,self.layers-1)
             subnets_per_layer[s_index] = subnets_per_layer[s_index] + 1
         
         max_subnet_in_layer = max(subnets_per_layer)
@@ -129,7 +149,7 @@ class Network:
             nodes_per_layer.append(min_nodes_per_subnet*subs)
             
         while sum(nodes_per_layer) < self.total_nodes:
-            n_index = random.randint(1,layers-1)
+            n_index = random.randint(1,self.layers-1)
             nodes_per_layer[n_index] = nodes_per_layer[n_index] + 1
             
         # Assign nodes to each subnet
@@ -205,7 +225,7 @@ class Network:
         
         while not nx.is_connected(self.graph):
             node_layers = nx.get_node_attributes(self.graph, "layer")
-            for i in range(layers-1):
+            for i in range(self.layers-1):
                 node_a = [n for n in node_layers if node_layers[n] == i]
                 degree_node_a = [self.graph.degree(n) for n in node_a]
                 node_b = [n for n in node_layers if node_layers[n] == i+1]
@@ -397,7 +417,8 @@ class Network:
             uncompromised_hosts = uncompromised_hosts + [
                 neighbor
                     for neighbor in self.graph.neighbors(c_host)
-                        if not neighbor in compromised_hosts and not neighbor in self.exposed_endpoints
+                        if not neighbor in compromised_hosts and not neighbor in self.exposed_endpoints \
+                            and len(self.get_path_from_exposed(neighbor, graph=visible_network)[0]) > 0
             ]
 
         # Add random element from 0 to 1 so the scan does not return the same order of hosts each time for the hacker

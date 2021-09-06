@@ -17,6 +17,7 @@ class Hacker:
         self.network = network
         self.compromised_users = []
         self.compromised_hosts = []
+        
         self.host_stack = []
         self.seen = []
         self.done = False
@@ -42,29 +43,25 @@ class Hacker:
 
         self.observed_changes = {}
 
+    def swap_hosts_in_compromised_hosts(self, host_id, other_host_id):
+        new_compromised_hosts = []
+
+        for id in self.compromised_hosts:
+            if id == host_id:
+                new_compromised_hosts.append(other_host_id)
+            elif id == other_host_id:
+                new_compromised_hosts.append(host_id)
+            else:
+                new_compromised_hosts.append(id)
+
+        self.compromised_hosts = new_compromised_hosts
+
     def remove_host_id_from_compromised(self, host_id):
         self.compromised_hosts = [
             id
                 for id in self.compromised_hosts
-                    if id != host_id    
+                    if id != host_id
         ]
-
-    def swap_host_ids_in_compromised(self, host_id, other_host_id):
-        new_compromised_list = []
-
-        for id in self.compromised_hosts:
-            if id in new_compromised_list:
-                continue
-            if id == host_id:
-                new_compromised_list.append(other_host_id)
-                continue
-            elif id == other_host_id:
-                new_compromised_list.append(host_id)
-                continue
-            else:
-                new_compromised_list.append(id)
-
-        self.compromised_hosts = list(set(new_compromised_list))
 
     def get_statistics(self):
         """
@@ -353,9 +350,9 @@ class Hacker:
         if user_reuse:
             self.log_host_result("USER REUSED PASS COMPROMISE")
             self.update_progress_state()
-            self.start_scan_for_neighbors()
             self.pivot_host_id = self.curr_host_id
             self.total_reuse_pass_compromise += 1
+            self.start_scan_for_neighbors()
         else:
             self.find_vulns()
 
@@ -396,9 +393,9 @@ class Hacker:
         if is_exploited:
             self.log_host_result("VULN COMPROMISE")
             self.update_progress_state()
-            self.start_scan_for_neighbors()
             self.pivot_host_id = self.curr_host_id
             self.total_vuln_compromise += 1
+            self.start_scan_for_neighbors()
         else:
             self.brute_force_users()
 
@@ -423,9 +420,9 @@ class Hacker:
         if brute_force_result:
             self.log_host_result("PASSWORD SPRAY USER COMPROMISE")
             self.update_progress_state()
-            self.start_scan_for_neighbors()
             self.pivot_host_id = self.curr_host_id
             self.total_brute_force_compromise += 1
+            self.start_scan_for_neighbors()
         else:
             self.start_host_enum()
 
@@ -433,6 +430,7 @@ class Hacker:
         """
         Updates the Hackers progress state when it compromises a host.
         """
+
         if not self.curr_host_id in self.compromised_hosts:
             self.compromised_hosts.append(self.curr_host_id)
             self.compromised_users = list(set(self.compromised_users + self.curr_host.get_compromised_users()))
