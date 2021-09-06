@@ -50,7 +50,7 @@ class Action:
 
     def __init__(self, action_manager, result, time_to_complete, failed_fn, failed_fn_args, host_instance = None, check_ports = False, 
                     check_ip = False, check_path = False, check_services = False, check_os = False,
-                    check_users = False, check_network_ips = False, check_network_paths = False):
+                    check_users = False, check_host_id = False, check_network_ips = False, check_network_paths = False):
         """
         Initialises an Action that checks if a change has occurred that would block the action.
 
@@ -82,6 +82,8 @@ class Action:
                 checks if the OS and OS version have not changed on the host_instance
             check_users:
                 checks if the users have not been changed on the host_instance
+            check_host_id:
+                checks if the host has the same node ID on the global network
             check_network_ips:
                 checks if the IP addresses on the hacker visible network have not changed
             check_network_paths:
@@ -89,7 +91,7 @@ class Action:
                 NOTE: uses a techinically incorrect implementation but it is good enough!
                       see the documentation for ActionManager().check_network_paths() for more information
         """
-        if (check_ports or check_ip or check_path or check_services or check_os or check_users) and host_instance == None:
+        if (check_ports or check_ip or check_path or check_services or check_os or check_users or check_host_id) and host_instance == None:
             raise exceptions.NoHostProvidedError
 
         self.action_manager = action_manager
@@ -143,6 +145,13 @@ class Action:
             checks.append(ActionCheck(
                 self.action_manager.check_users_on_host,
                 exceptions.UsersOnHostChangeError,
+                check_args=[host_instance]
+            ))
+
+        if check_host_id:
+            checks.append(ActionCheck(
+                self.action_manager.check_host_has_same_node_id,
+                exceptions.PathToHostChangeError,
                 check_args=[host_instance]
             ))
 
@@ -251,6 +260,9 @@ class ActionManager:
         """
         self.hacker = hacker
 
+    def get_hacker(self):
+        return self.hacker
+
     def check_ports_on_host(self, host_instance):
         """
         Returns the ports of the host_instance to see if they have been changed.
@@ -319,6 +331,12 @@ class ActionManager:
         """
         return host_instance.get_users()
 
+    def check_host_has_same_node_id(self, host_instance):
+        """
+        Checks if the host_instance has the same node id on the global network graph
+        """
+        return host_instance.host_id
+
     def check_network_ip_addresses(self):
         """
         Checks if the IP addresses on a network that are visible to the hacker are the same.
@@ -346,7 +364,7 @@ class ActionManager:
 
     def create_action(self, result, time_to_complete, failed_fn=constants.nothing, failed_fn_args=[], host_instance = None, check_ports = False, 
                         check_ip = False, check_path = False, check_services = False, check_os = False,
-                        check_users = False, check_network_ips = False, check_network_paths = False):
+                        check_users = False, check_host_id = False, check_network_ips = False, check_network_paths = False):
         """
         Creates an Action that can be blocked by a network reconfiguration.
 
@@ -386,7 +404,7 @@ class ActionManager:
         """
         return Action(self, result, time_to_complete, failed_fn, failed_fn_args, host_instance = host_instance, check_ports = check_ports, 
                         check_ip = check_ip, check_path = check_path, check_services = check_services,
-                        check_os = check_os, check_users = check_users, check_network_ips = check_network_ips,
+                        check_os = check_os, check_users = check_users, check_host_id = check_host_id, check_network_ips = check_network_ips,
                         check_network_paths = check_network_paths)
 
         

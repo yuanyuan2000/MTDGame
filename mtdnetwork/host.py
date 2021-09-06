@@ -84,6 +84,10 @@ class Host:
         else:
             self.change_node_color(color="green")
 
+        hacker = self.network.get_action_manager().get_hacker()
+
+        hacker.remove_host_id_from_compromised(self.host_id)
+
     def set_compromised(self):
         """
         Sets the host as compromised
@@ -126,7 +130,8 @@ class Host:
                 check_path = True,
                 check_services = True,
                 check_os = True,
-                check_users = True
+                check_users = True,
+                check_host_id = True
             )
 
         return self.action_manager.create_action(
@@ -139,7 +144,8 @@ class Host:
             check_path = True,
             check_services = True,
             check_os = True,
-            check_users = True
+            check_users = True,
+            check_host_id = True
         )
 
     def is_compromised(self):
@@ -153,7 +159,8 @@ class Host:
             failed_fn = self.revert_compromised,
             host_instance = self,
             check_ip = True,
-            check_path = True
+            check_path = True,
+            check_host_id = True
         )
 
     def compromise_with_users(self, compromised_users):
@@ -182,7 +189,8 @@ class Host:
                 check_path = True,
                 check_services = True,
                 check_os = True,
-                check_users = True
+                check_users = True,
+                check_host_id = True
             )
         return self.action_manager.create_action(
             False,
@@ -194,7 +202,8 @@ class Host:
             check_path = True,
             check_services = True,
             check_os = True,
-            check_users = True
+            check_users = True,
+            check_host_id = True
         )
 
     def get_services(self, just_exploited=False):
@@ -309,7 +318,8 @@ class Host:
             check_ip = True,
             check_path = True,
             check_services = True,
-            check_os = True
+            check_os = True,
+            check_host_id = True
         )
 
     def get_vulns(self, discovered_service_ports, ignore_services=[], roa_threshold=0):
@@ -351,7 +361,8 @@ class Host:
             check_ip = True,
             check_path = True,
             check_services = True,
-            check_os = True
+            check_os = True,
+            check_host_id = True
         )
 
     def exploit_vulns(self, vulns):
@@ -388,7 +399,8 @@ class Host:
             check_ip = True,
             check_path = True,
             check_services = True,
-            check_os = True
+            check_os = True,
+            check_host_id = True
         )
 
     def discover_neighbors(self):
@@ -406,7 +418,8 @@ class Host:
             scan_time,
             host_instance = self,
             check_ip = True,
-            check_path = True
+            check_path = True,
+            check_host_id = True
         )
 
     def get_ports(self):

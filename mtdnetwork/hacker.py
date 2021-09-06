@@ -42,6 +42,30 @@ class Hacker:
 
         self.observed_changes = {}
 
+    def remove_host_id_from_compromised(self, host_id):
+        self.compromised_hosts = [
+            id
+                for id in self.compromised_hosts
+                    if id != host_id    
+        ]
+
+    def swap_host_ids_in_compromised(self, host_id, other_host_id):
+        new_compromised_list = []
+
+        for id in self.compromised_hosts:
+            if id in new_compromised_list:
+                continue
+            if id == host_id:
+                new_compromised_list.append(other_host_id)
+                continue
+            elif id == other_host_id:
+                new_compromised_list.append(host_id)
+                continue
+            else:
+                new_compromised_list.append(id)
+
+        self.compromised_hosts = list(set(new_compromised_list))
+
     def get_statistics(self):
         """
         Returns statistics for the simulation

@@ -49,6 +49,9 @@ class Network:
         self.gen_graph(total_subnets = total_subnets, layers = total_layers)
         self.setup_network()
 
+    def get_service_generator(self):
+        return self.service_generator
+
     def get_hosts(self):
         return dict(nx.get_node_attributes(self.graph, "host"))
 
@@ -358,8 +361,11 @@ class Network:
             except:
                 pass
 
-        if shortest_distance == constants.LARGE_INT:
-            raise exceptions.PathToTargetNotFoundError
+        # This function is used for sorting so shouldn't raise an exception
+        # some MTD cause this exception to be raised.
+        #
+        # if shortest_distance == constants.LARGE_INT:
+        #     raise exceptions.PathToTargetNotFoundError(target_node)
 
         return shortest_path, shortest_distance
         
@@ -394,9 +400,10 @@ class Network:
                         if not neighbor in compromised_hosts and not neighbor in self.exposed_endpoints
             ]
 
+        # Add random element from 0 to 1 so the scan does not return the same order of hosts each time for the hacker
         uncompromised_hosts = sorted(
             uncompromised_hosts,
-            key = lambda host_id : self.get_path_from_exposed(host_id, graph=visible_network)[1]
+            key = lambda host_id : self.get_path_from_exposed(host_id, graph=visible_network)[1] + random.random()
         )
 
         uncompromised_hosts = uncompromised_hosts + [
@@ -458,7 +465,7 @@ class Network:
                 host_id, 
                 pivot_host_id=pivot_host_id, 
                 graph=visible_network
-            )
+            ) + random.random()
         ) + [
             host_id
                 for host_id in self.exposed_endpoints
