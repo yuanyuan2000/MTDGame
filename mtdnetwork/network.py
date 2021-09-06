@@ -49,6 +49,9 @@ class Network:
         self.gen_graph(total_subnets = total_subnets, layers = total_layers)
         self.setup_network()
 
+    def get_hosts(self):
+        return dict(nx.get_node_attributes(self.graph, "host"))
+
     def get_action_manager(self):
         """
         Returns:

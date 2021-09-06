@@ -23,7 +23,7 @@ class ActionBlockedError(Exception):
                 the exceptions that were raised due to an aspect of the network being reconfigured so it would block the action
         """
         self.message = "The action has been blocked!"
-        self.blocked_action_reasons = blocked_action_exceptions
+        self.blocked_action_reasons = [type(reason) for reason in blocked_action_exceptions]
         super().__init__(self.message)
 
     def get_blocking_actions(self):

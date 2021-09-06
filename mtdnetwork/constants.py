@@ -23,8 +23,8 @@ LARGE_INT = (1 << 100)
 # NAME_LIST_URL = "https://raw.githubusercontent.com/dominictarr/random-name/master/first-names.txt"
 
 # Constants for MTD strategies
-MTD_MIN_TRIGGER_TIME = 100
-MTD_MAX_TRIGGER_TIME = 2000
+MTD_MIN_TRIGGER_TIME = 1000
+MTD_MAX_TRIGGER_TIME = 5000
 
 # Constants for Network
 NETWORK_HOST_DISCOVER_TIME = 1

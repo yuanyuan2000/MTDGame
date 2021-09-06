@@ -40,15 +40,7 @@ class Hacker:
 
         self.logger = logging.getLogger(__name__)
 
-        self.observed_changes = {
-            exceptions.PortsOnHostChangeError : 0,
-            exceptions.HostIPChangeError : 0,
-            exceptions.PathToHostChangeError : 0,
-            exceptions.ServicesOnHostChangeError : 0,
-            exceptions.OSOnHostChangeError : 0,
-            exceptions.UsersOnHostChangeError: 0,
-            exceptions.NetworkIPAddressesChangeError : 0
-        }
+        self.observed_changes = {}
 
     def get_statistics(self):
         """
@@ -127,7 +119,7 @@ class Hacker:
 
         for blocked_reason in blocked_exceptions:
             total_observations += self.observed_changes.get(blocked_reason, 0)
-            self.observed_changes[blocked_reason] = self.observed_changes[blocked_reason] + 1
+            self.observed_changes[blocked_reason] = self.observed_changes.get(blocked_reason, 0) + 1
 
         average_observations = total_observations / total_types_of_changes
 
@@ -166,7 +158,7 @@ class Hacker:
             self.start_port_scan()
             return
 
-        if exceptions.UsersOnHostChangeError:
+        if exceptions.UsersOnHostChangeError in blocked_exceptions:
             # If the hacker was just checking if a user has reused their password they should continue
             # to trying to discover vulnerabilities on the host.
             if self.action.complete_fn == self.check_reuse_user_pass:
