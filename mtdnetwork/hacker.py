@@ -143,7 +143,9 @@ class Hacker:
 
         # Temporarily add constants.HACKER_BLOCKED_BY_MTD_PENALITY to self.curr_time to add on the penality time for
         # being blocked by the MTD defense strategy which would waste time.
-        self.curr_time += int(constants.HACKER_BLOCKED_BY_MTD_PENALITY*self.get_mtd_penality_discount(blocked_exceptions))
+        time_penality = int(constants.HACKER_BLOCKED_BY_MTD_PENALITY*self.get_mtd_penality_discount(blocked_exceptions))
+        self.logger.info("Time Penality: {}".format(time_penality))
+        self.curr_time += time_penality
 
         if exceptions.HostIPChangeError in blocked_exceptions or \
             exceptions.PathToHostChangeError in blocked_exceptions:
