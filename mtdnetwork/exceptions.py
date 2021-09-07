@@ -13,6 +13,10 @@ class NoHostFoundError(Exception):
         self.message = "No suitable host was found!"
         super().__init__(self.message)
 
+class CannotAddMTDEventToScorerError(Exception):
+    def __init__(self):
+        super().__init__("Cannot add MTD event to scorer since no MTD events have occurred")
+
 class ActionBlockedError(Exception):
     def __init__(self, blocked_action_exceptions):
         """

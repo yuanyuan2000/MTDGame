@@ -15,6 +15,7 @@ class Hacker:
                 the Network instance that this hacker is trying to compromise
         """
         self.network = network
+        self.scorer = self.network.get_scorer()
         self.compromised_users = []
         self.compromised_hosts = []
         
@@ -160,6 +161,7 @@ class Hacker:
                 a list of exceptions that explain what was changed in the network that blocked the action
         """
         self.logger.info("MTD operation blocked action!")
+        self.scorer.add_mtd_blocked_event(self.curr_time)
         self.total_blocked_by_mtd += 1
 
         # Temporarily add constants.HACKER_BLOCKED_BY_MTD_PENALITY to self.curr_time to add on the penality time for
@@ -352,6 +354,7 @@ class Hacker:
             self.update_progress_state()
             self.pivot_host_id = self.curr_host_id
             self.total_reuse_pass_compromise += 1
+            self.scorer.add_host_reuse_pass_compromise(self.curr_time, self.curr_host)
             self.start_scan_for_neighbors()
         else:
             self.find_vulns()
@@ -388,6 +391,10 @@ class Hacker:
         """
         Checks if the adversary was able to successfully compromise the host
         """
+        for vuln in self.curr_vulns:
+            if vuln.is_exploited():
+                self.scorer.add_vuln_compromise(self.curr_time, vuln)
+
         is_exploited = self.action.get_result()
         self.debug_log("ATTEMPT EXPLOIT VULNS")
         if is_exploited:
@@ -395,6 +402,7 @@ class Hacker:
             self.update_progress_state()
             self.pivot_host_id = self.curr_host_id
             self.total_vuln_compromise += 1
+            self.scorer.add_host_vuln_compromise(self.curr_time, self.curr_host)
             self.start_scan_for_neighbors()
         else:
             self.brute_force_users()
@@ -422,6 +430,7 @@ class Hacker:
             self.update_progress_state()
             self.pivot_host_id = self.curr_host_id
             self.total_brute_force_compromise += 1
+            self.scorer.add_host_pass_spray_compromise(self.curr_time, self.curr_host)
             self.start_scan_for_neighbors()
         else:
             self.start_host_enum()
@@ -433,7 +442,10 @@ class Hacker:
 
         if not self.curr_host_id in self.compromised_hosts:
             self.compromised_hosts.append(self.curr_host_id)
+            for user in self.curr_host.get_compromised_users():
+                if not user in self.compromised_users:
+                    self.scorer.add_user_account_leak(self.curr_time, user)
             self.compromised_users = list(set(self.compromised_users + self.curr_host.get_compromised_users()))
-
             if self.network.is_compromised(self.compromised_hosts):
                 self.done = True
+        

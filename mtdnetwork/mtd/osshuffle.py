@@ -3,7 +3,7 @@ from mtdnetwork.mtd import *
 class OSShuffle(MTD):
     def __init__(self, network):
         self.logger = logging.getLogger("mtd:osshuffle")
-        super().__init__(network)
+        super().__init__("OSShuffle", network)
 
     def mtd_operation(self):
         self.logger.info("changing os on hosts")

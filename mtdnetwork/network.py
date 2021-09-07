@@ -11,6 +11,7 @@ import mtdnetwork.services as services
 from mtdnetwork.host import Host
 import mtdnetwork.data as simdata
 import mtdnetwork.exceptions as exceptions
+from mtdnetwork.scorer import Scorer
 
 class Network:
 
@@ -47,9 +48,17 @@ class Network:
         self.service_generator = services.ServicesGenerator()
         self.mtd_strategies = []
         self.action_manager = ActionManager(self)
+        self.scorer = Scorer(self)
         self.setup_users(users_to_nodes_ratio, prob_user_reuse_pass, int(1/users_to_nodes_ratio))
         self.gen_graph()
         self.setup_network()
+        self.scorer.set_initial_statistics(self)
+
+    def get_scorer(self):
+        return self.scorer
+
+    def get_statistics(self):
+        return self.scorer.get_statistics()
 
     def get_service_generator(self):
         return self.service_generator
@@ -290,7 +299,9 @@ class Network:
         """
         if len(self.mtd_strategies) == 0:
             self.set_mtd_trigger_time(0)
-        self.mtd_strategies.append(mtd_strategy(self))
+        mtd_strat = mtd_strategy(self)
+        self.mtd_strategies.append(mtd_strat)
+        self.scorer.register_mtd(mtd_strat)
 
     def step(self, curr_time):
         """
@@ -305,6 +316,8 @@ class Network:
                 mtd_strat = random.choice(self.mtd_strategies)
                 mtd_strat.mtd_operation()
                 self.set_mtd_trigger_time(curr_time)
+                self.scorer.set_last_mtd(mtd_strat)
+                self.scorer.add_mtd_event(curr_time)
 
     def get_hacker_visible_graph(self, compromised_hosts):
         """

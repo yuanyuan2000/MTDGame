@@ -108,6 +108,10 @@ class Vulnerability:
         The x100 is because impact is expressed as a value 1-10 on CVE
         """
         return (self.complexity * self.impact)/self.exploit_time()
+
+    def initial_roa(self):
+        return (self.complexity * self.impact)/(constants.VULN_MIN_EXPLOIT_TIME + \
+                (constants.VULN_MAX_EXPLOIT_TIME - constants.VULN_MIN_EXPLOIT_TIME)*(1-self.complexity))
     
     def __eq__(self, other):
         """
@@ -153,6 +157,9 @@ class Service:
                 for v in self.vulnerabilities  
                     if v.roa() > roa_threshold and not v.is_exploited()
         ][:constants.SERVICE_TOP_X_VULNS_TO_RETURN]
+
+    def get_all_vulns(self):
+        return self.vulnerabilities
     
     def is_exploited(self):
         self.exploit_value = 0
@@ -188,9 +195,15 @@ class Service:
 
 class ServicesGenerator:
 
-    def __init__(self, services_per_os=20, percent_cross_platform=0.5, max_vuln_probability=0.2, 
-                 vuln_patch_mean=10, vuln_patch_range=9, vuln_initial_chances=10, os_dependent_vuln_chance=0.1,
-                 dependent_vuln_chance=0.1):
+    def __init__(self, 
+                 services_per_os=constants.SERVICE_NO_OF_SERVICES_PER_OS, 
+                 percent_cross_platform=constants.VULN_PERCENT_CROSS_PLATFORM, 
+                 max_vuln_probability=constants.VULN_MAX_PROB_FOR_OCCURING_FOR_SERVICE_VERSION, 
+                 vuln_patch_mean=constants.VULN_PATCH_MEAN, 
+                 vuln_patch_range=constants.VULN_PATCH_RANGE, 
+                 vuln_initial_chances=constants.VULN_INITIAL_CHANCES, 
+                 os_dependent_vuln_chance=constants.VULN_PROB_DEPENDS_ON_OS,
+                 dependent_vuln_chance=constants.VULN_PROB_DEPENDS_ON_OTHER_VULNS):
         """
         Used to generator services for the simulation
 

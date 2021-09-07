@@ -3,7 +3,7 @@ from mtdnetwork.mtd import *
 class UserShuffle(MTD):
     def __init__(self, network):
         self.logger = logging.getLogger("mtd:usershuffle")
-        super().__init__(network)
+        super().__init__("UserShuffle", network)
 
     def mtd_operation(self):
         self.logger.info("changing users on hosts")

@@ -67,6 +67,22 @@ class Host:
             return False
         return other.uuid == self.uuid
 
+    def get_all_services(self):
+        return list(dict(nx.get_node_attributes(self.graph, "service")).values())
+
+    def get_all_vulns(self):
+        all_services = self.get_all_services()
+
+        all_vulns = []
+        for service in all_services:
+            service_vulns = service.get_all_vulns()
+
+            for v in service_vulns:
+                if not v in all_vulns:
+                    all_vulns.append(v)
+
+        return all_vulns
+
     def setup_network(self, service_generator, keep_ports = False):
         port_addresses = []
         for node_id in range(self.total_nodes):
