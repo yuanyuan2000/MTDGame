@@ -9,6 +9,13 @@ setup(
     packages = find_packages(),
     python_requires = ">=3.8",
     install_requires = required,
-    include_package_data = True,
-    zip_safe = True
+    entry_points = {
+        "console_scripts" : [
+            "mtdsim = mtdnetwork.run:main"
+        ]
+    },
+    zip_safe = True,
+    package_data = {
+        "mtdnetwork.data" : ["*.txt"]
+    }
 )

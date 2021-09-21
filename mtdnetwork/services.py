@@ -1,7 +1,6 @@
 import random, logging, os
 import mtdnetwork.constants as constants
-import mtdnetwork.data as simdata
-import importlib.resources as pkg_resources
+import pkg_resources
 import uuid
 
 class Vulnerability:
@@ -343,4 +342,4 @@ class ServicesGenerator:
                     self.os_services[os_name][os_version][service] = service_versions
 
     def get_service_name_list():
-        return pkg_resources.read_text(simdata, "words.txt").splitlines()
+        return [x.decode() for x in pkg_resources.resource_string('mtdnetwork', "data/words.txt").splitlines()]

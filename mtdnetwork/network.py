@@ -1,6 +1,6 @@
 from mtdnetwork.actions import ActionManager
 import networkx as nx
-import importlib.resources as pkg_resources
+import pkg_resources
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -9,7 +9,6 @@ import os
 import mtdnetwork.constants as constants
 import mtdnetwork.services as services
 from mtdnetwork.host import Host
-import mtdnetwork.data as simdata
 import mtdnetwork.exceptions as exceptions
 from mtdnetwork.scorer import Scorer
 
@@ -112,7 +111,7 @@ class Network:
         if self.total_users < 1:
             self.total_users = 1
         
-        names = pkg_resources.read_text(simdata, "first-names.txt").splitlines()
+        names = [x.decode() for x in pkg_resources.resource_string('mtdnetwork', "data/first-names.txt").splitlines()]
 
         random_users = random.choices(names, k=self.total_users)
         self.users_list = [
