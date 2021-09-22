@@ -11,11 +11,13 @@ setup(
     install_requires = required,
     entry_points = {
         "console_scripts" : [
-            "mtdsim = mtdnetwork.run:main"
+            "mtdsim = mtdnetwork.run:main",
+            "mtdazuresim = mtdnetwork.azure.run:main"
         ]
     },
     zip_safe = True,
     package_data = {
-        "mtdnetwork.data" : ["*.txt"]
+        "mtdnetwork.data" : ["*.txt"],
+        "mtdnetwork.azure.scripts" : ["startup.sh"]
     }
 )
