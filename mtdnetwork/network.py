@@ -3,9 +3,7 @@ import networkx as nx
 import pkg_resources
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
 import random
-import os
 import mtdnetwork.constants as constants
 import mtdnetwork.services as services
 from mtdnetwork.host import Host
