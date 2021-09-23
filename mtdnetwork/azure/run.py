@@ -77,11 +77,18 @@ def parse_args():
         type = str
     )
 
+    parser.add_argument(
+        '--task-slots-per-node',
+        help = 'The number of task slots per node',
+        default = 8,
+        type = int
+    )
+
     return parser.parse_args()
 
 def main():
     args = parse_args()
-
+    assert args.max_combinations >= 1, "Cannot do combinations for less than 1 type of MTD!"
     batch_service_client = get_batch_service_client(args.batch_url)
     blob_service_client = get_blob_service_client(args.storage_url)
 
@@ -92,12 +99,19 @@ def main():
         args.sas_container_token
     )
 
-    pool_id = create_pool(batch_service_client, startup_resource_files, args.batch_nodes, vm_size=args.vm_size)
+    pool_id = create_pool(
+        batch_service_client, 
+        startup_resource_files, 
+        args.batch_nodes, 
+        vm_size = args.vm_size,
+        task_slots_per_node = args.task_slots_per_node
+    )
+    
     job_id = create_job(batch_service_client, pool_id)
 
     all_mtd_types = []
 
-    for i in range(1, args.max_combinations):
+    for i in range(1, args.max_combinations+1):
         mtd_combinations  = list(itertools.combinations(MTD_STRATEGIES, i))
 
         if i == 1:
