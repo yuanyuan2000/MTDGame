@@ -107,18 +107,6 @@ def main():
                 args.container_name,
                 "results/200-nodes-50-endpoints-20-subnets-3-layers-250000-time/{}.json".format(task_id)
             )
-        
-
-    add_task(
-        batch_service_client, 
-        job_id, 
-        "test", 
-        "/usr/local/bin/mtdsim output.json", 
-        args.sas_container_token,
-        args.storage_url,
-        args.container_name,
-        "test/wow/test.json"
-    )
 
     print("Waiting for the simulation to complete!")
     wait_until_complete(batch_service_client, job_id)
