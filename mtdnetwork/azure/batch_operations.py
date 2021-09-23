@@ -98,7 +98,7 @@ def add_task(batch_service_client, job_id, task_name, cmd, sas_container_token, 
     batch_service_client.task.add_collection(job_id, tasks)
 
 def create_pool(batch_service_client: BatchServiceClient, resource_files: list,
-                    total_nodes: int):
+                    total_nodes: int, vm_size = "STANDARD_E2S_V3"):
     pool_id = DEFAULT_POOL_NAME + "-" + str(uuid4())
 
     new_pool = batchmodels.PoolAddParameter(
@@ -112,7 +112,7 @@ def create_pool(batch_service_client: BatchServiceClient, resource_files: list,
                 version="latest"
         ),
         node_agent_sku_id="batch.node.ubuntu 18.04"),
-        vm_size="STANDARD_E2S_V3",
+        vm_size=vm_size,
         target_dedicated_nodes=total_nodes,
         task_slots_per_node=8,
         start_task=batchmodels.StartTask(

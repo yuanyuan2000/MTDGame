@@ -56,6 +56,27 @@ def parse_args():
         type = int
     )
 
+    parser.add_argument(
+        '--max-combinations',
+        help = 'The maximum number of combinations of MTD',
+        default = 3,
+        type = int
+    )
+
+    parser.add_argument(
+        '--result-blob-folder-name',
+        help = 'The name of the result blob folder',
+        default = 'results',
+        type = str
+    )
+
+    parser.add_argument(
+        '--vm-size',
+        help = 'The size of VM to use on Azure Batch',
+        default = 'STANDARD_E2S_V3',
+        type = str
+    )
+
     return parser.parse_args()
 
 def main():
@@ -71,12 +92,12 @@ def main():
         args.sas_container_token
     )
 
-    pool_id = create_pool(batch_service_client, startup_resource_files, args.batch_nodes)
+    pool_id = create_pool(batch_service_client, startup_resource_files, args.batch_nodes, vm_size=args.vm_size)
     job_id = create_job(batch_service_client, pool_id)
 
     all_mtd_types = []
 
-    for i in range(1, 4):
+    for i in range(1, args.max_combinations):
         mtd_combinations  = list(itertools.combinations(MTD_STRATEGIES, i))
 
         if i == 1:
@@ -85,7 +106,7 @@ def main():
 
     for mtd_strat in all_mtd_types:
         for i in range(args.trials):
-            if len(mtd_strat) == 0 and mtd_strat[0] == None:
+            if len(mtd_strat) == 1 and mtd_strat[0] == None:
                 cmd = "/usr/local/bin/mtdsim output.json",
                 task_id = "none-{}".format(i)
             else:
@@ -105,7 +126,10 @@ def main():
                 args.sas_container_token,
                 args.storage_url,
                 args.container_name,
-                "results/200-nodes-50-endpoints-20-subnets-3-layers-250000-time/{}.json".format(task_id)
+                "{}/200-nodes-50-endpoints-20-subnets-3-layers-250000-time/{}.json".format(
+                    args.result_blob_folder_name,
+                    task_id
+                )
             )
 
     print("Waiting for the simulation to complete!")
