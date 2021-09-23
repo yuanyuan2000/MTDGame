@@ -56,7 +56,7 @@ def parse_args():
     parser.add_argument(
         "-t", "--time",
         help = "The total simulation time",
-        default = 200000,
+        default = 250000,
         type = int
     )
 
