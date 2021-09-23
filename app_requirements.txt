@@ -22,7 +22,6 @@ networkx>=2.6.3
 numpy>=1.21.2
 oauthlib>=3.1.1
 Pillow>=8.3.2
-portalocker>=1.7.1
 pycparser>=2.20
 PyJWT>=2.1.0
 pyparsing>=2.4.7
