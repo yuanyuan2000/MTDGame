@@ -8,8 +8,8 @@ import pkg_resources
 from uuid import uuid4
 
 DEFAULT_POOL_NAME = "mtdresearch"
-INIT_COMMAND = "/bin/bash ./startup.sh"
 STARTUP_BLOB_NAME = "startup.sh"
+INIT_COMMAND = "/bin/bash " + STARTUP_BLOB_NAME
 
 def get_batch_service_client(batch_url: str):
     creds = get_azure_cli_credentials(resource = "https://batch.core.windows.net/")[0]
@@ -19,26 +19,18 @@ def get_blob_service_client(storage_url: str):
     creds = AzureCliCredential()
     return BlobServiceClient(account_url = storage_url, credential = creds)
 
-def upload_startup_script(blob_service_client: BlobServiceClient, container_name: str):
+def upload_startup_script(blob_service_client: BlobServiceClient, storage_url: str, container_name: str, sas_container_token: str):
     blob_client = blob_service_client.get_blob_client(container_name, STARTUP_BLOB_NAME)
     if blob_client.exists():
         blob_client.delete_blob()
     startup_script = pkg_resources.resource_string('mtdnetwork.azure', "scripts/startup.sh")
     blob_client.upload_blob(startup_script)
 
-    sas_token = generate_blob_sas(
-        blob_service_client.account_name,
-        container_name,
-        STARTUP_BLOB_NAME,
-        account_key = blob_service_client.credential.account_key,
-        permission = BlobSasPermissions(read = True)
-    )
-
-    print(sas_token)
+    container_url = storage_url + container_name + "?" + sas_container_token
 
     return [batchmodels.ResourceFile(
-        auto_storage_container_name = container_name,
-        file_path = "startup.sh",
+        storage_container_url = container_url,
+        blob_prefix = STARTUP_BLOB_NAME,
         file_mode = "0555"
     )]
 

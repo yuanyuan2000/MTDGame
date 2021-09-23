@@ -1,5 +1,7 @@
 #!/bin/bash
 
+sudo apt update;
+sudo apt install -y python3.8 python3.8-dev;
 git clone https://github.com/Ccamm/MTDSim mtdsim;
 cd mtdsim;
-python3 setup.py install
+sudo python3.8 setup.py install;
