@@ -84,6 +84,18 @@ def parse_args():
         type = int
     )
 
+    parser.add_argument(
+        '--keep-job',
+        help = "Should the Azure Batch Job not be deleted after the simulation",
+        action = "store_true"
+    )
+
+    parser.add_argument(
+        '--keep-pool',
+        help = "Should the Azure Batch Pool not be deleted after the simulation",
+        action = "store_true"
+    )
+
     return parser.parse_args()
 
 def main():
@@ -115,22 +127,18 @@ def main():
         mtd_combinations  = list(itertools.combinations(MTD_STRATEGIES, i))
 
         if i == 1:
-            mtd_combinations.append((None,))
+            mtd_combinations.append(("NoMTD",))
         all_mtd_types = all_mtd_types + mtd_combinations
 
     for mtd_strat in all_mtd_types:
         for i in range(args.trials):
-            if len(mtd_strat) == 1 and mtd_strat[0] == None:
-                cmd = "/usr/local/bin/mtdsim output.json",
-                task_id = "none-{}".format(i)
-            else:
-                cmd = "/usr/local/bin/mtdsim -m '{}' output.json".format(
-                    ','.join(mtd_strat)
-                )
-                task_id = "{}-{}".format(
-                    "-".join(mtd_strat),
-                    i
-                )
+            cmd = "/usr/local/bin/mtdsim -m '{}' output.json".format(
+                ','.join(mtd_strat)
+            )
+            task_id = "{}-{}".format(
+                "-".join(mtd_strat),
+                i
+            )
 
             add_task(
                 batch_service_client, 
@@ -145,10 +153,32 @@ def main():
                     task_id
                 )
             )
+    
+    # TODO: Delete later
+    # for i in range(args.trials):
+    #     cmd = "/usr/local/bin/mtdsim output.json"
+    #     task_id = "NoMTD-{}".format(i)
+    #     add_task(
+    #         batch_service_client, 
+    #         job_id, 
+    #         task_id, 
+    #         cmd, 
+    #         args.sas_container_token,
+    #         args.storage_url,
+    #         args.container_name,
+    #         "{}/200-nodes-50-endpoints-20-subnets-3-layers-250000-time/{}.json".format(
+    #             args.result_blob_folder_name,
+    #             task_id
+    #         )
+    #     )
 
     print("Waiting for the simulation to complete!")
     wait_until_complete(batch_service_client, job_id)
 
-    delete_job(batch_service_client, job_id)
-    delete_pool(batch_service_client, pool_id)
+    if not args.keep_job:
+        delete_job(batch_service_client, job_id)
+
+    if not args.keep_pool:
+        delete_pool(batch_service_client, pool_id)
+
     print("Done!")
