@@ -25,6 +25,9 @@ def wait_until_complete(batch_service_client: BatchServiceClient, job_id: str):
             has_completed = task_counts.active == 0 and task_counts.running == 0
         except:
             has_completed = False
+        
+        # Don't want it to go too fast
+        time.sleep(30)
 
 def get_batch_service_client(batch_url: str):
     creds = get_azure_cli_credentials(resource = "https://batch.core.windows.net/")[0]
