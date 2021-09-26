@@ -96,6 +96,18 @@ def parse_args():
         action = "store_true"
     )
 
+    parser.add_argument(
+        '--min-combinations',
+        help = "The minimum number of combinations of MTD",
+        default = 1
+    )
+
+    parser.add_argument(
+        "--just-ip-and-port",
+        help = "Only have combinations where IPShuffle and PortShuffle are used (mainly for 3 combination tests)",
+        action = "store_true"
+    )
+
     return parser.parse_args()
 
 def main():
@@ -123,12 +135,15 @@ def main():
 
     all_mtd_types = []
 
-    for i in range(1, args.max_combinations+1):
+    for i in range(args.min_combinations, args.max_combinations+1):
         mtd_combinations  = list(itertools.combinations(MTD_STRATEGIES, i))
 
         if i == 1:
             mtd_combinations.append(("NoMTD",))
         all_mtd_types = all_mtd_types + mtd_combinations
+
+    if args.just_ip_and_port:
+        all_mtd_types = [x for x in all_mtd_types if "IPShuffle" in x and "PortShuffle" in x]
 
     for mtd_strat in all_mtd_types:
         for i in range(args.trials):
@@ -153,24 +168,6 @@ def main():
                     task_id
                 )
             )
-    
-    # TODO: Delete later
-    # for i in range(args.trials):
-    #     cmd = "/usr/local/bin/mtdsim output.json"
-    #     task_id = "NoMTD-{}".format(i)
-    #     add_task(
-    #         batch_service_client, 
-    #         job_id, 
-    #         task_id, 
-    #         cmd, 
-    #         args.sas_container_token,
-    #         args.storage_url,
-    #         args.container_name,
-    #         "{}/200-nodes-50-endpoints-20-subnets-3-layers-250000-time/{}.json".format(
-    #             args.result_blob_folder_name,
-    #             task_id
-    #         )
-    #     )
 
     print("Waiting for the simulation to complete!")
     wait_until_complete(batch_service_client, job_id)
