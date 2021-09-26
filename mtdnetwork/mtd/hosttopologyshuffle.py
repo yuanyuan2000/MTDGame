@@ -20,13 +20,14 @@ class HostTopologyShuffle(MTD):
         hosts = self.network.get_hosts()
         host_id_list = list(hosts.keys())
         hacker = self.network.get_action_manager().get_hacker()
+        exposed_endpoints = self.network.exposed_endpoints
         seen = []
 
         for host_id, host_instance in hosts.items():
-            if host_id in seen:
+            if host_id in seen or host_id in exposed_endpoints:
                 continue
             other_host_id = self.random_different_host_id(host_id, host_id_list)
-            if other_host_id in seen:
+            if other_host_id in seen or host_id in exposed_endpoints:
                 continue
             other_host_instance = hosts[other_host_id]
 
