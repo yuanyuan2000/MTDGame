@@ -61,6 +61,9 @@ class Host:
         )
         self.setup_network(service_generator)
         self.set_host_users(users_list)
+
+    def is_exposed_endpoint(self):
+        return self.host_id in self.network.exposed_endpoints
     
     def __eq__(self, other):
         if not isinstance(other, Host):

@@ -13,7 +13,7 @@ from mtdnetwork.scorer import Scorer
 class Network:
 
     def __init__(self, total_nodes, total_endpoints, total_subnets, total_layers,
-                    users_to_nodes_ratio=1/3, prob_user_reuse_pass=0.05, seed=None):
+                    users_to_nodes_ratio=constants.USER_TO_NODES_RATIO, prob_user_reuse_pass=constants.USER_PROB_TO_REUSE_PASS, seed=None):
         """
         Initialises the state of the network for the simulation.
 
@@ -45,8 +45,8 @@ class Network:
         self.service_generator = services.ServicesGenerator()
         self.mtd_strategies = []
         self.action_manager = ActionManager(self)
-        self.scorer = Scorer(self)
-        self.setup_users(users_to_nodes_ratio, prob_user_reuse_pass, int(1/users_to_nodes_ratio))
+        self.scorer = Scorer()
+        self.setup_users(users_to_nodes_ratio, prob_user_reuse_pass, constants.USER_TOTAL_FOR_EACH_HOST)
         self.gen_graph()
         self.setup_network()
         self.scorer.set_initial_statistics(self)

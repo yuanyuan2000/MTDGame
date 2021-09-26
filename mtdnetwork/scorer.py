@@ -6,7 +6,7 @@ class Statistics:
 
     def __init__(self, record_type):
         """
-        Statisticss when events have occurred for a particular type of event.
+        Statistics when events have occurred for a particular type of event.
 
         Parameters:
             record_type:
@@ -21,7 +21,7 @@ class Statistics:
         self.y_list.append(y)
 
     def get_dict(self):
-        cumul_y = [i for i in range(len(self.y_list))]
+        cumul_y = [i+1 for i in range(len(self.y_list))]
         return {
             "record name" : self.record_type,
             "x" : self.x_list,
@@ -32,6 +32,38 @@ class Statistics:
 
     def __str__(self):
         return self.record_type
+
+class CompromiseStatistics(Statistics):
+
+    def __init__(self, recourd_type):
+        self.non_exposed_x = []
+        self.non_exposed_y = []
+        super().__init__(recourd_type)
+
+    def add_event(self, x, host_instance):
+        host_id = host_instance.host_id
+        if not host_instance.is_exposed_endpoint():
+            self.non_exposed_x.append(x)
+            self.non_exposed_y.append(host_id)
+
+        self.x_list.append(x)
+        self.y_list.append(host_id)
+
+    def get_dict(self):
+        cumul_y = [i+1 for i in range(len(self.y_list))]
+        cumul_non_exposed_y = [i+1 for i in range(len(self.non_exposed_y))]
+
+        return {
+            "record name" : self.record_type,
+            "x" : self.x_list,
+            "y" : self.y_list,
+            "cumulative y" : cumul_y,
+            "total events" : len(self.y_list),
+            "not exposed x" : self.non_exposed_x,
+            "not exposed y" : self.non_exposed_y,
+            "cumulative not exposed y" : cumul_non_exposed_y,
+            "total not exposed events" : len(self.non_exposed_y)
+        }
 
 class VulnStatistics(Statistics):
     def __init__(self, record_type):
@@ -51,7 +83,7 @@ class VulnStatistics(Statistics):
         self.has_dependent_vulns += 1 if vuln.has_dependent_vulns else 0
 
     def get_dict(self):
-        cumulative_exploited_vulns = [i for i in range(len(self.x_list))]
+        cumulative_exploited_vulns = [i+1 for i in range(len(self.x_list))]
         return {
             "record name" : self.record_type,
             "x" : self.x_list,
@@ -75,8 +107,8 @@ class MTDStatistics(Statistics):
         self.blocked_y_list.append(y)
 
     def get_dict(self):
-        cumul_y = [i for i in range(len(self.y_list))]
-        cumul_blocked_y = [i for i in range(len(self.blocked_y_list))]
+        cumul_y = [i+1 for i in range(len(self.y_list))]
+        cumul_blocked_y = [i+1 for i in range(len(self.blocked_y_list))]
         return {
             "record name" : self.record_type,
             "x" : self.x_list,
@@ -91,11 +123,11 @@ class MTDStatistics(Statistics):
 
 class Scorer:
 
-    def __init__(self, network):
-        self.host_compromises = Statistics("Host Compromises")
-        self.host_vuln_compromises = Statistics("Vuln Compromises")
-        self.host_reuse_pass_compromises = Statistics("Reuse Password Compromises")
-        self.host_pass_spray_compromises = Statistics("Password Spray Compromises")
+    def __init__(self):
+        self.host_compromises = CompromiseStatistics("Host Compromises")
+        self.host_vuln_compromises = CompromiseStatistics("Vuln Compromises")
+        self.host_reuse_pass_compromises = CompromiseStatistics("Reuse Password Compromises")
+        self.host_pass_spray_compromises = CompromiseStatistics("Password Spray Compromises")
         self.user_account_leaks = Statistics("User Account Has Been Leaked By Compromise")
 
         # Gather statistics on the types of vulnerabilities that were exploited
@@ -136,31 +168,31 @@ class Scorer:
             raise exceptions.CannotAddMTDEventToScorerError
  
     def add_host_compromise(self, curr_time, host_instance):
-        host_os_type = host_instance.os_type
-        host_os_version = host_instance.os_version
-        host_type = "{} {}".format(host_os_type, host_os_version)
-        self.host_compromises.add_event(curr_time, host_type)
+        # host_os_type = host_instance.os_type
+        # host_os_version = host_instance.os_version
+        # host_type = "{} {}".format(host_os_type, host_os_version)
+        self.host_compromises.add_event(curr_time, host_instance)
 
     def add_host_vuln_compromise(self, curr_time, host_instance):
         self.add_host_compromise(curr_time, host_instance)
-        host_os_type = host_instance.os_type
-        host_os_version = host_instance.os_version
-        host_type = "{} {}".format(host_os_type, host_os_version)
-        self.host_vuln_compromises.add_event(curr_time, host_type)
+        # host_os_type = host_instance.os_type
+        # host_os_version = host_instance.os_version
+        # host_type = "{} {}".format(host_os_type, host_os_version)
+        self.host_vuln_compromises.add_event(curr_time, host_instance)
 
     def add_host_reuse_pass_compromise(self, curr_time, host_instance):
         self.add_host_compromise(curr_time, host_instance)
-        host_os_type = host_instance.os_type
-        host_os_version = host_instance.os_version
-        host_type = "{} {}".format(host_os_type, host_os_version)
-        self.host_reuse_pass_compromises.add_event(curr_time, host_type)
+        # host_os_type = host_instance.os_type
+        # host_os_version = host_instance.os_version
+        # host_type = "{} {}".format(host_os_type, host_os_version)
+        self.host_reuse_pass_compromises.add_event(curr_time, host_instance)
 
     def add_host_pass_spray_compromise(self, curr_time, host_instance):
         self.add_host_compromise(curr_time, host_instance)
-        host_os_type = host_instance.os_type
-        host_os_version = host_instance.os_version
-        host_type = "{} {}".format(host_os_type, host_os_version)
-        self.host_pass_spray_compromises.add_event(curr_time, host_type)
+        # host_os_type = host_instance.os_type
+        # host_os_version = host_instance.os_version
+        # host_type = "{} {}".format(host_os_type, host_os_version)
+        self.host_pass_spray_compromises.add_event(curr_time, host_instance)
 
     def add_user_account_leak(self, curr_time, username):
         self.user_account_leaks.add_event(curr_time, username)
