@@ -99,7 +99,8 @@ def parse_args():
     parser.add_argument(
         '--min-combinations',
         help = "The minimum number of combinations of MTD",
-        default = 1
+        default = 1,
+        type = int
     )
 
     parser.add_argument(
