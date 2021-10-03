@@ -136,3 +136,6 @@ dmypy.json
 
 # Cython debug symbols
 cython_debug/
+research-analysis/results/.~lock.2-combinations-z-statistics-ip-port.ods#
+.gitignore
+research-analysis/results/.~lock.3-combinations-ip-and-port-z-statistics.ods#

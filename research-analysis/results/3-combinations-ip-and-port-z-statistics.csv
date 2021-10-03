@@ -1,0 +1,6 @@
+Combined MTD Strategy,MTD Strategy A,Z Statistic A,Matches Combined Mean Distribution A,MTD Strategy B,Z Statistic B,Matches Combined Mean Distribution B,MTD Strategy C,Z Statistic C,Matches Combined Mean Distribution C
+"IPShuffle,PortShuffle,UserShuffle",IPShuffle,-13.450585407720713,Highly Significantly Different,PortShuffle,-7.574580796341288,Highly Significantly Different,UserShuffle,2.9106167319728673,Significantly Different
+"CompleteTopologyShuffle,IPShuffle,PortShuffle",IPShuffle,-21.36987495946483,Highly Significantly Different,PortShuffle,-9.038011624375553,Highly Significantly Different,CompleteTopologyShuffle,2.1767437816710022,Marginally Different
+"IPShuffle,PortShuffle,ServiceShuffle",IPShuffle,-19.489409231931663,Highly Significantly Different,PortShuffle,-7.756233054365628,Highly Significantly Different,ServiceShuffle,6.243590931572445,Highly Significantly Different
+"HostTopologyShuffle,IPShuffle,PortShuffle",IPShuffle,-24.545301163520197,Highly Significantly Different,PortShuffle,-13.222516755745092,Highly Significantly Different,HostTopologyShuffle,7.881784651046651,Highly Significantly Different
+"IPShuffle,OSShuffle,PortShuffle",IPShuffle,-11.576089947760385,Highly Significantly Different,PortShuffle,-5.156980858064464,Highly Significantly Different,OSShuffle,6.004245445546391,Highly Significantly Different
