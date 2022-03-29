@@ -1,0 +1,5 @@
+\textbf{MTD Combination},$H_M(t_{max})$,$\hat{H}_M(t_{max})$,$Z_M$ ,\textbf{Rejected $H_0$}
+"IPShuffle,OSShuffle,PortShuffle",22.95,17.52,4.06,True
+"IPShuffle,PortShuffle,ServiceShuffle",25.6,17.28,9.95,True
+"CompleteTopologyShuffle,IPShuffle,PortShuffle",27.76,14.8,15.19,True
+"HostTopologyShuffle,IPShuffle,PortShuffle",36.58,20.3,14.62,True

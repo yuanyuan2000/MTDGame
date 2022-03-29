@@ -1,0 +1,16 @@
+"\textbf{MTD ($M = \{m_1, m_2\}$)}",$m_1$,$Z_{ m_1 }$,"\textbf{Reject $H_{ 0,m_1 }$}",$m_2$,$Z_{ m_2 }$,"\textbf{Reject $H_{ 0,m_2 }$}",Closest Matching MTD
+"OSShuffle,ServiceShuffle",\textit{OSShuffle},1.19,True,\textit{ServiceShuffle},0.77,True,\textbf{\textit{ServiceShuffle}}
+"IPShuffle,PortShuffle",\textit{IPShuffle},2.0,True,\textit{PortShuffle},-3.37,False,\textbf{\textit{IPShuffle}}
+"HostTopologyShuffle,IPShuffle",\textit{IPShuffle},30.92,False,\textit{HostTopologyShuffle},-6.41,False,\textbf{\textit{HostTopologyShuffle}}
+"CompleteTopologyShuffle,PortShuffle",\textit{PortShuffle},11.83,False,\textit{CompleteTopologyShuffle},1.81,True,\textbf{\textit{CompleteTopologyShuffle}}
+"CompleteTopologyShuffle,HostTopologyShuffle",\textit{CompleteTopologyShuffle},10.99,False,\textit{HostTopologyShuffle},-1.83,True,\textbf{\textit{HostTopologyShuffle}}
+"IPShuffle,OSShuffle",\textit{IPShuffle},15.69,False,\textit{OSShuffle},-4.61,False,\textbf{\textit{OSShuffle}}
+"IPShuffle,ServiceShuffle",\textit{IPShuffle},18.58,False,\textit{ServiceShuffle},-6.69,False,\textbf{\textit{ServiceShuffle}}
+"PortShuffle,ServiceShuffle",\textit{PortShuffle},10.51,False,\textit{ServiceShuffle},-1.35,True,\textbf{\textit{ServiceShuffle}}
+"OSShuffle,PortShuffle",\textit{PortShuffle},7.66,False,\textit{OSShuffle},-3.13,False,\textbf{\textit{OSShuffle}}
+"CompleteTopologyShuffle,IPShuffle",\textit{IPShuffle},21.59,False,\textit{CompleteTopologyShuffle},-2.14,True,\textbf{\textit{CompleteTopologyShuffle}}
+"HostTopologyShuffle,ServiceShuffle",\textit{HostTopologyShuffle},4.31,False,\textit{ServiceShuffle},9.88,False,\textbf{\textit{HostTopologyShuffle}}
+"HostTopologyShuffle,OSShuffle",\textit{HostTopologyShuffle},3.8,False,\textit{OSShuffle},9.48,False,\textbf{\textit{HostTopologyShuffle}}
+"CompleteTopologyShuffle,OSShuffle",\textit{CompleteTopologyShuffle},8.6,False,\textit{OSShuffle},2.77,False,\textbf{\textit{OSShuffle}}
+"HostTopologyShuffle,PortShuffle",\textit{PortShuffle},15.81,False,\textit{HostTopologyShuffle},-4.41,False,\textbf{\textit{HostTopologyShuffle}}
+"CompleteTopologyShuffle,ServiceShuffle",\textit{CompleteTopologyShuffle},10.32,False,\textit{ServiceShuffle},3.57,False,\textbf{\textit{ServiceShuffle}}
