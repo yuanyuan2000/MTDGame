@@ -1,0 +1,30 @@
+Things that will need to be fixed:
+
+Service.py - gen_service creates vulnerabilities in a way that allows future versions to have more vulnerabilties
+"When a new vulnerability is introduced for a service at a specific version, the attack complexity AC and impact I are randomly selected. This aspect was inspired
+by the CVSS scoring system, which is a widely adopted metric in the cyber security industry to describe the severity of known vulnerabilities [30]. The vulnerability
+will then remain in proceeding versions of the service since the vulnerability was introduced for a mean of 10 versions, at which point it was assumed that the vendor
+of the service would of identified and patched the vulnerability."
+
+
+Things that need to be done:
+
+Un-Generalising Shuffle Techniques
+    Port Shuffle?
+    Complete Topology Shuffle
+    Host Shuffle
+    OS Shuffle
+    Service Shuffle
+Developing Diversity MTD Techniques
+    Code Diversity
+    Software Stack Diversity
+    Programming Language Diversity
+    Network Diversity
+Implement Dynamic Security Measures
+    Attack Path Variation (APV) 
+    Attack Path Exposure (APE)
+
+Non-Important Fixes/Additions: 
+
+Network.py - Different Network Generations than just Barabasi-Albert Random Graph model
+Network.py - Network Generation code optimisations

@@ -312,6 +312,8 @@ class ServicesGenerator:
 
             self.services[service] = []
             vulns = {}
+
+            # Code for vulnerability generation is wrong, by using random int to generate vulnerabilities, previous versions may have less vuln
             for _i in range(self.vuln_initial_chances):
                 if random.random() < self.max_vuln_probability:
                     vuln_patch_dist = self.vuln_patch_mean + random.randint(-self.vuln_patch_range, self.vuln_patch_range)

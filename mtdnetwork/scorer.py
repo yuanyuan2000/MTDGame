@@ -35,10 +35,10 @@ class Statistics:
 
 class CompromiseStatistics(Statistics):
 
-    def __init__(self, recourd_type):
+    def __init__(self, record_type):
         self.non_exposed_x = []
         self.non_exposed_y = []
-        super().__init__(recourd_type)
+        super().__init__(record_type)
 
     def add_event(self, x, host_instance):
         host_id = host_instance.host_id

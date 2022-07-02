@@ -98,7 +98,7 @@ class Network:
 
         Parameters:
             user_to_nodes_ratio:
-                the percent of users in comparison to hsot machines.
+                the percent of users in comparison to host machines.
                 each node will then be given `int(1/user_to_nodes_ratio)` users each (less users more users on each computer).
             prob_user_reuse_pass:
                 the probability that a user has reused their password.
@@ -138,30 +138,38 @@ class Network:
         # Decide the number of subnets for each layer of the network
         subnets_per_layer = []
         while len(subnets_per_layer) < self.layers:
+            # Adds 1 to start of array if array is empty
             if len(subnets_per_layer) == 0: subnets_per_layer.append(1)
             l_subnets = random.randint(1, max_subnets_per_layer)
+            # Only appends value if it doesn't exceed maximum number of subnets possible
             if self.total_subnets - (sum(subnets_per_layer) + l_subnets) > self.layers - len(subnets_per_layer):
                 subnets_per_layer.append(l_subnets)
         
+        # Randomly adds one to random subnets until there is the correct amount of subnets (Should be Optimised in future)
         while sum(subnets_per_layer) < self.total_subnets:
             s_index = random.randint(1,self.layers-1)
-            subnets_per_layer[s_index] = subnets_per_layer[s_index] + 1
-        
+            if subnets_per_layer[s_index] <= max_subnets_per_layer:
+                subnets_per_layer[s_index] = subnets_per_layer[s_index] + 1
+         
         max_subnet_in_layer = max(subnets_per_layer)
         
         # Assign nodes to each layer
         nodes_per_layer = [self.total_endpoints]
+        # Appends the minimum number of nodes that should be in the layer
         for subs in subnets_per_layer[1:]:
             nodes_per_layer.append(min_nodes_per_subnet*subs)
-            
+        
+        # Randomly adds one to random subnets until there is the correct number of nodes (Should be Opitmised in future)
         while sum(nodes_per_layer) < self.total_nodes:
             n_index = random.randint(1,self.layers-1)
             nodes_per_layer[n_index] = nodes_per_layer[n_index] + 1
             
-        # Assign nodes to each subnet
+        # Assign number of nodes to each subnet
         subnet_nodes = []
         for i,subnets in enumerate(subnets_per_layer):
+            # List containing the minimum number of nodes for every subnet in layer
             temp_subnet_nodes = [min_nodes_per_subnet for _i in range(subnets)]
+            # Randomly adds one to random subnets until correct number of nodes for the layer
             while sum(temp_subnet_nodes) < nodes_per_layer[i]:
                 n_index = random.randint(0, subnets-1)
                 temp_subnet_nodes[n_index] = temp_subnet_nodes[n_index] + 1
@@ -171,6 +179,7 @@ class Network:
         
         # self.graphenerate the graph
         self.graph = nx.Graph()
+        # Node offset
         node_id = 0
         self.colour_map = []
         self.pos = {}
@@ -188,6 +197,7 @@ class Network:
                 new_attr = {k+node_id:{"subnet":j,"layer":i} for k in range(s_nodes)}
                 attr = {**attr, **new_attr}
                 
+                # Setting offset to next empty node
                 node_id += s_nodes
 
                 subgraph_pos = nx.spring_layout(subgraph)
@@ -211,15 +221,18 @@ class Network:
                         k:np.array([0, k]) 
                             for k,_v in subgraph_pos.items()
                     }
+                # Stores all the positions of items from subgraphs    
                 self.pos = {**self.pos, **subgraph_pos}
                 for k in range(s_nodes):
                     if i == 0:
                         self.colour_map.append("green")
                     else:
                         self.colour_map.append("blue")
-                        
+
+                #Adds Subgraph to final graph        
                 self.graph = nx.compose(self.graph, subgraph)
         
+        #Defines Nodes for whole graph
         nx.set_node_attributes(self.graph, attr)
         
         # Connect the graph
