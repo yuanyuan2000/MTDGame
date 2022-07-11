@@ -6,25 +6,83 @@ by the CVSS scoring system, which is a widely adopted metric in the cyber securi
 will then remain in proceeding versions of the service since the vulnerability was introduced for a mean of 10 versions, at which point it was assumed that the vendor
 of the service would of identified and patched the vulnerability."
 
+Host 1 2 3 compromised, when 2 is swapped, attacker can only reach 1?
+
+Variance of entry points 
+
+1. Add attack scenario where targetted node
+2. Reclassify diversity techniques 
+
+
+Research Context Manager (Action Manager)
+Research Topological sort
+Combine IP and Port Scan
+2 Weeks - New Attack Scenario (attacker knows the target host when neighbouring) Set the distance for target node?
+2 weeks - Diversity
 
 Things that need to be done:
 
-Un-Generalising Shuffle Techniques
-    Port Shuffle?
-    Complete Topology Shuffle
-    Host Shuffle
-    OS Shuffle
-    Service Shuffle
+Practical Applications of Shuffle Techniques
+    Port Shuffle - Benchmark with ???
+    Complete Topology Shuffle - Can't use EPV as every host is target? 
+    Host Shuffle - ???
+    OS Shuffle - ???
+    Service Shuffle - Benchmark against Expected Path Variation (Need to calculate probability of each host of compromise?)
 Developing Diversity MTD Techniques
-    Code Diversity
-    Software Stack Diversity
-    Programming Language Diversity
-    Network Diversity
+    Code Diversity - Every Service has x configurations of vulnerabilities 
+    Software Stack Diversity - Every Host x configurations of services it cycles through?
+    Programming Language Diversity 
+    Network Diversity - Deploy different network configurations (What is difference to network topology shuffle?)
 Implement Dynamic Security Measures
     Attack Path Variation (APV) 
     Attack Path Exposure (APE)
 
+RoA Thresholding?
 Non-Important Fixes/Additions: 
 
 Network.py - Different Network Generations than just Barabasi-Albert Random Graph model
 Network.py - Network Generation code optimisations
+
+OS Shuffle -> OS Diversity
+Service Shuffle -> Service Diversity? (Needs to be changed)
+
+Add attack scenario where targetted node Breakdown
+	Add Constant to Host.py of Targetted State
+	Network.py: set function that accepts an int < total_layer that sets a single host as "target" in selected layer
+	Hacker.py: Set "target" host to top of attack list if discovered
+	Scorer.py: Add Target Metrics to scorer (At time target was seen, time target was compromised) 
+	Develop new metrics for effectiveness of shuffle techniques:
+		IP Shuffle: Works Same as before
+		Port Shuffle: Works Same as before
+		Complete Topology Shuffle: 
+
+		Host Shuffle:
+			 
+		OS Diversity:
+		Service Diversity:
+
+
+
+Attackers pop top from Host.stack (hacker.py)
+
+Attacker Scan Network
+	Hacker.py start_network_enum 
+		Network.scan(compromised_hosts)
+		*Gets list of hosts (uncompromised_hosts)
+		Creates Action
+			Actions.py (create Action with check_ips + check_paths)
+-> Performs Port Scan 
+-> Selects Host?	
+
+
+When the exposed nodes are assigned/labelled -> Apply topological Sort -> Partition Network (add tags based on proportion)
+		
+Attacker Priority -> Target -> Tag -> Random 
+
+
+
+
+
+1a New Attack Scenario (Target node)
+1b Needs Connection + Compromise not just compromised
+2. Metrics
