@@ -75,14 +75,17 @@ Attacker Scan Network
 -> Selects Host?	
 
 
-When the exposed nodes are assigned/labelled -> Apply topological Sort -> Partition Network (add tags based on proportion)
+When the exposed nodes are assigned/labelled (Assigned at initiation of network.py using, first nodes) -> Apply topological Sort -> Partition Network (add tags based on proportion)
 		
 Attacker Priority -> Target -> Tag -> Random 
 
 
 
 
-
+0. Fix Network Generation
+	Network doesn't use all endpoints
 1a New Attack Scenario (Target node)
 1b Needs Connection + Compromise not just compromised
+	Network.py: Rewrite get_hacker_visible_graph to return only Reachable nodes (should only run after MTD Operation)
+		NOTE:Hacker.py stores Compromised Hosts Via Host ID
 2. Metrics

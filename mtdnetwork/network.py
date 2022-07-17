@@ -268,6 +268,13 @@ class Network:
                 if neighbor in endpoint_nodes_list:
                     self.graph.remove_edge(n, neighbor)
 
+        print("subnets per layer: ")
+        print(subnets_per_layer)
+        print("nodes per layer: ")
+        print(nodes_per_layer)
+        print("Nodes per subnet: ")
+        print(subnet_nodes)
+
     def setup_network(self):
         """
         Using the generated graph, generates a host for each node on the graph.
