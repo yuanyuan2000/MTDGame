@@ -1,3 +1,4 @@
+from tkinter import N
 from mtdnetwork.actions import ActionManager
 import networkx as nx
 import pkg_resources
@@ -43,6 +44,7 @@ class Network:
         self.layers = total_layers
         self.exposed_endpoints = [i for i in range(total_endpoints)]
         self.service_generator = services.ServicesGenerator()
+        self.nodes = []
         self.mtd_strategies = []
         self.action_manager = ActionManager(self)
         self.scorer = Scorer()
@@ -145,6 +147,7 @@ class Network:
             if self.total_subnets - (sum(subnets_per_layer) + l_subnets) > self.layers - len(subnets_per_layer):
                 subnets_per_layer.append(l_subnets)
         
+
         # Randomly adds one to random subnets until there is the correct amount of subnets (Should be Optimised in future)
         while sum(subnets_per_layer) < self.total_subnets:
             s_index = random.randint(1,self.layers-1)
@@ -258,29 +261,55 @@ class Network:
                     n_a2 = get_other_node(node_a, degree_node_a, n_a1)
                     self.graph.add_edge(n_a1, n_a2)
                 
-        # Remove edges between endpoint nodes (not needed since adversary can reach them all anyway)
-        # Also fix positions for endpoints
+
         endpoint_nodes_list = [n for n in range(self.total_endpoints)]
+        blank_endpoints = []
+
+        # Remove edges between endpoint nodes (not needed since adversary can reach them all anyway)
+        # Store all external nodes with no internal nodes into blank_endpoints   
         for n in endpoint_nodes_list:
-            self.pos[n] = np.array([0, (n+1)/self.total_endpoints*(max_y_pos - min_y_pos) + min_y_pos])
             neighbors = list(self.graph.neighbors(n))
             for neighbor in neighbors:
                 if neighbor in endpoint_nodes_list:
                     self.graph.remove_edge(n, neighbor)
+            internal_connection = list(self.graph.neighbors(n))
+            if not internal_connection:
+                blank_endpoints.append(n)
 
-        print("subnets per layer: ")
-        print(subnets_per_layer)
-        print("nodes per layer: ")
-        print(nodes_per_layer)
-        print("Nodes per subnet: ")
-        print(subnet_nodes)
+        #Removes all blank_endpoints from pos and colourmap
+        #Updates nodes to have all the nodes in the network
+        self.graph.remove_nodes_from(blank_endpoints)
+        blank_endpoints_index = 0
+
+        for n in range(self.total_nodes):
+            if n == blank_endpoints[blank_endpoints_index]:
+                self.pos.pop(n, None)
+                self.colour_map.pop(0)
+                blank_endpoints_index += 1
+                if blank_endpoints_index == len(blank_endpoints):
+                    blank_endpoints_index = 0
+            else:
+                self.nodes.append(n)
+
+        #Updates the total nodes and endpoints with totals without blank_endpoints
+        self.total_nodes = len(self.nodes)
+        self.total_endpoints = self.total_endpoints - len(blank_endpoints)
+        
+
+        # Fix positions for endpoints    
+        for n in range(self.total_endpoints):
+            position = (n+1)/self.total_endpoints*(max_y_pos - min_y_pos) + min_y_pos
+            new_pos = {self.nodes[n]: np.array([0, position])}
+            self.pos.update(new_pos)
+        
+        print("Number of endpoints:", self.total_endpoints)
 
     def setup_network(self):
         """
         Using the generated graph, generates a host for each node on the graph.
         """
         ip_addresses = []
-        for host_id in range(self.total_nodes):
+        for host_id in self.nodes:
             node_os = Host.get_random_os()
             node_os_version = Host.get_random_os_version(node_os)
             node_ip = Host.get_random_address(existing_addresses=ip_addresses)

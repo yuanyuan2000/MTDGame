@@ -10,7 +10,7 @@ from mtdnetwork.host import Host
 import mtdnetwork.exceptions as exceptions
 from mtdnetwork.scorer import Scorer
 
-class AltNetwork:
+class Network:
 
     def __init__(self, total_nodes, total_endpoints, total_subnets, total_layers,
                     users_to_nodes_ratio=constants.USER_TO_NODES_RATIO, prob_user_reuse_pass=constants.USER_PROB_TO_REUSE_PASS, seed=None):
@@ -101,6 +101,9 @@ class AltNetwork:
         self.graph = nx.Graph()
         subgraph = nx.barabasi_albert_graph(10, 2)
         self.graph = nx.compose(self.graph, subgraph)
+
+    def remove_node(self, node):
+        self.graph.remove_node(node)
 
 
 

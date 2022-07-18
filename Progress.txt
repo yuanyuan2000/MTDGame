@@ -77,13 +77,17 @@ Attacker Scan Network
 
 When the exposed nodes are assigned/labelled (Assigned at initiation of network.py using, first nodes) -> Apply topological Sort -> Partition Network (add tags based on proportion)
 		
-Attacker Priority -> Target -> Tag -> Random 
+Attacker Priority -> Target -> Tag -> First in First Out
 
 
+3 Queues:
+	Attacker Queues
+	Reachable 
+	Compromised nodes
+
+	Spanning Tree on compromised nodes -> All nodes are reachable that have connected
 
 
-0. Fix Network Generation
-	Network doesn't use all endpoints
 1a New Attack Scenario (Target node)
 1b Needs Connection + Compromise not just compromised
 	Network.py: Rewrite get_hacker_visible_graph to return only Reachable nodes (should only run after MTD Operation)
