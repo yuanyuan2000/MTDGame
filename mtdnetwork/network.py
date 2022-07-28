@@ -42,7 +42,7 @@ class Network:
         self.total_endpoints = total_endpoints
         self.total_subnets = total_subnets
         self.layers = total_layers
-        self.exposed_endpoints = [i for i in range(total_endpoints)]
+        self.exposed_endpoints = []
         self.service_generator = services.ServicesGenerator()
         self.nodes = []
         self.mtd_strategies = []
@@ -295,6 +295,10 @@ class Network:
         self.total_nodes = len(self.nodes)
         self.total_endpoints = self.total_endpoints - len(blank_endpoints)
         
+        i = 0
+        while i < self.total_endpoints:
+            self.exposed_endpoints.append(self.nodes[i])
+            i += 1
 
         # Fix positions for endpoints    
         for n in range(self.total_endpoints):
@@ -324,7 +328,7 @@ class Network:
                 self.service_generator,
                 self.action_manager
             )
-
+            
     def set_mtd_trigger_time(self, curr_time):
         """
         Sets the time for when the next MTD operation will be triggered.

@@ -81,15 +81,28 @@ Attacker Priority -> Target -> Tag -> First in First Out
 
 
 3 Queues:
-	Attacker Queues
+	Attacker Queues: Attacker.py -> Host_stack
 	Reachable 
-	Compromised nodes
+	Compromised nodes: Attacker.py -> Compromised_hosts 
 
 	Spanning Tree on compromised nodes -> All nodes are reachable that have connected
 
 
 1a New Attack Scenario (Target node)
+	
+	Make shuffles only change nodes within layer
+
 1b Needs Connection + Compromise not just compromised
 	Network.py: Rewrite get_hacker_visible_graph to return only Reachable nodes (should only run after MTD Operation)
-		NOTE:Hacker.py stores Compromised Hosts Via Host ID
+		Add Reachable list in network.py which:
+			Updates when host is compromised/Network scan (must pick up already compromised hosts)
+			MTD is triggered (DFS Scan to update it)
+		Clear attacker queue if MTD blocks Operation
+			NOTE:Hacker.py stores Compromised Hosts Via Host ID
+	NOTE: Should be completed, just needs to be tested
+
+1c Unattackable Queue - After Attempted x times, remove from queue and don't revisit
+1d If 5% of network isn't exposed, regenerate - connect new nodes
+1e Run different attack scenarios on same graph
+
 2. Metrics
