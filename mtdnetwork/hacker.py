@@ -242,7 +242,6 @@ class Hacker:
         in the function self.network.scan().
         """
         self.host_stack = self.action.get_result()
-        print("Setup host_enum run, host stack is: ", self.host_stack)
         self.start_host_enum()
 
     def start_scan_for_neighbors(self):

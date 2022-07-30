@@ -95,6 +95,13 @@ class Network:
 
         return layer_subnets
 
+    def get_reachable(self):
+        """
+        Returns:
+            The reachable array
+        """
+        return self.reachable
+
     def get_action_manager(self):
         """
         Returns:
@@ -325,10 +332,12 @@ class Network:
 
 
 
+
         # print("Endpoint list:", self.total_endpoints)
         # print("Node list:", self.nodes)
         # print("Exposed Endpoint list: ", self.exposed_endpoints)
         # print("Tags Used: ", self.tags)
+
 
     def setup_network(self):
         """
@@ -515,6 +524,8 @@ class Network:
                 for ex_node in self.exposed_endpoints
                     if not ex_node in compromised_hosts
         ]
+
+        print("Hosts found by scan: ", uncompromised_hosts)
 
         return self.action_manager.create_action(
             uncompromised_hosts,
@@ -716,6 +727,7 @@ class Network:
         Updates the Reachable with the node_id of the compromised node
         """
         self.reachable.append(compromised_node_id)
+        print("Reachable Compromised Appended:", self.reachable)
         appended_host = compromised_node_id
         self.compromised_hosts = compromised_hosts
         all_reachable_hosts_added = False
@@ -733,5 +745,6 @@ class Network:
                 all_reachable_hosts_added = True
             else:
                 appended_host = compromised_neighbour_nodes.pop(0)
-            
+        print("Reachable Compromised:", self.reachable)
+             
 
