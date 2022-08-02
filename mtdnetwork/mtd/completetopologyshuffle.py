@@ -19,4 +19,5 @@ class CompleteTopologyShuffle(MTD):
         self.network.colour_map = colour_map
         for host_id, host_instance in hosts.items():
             self.network.graph.nodes[host_id]["host"] = host_instance
+        self.network.update_reachable_mtd()
 

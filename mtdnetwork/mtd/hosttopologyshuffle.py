@@ -41,3 +41,5 @@ class HostTopologyShuffle(MTD):
             seen.append(other_host_id)
 
             hacker.swap_hosts_in_compromised_hosts(host_id, other_host_id)
+        
+        self.network.update_reachable_mtd()

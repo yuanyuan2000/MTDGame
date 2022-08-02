@@ -13,7 +13,7 @@ from mtdnetwork.scorer import Scorer
 
 class Network:
 
-    def __init__(self, total_nodes, total_endpoints, total_subnets, total_layers,
+    def __init__(self, total_nodes, total_endpoints, total_subnets, total_layers, target_layer,
                     users_to_nodes_ratio=constants.USER_TO_NODES_RATIO, prob_user_reuse_pass=constants.USER_PROB_TO_REUSE_PASS, seed=None):
         """
         Initialises the state of the network for the simulation.
@@ -43,11 +43,19 @@ class Network:
         self.total_subnets = total_subnets
         self.layers = total_layers
         self.exposed_endpoints = []
+        self.target_layer = target_layer
+        self.tags = []
         self.service_generator = services.ServicesGenerator()
         self.nodes = []
         self.mtd_strategies = []
+        self.tag_priority = []
+        self.reachable = []
+        self.compromised_hosts = []
+        self.target_node = -1
         self.action_manager = ActionManager(self)
         self.scorer = Scorer()
+        self.assign_tags()
+        self.assign_tag_priority()
         self.setup_users(users_to_nodes_ratio, prob_user_reuse_pass, constants.USER_TOTAL_FOR_EACH_HOST)
         self.gen_graph()
         self.setup_network()
@@ -86,6 +94,13 @@ class Network:
             layer_subnets[layer_id][subnet_id] = layer_subnets[layer_id].get(subnet_id, []) + [host_id]
 
         return layer_subnets
+
+    def get_reachable(self):
+        """
+        Returns:
+            The reachable array
+        """
+        return self.reachable
 
     def get_action_manager(self):
         """
@@ -189,6 +204,7 @@ class Network:
         attr = {}
         min_y_pos = 200000
         max_y_pos = -200000
+        # Layer = i, subnet = j, s_nodes = # of nodes in subnet
         for i, subnet_node_list in enumerate(subnet_nodes):
             for j,s_nodes in enumerate(subnet_node_list):
                 m = int(s_nodes*subnet_m_ratio)
@@ -226,12 +242,16 @@ class Network:
                     }
                 # Stores all the positions of items from subgraphs    
                 self.pos = {**self.pos, **subgraph_pos}
-                for k in range(s_nodes):
-                    if i == 0:
-                        self.colour_map.append("green")
-                    else:
-                        self.colour_map.append("blue")
+                
+                # Selects Target Host
+                if ((i == self.target_layer) and (j == 1)):
+                    self.target_node = node_id - random.randrange(0,s_nodes)
+                    print("Target Node is: ", self.target_node)
 
+                #Assigns Colour of nodes based on constant key
+                for k in range(s_nodes):
+                    self.colour_map.append(constants.NODE_COLOURS[i])
+                   
                 #Adds Subgraph to final graph        
                 self.graph = nx.compose(self.graph, subgraph)
         
@@ -290,11 +310,15 @@ class Network:
                     blank_endpoints_index = 0
             else:
                 self.nodes.append(n)
+        
+        # Updates Colour of target node to red
+        self.colour_map[self.target_node - len(blank_endpoints)] = "red"
 
         #Updates the total nodes and endpoints with totals without blank_endpoints
         self.total_nodes = len(self.nodes)
         self.total_endpoints = self.total_endpoints - len(blank_endpoints)
         
+        #Updates exposed_endpoints to not contain removed endpoints
         i = 0
         while i < self.total_endpoints:
             self.exposed_endpoints.append(self.nodes[i])
@@ -305,8 +329,15 @@ class Network:
             position = (n+1)/self.total_endpoints*(max_y_pos - min_y_pos) + min_y_pos
             new_pos = {self.nodes[n]: np.array([0, position])}
             self.pos.update(new_pos)
-        
-        print("Number of endpoints:", self.total_endpoints)
+
+
+
+
+        # print("Endpoint list:", self.total_endpoints)
+        # print("Node list:", self.nodes)
+        # print("Exposed Endpoint list: ", self.exposed_endpoints)
+        # print("Tags Used: ", self.tags)
+
 
     def setup_network(self):
         """
@@ -328,7 +359,7 @@ class Network:
                 self.service_generator,
                 self.action_manager
             )
-            
+
     def set_mtd_trigger_time(self, curr_time):
         """
         Sets the time for when the next MTD operation will be triggered.
@@ -369,19 +400,16 @@ class Network:
                 self.scorer.set_last_mtd(mtd_strat)
                 self.scorer.add_mtd_event(curr_time)
 
-    def get_hacker_visible_graph(self, compromised_hosts):
+    def get_hacker_visible_graph(self):
         """
         Returns the Network graph that is visible to the hacker depending on the hosts that have already been compromised
 
-        Parameters:
-            compromised_hosts:
-                a list of the host IDs that have already been compromised by the hacker
         """
         visible_hosts = []
-        for c_host in compromised_hosts:
+        for c_host in self.reachable:
             visible_hosts = visible_hosts + list(self.graph.neighbors(c_host))
 
-        visible_hosts = visible_hosts + compromised_hosts
+        visible_hosts = visible_hosts + self.reachable
         visible_hosts = visible_hosts + self.exposed_endpoints
 
         return self.graph.subgraph(
@@ -471,11 +499,12 @@ class Network:
             an action that will return the scanned hosts if not blocked by a MTD
         """
 
-        visible_network = self.get_hacker_visible_graph(compromised_hosts)
+        visible_network = self.get_hacker_visible_graph()
     
         scan_time = constants.NETWORK_HOST_DISCOVER_TIME*visible_network.number_of_nodes()
 
         uncompromised_hosts = []
+        # Add every uncompromised host that is reachable and is not an exposed or compromised host 
         for c_host in compromised_hosts:
             uncompromised_hosts = uncompromised_hosts + [
                 neighbor
@@ -484,10 +513,10 @@ class Network:
                             and len(self.get_path_from_exposed(neighbor, graph=visible_network)[0]) > 0
             ]
 
-        # Add random element from 0 to 1 so the scan does not return the same order of hosts each time for the hacker
+        # Sorts array based on tag, putting target first
         uncompromised_hosts = sorted(
             uncompromised_hosts,
-            key = lambda host_id : self.get_path_from_exposed(host_id, graph=visible_network)[1] + random.random()
+            key = lambda host_id : self.get_host_id_priority(host_id) + random.random()
         )
 
         uncompromised_hosts = uncompromised_hosts + [
@@ -495,6 +524,8 @@ class Network:
                 for ex_node in self.exposed_endpoints
                     if not ex_node in compromised_hosts
         ]
+
+        print("Hosts found by scan: ", uncompromised_hosts)
 
         return self.action_manager.create_action(
             uncompromised_hosts,
@@ -535,7 +566,7 @@ class Network:
                 if None then it only sorts by the exposed endpoints
         """
 
-        visible_network = self.get_hacker_visible_graph(compromised_hosts)
+        visible_network = self.get_hacker_visible_graph()
 
         non_exposed_endpoints = [
             host_id
@@ -577,11 +608,11 @@ class Network:
         nx.draw(self.graph, pos=self.pos, node_color=self.colour_map, with_labels=True)
         plt.show()
 
-    def draw_hacker_visible(self, compromised_hosts):
+    def draw_hacker_visible(self):
         """
         Draws the network that is visible for the hacker
         """
-        subgraph = self.get_hacker_visible_graph(compromised_hosts)
+        subgraph = self.get_hacker_visible_graph()
         
         plt.figure(1, figsize=(15,12))
         nx.draw(subgraph, pos=self.pos, with_labels=True)
@@ -603,3 +634,117 @@ class Network:
         plt.figure(1, figsize=(15,12))
         nx.draw(subgraph, pos=self.pos, node_color=colour_map, with_labels=True)
         plt.show()
+
+    def assign_tags(self):
+        """
+        Assigns the tags to layers from constants.py
+        """
+        i = 0
+        while i < self.layers:
+            self.tags.append(constants.HOST_TAGS[i]) 
+            i += 1
+
+    def assign_tag_priority(self):
+        """
+        Orders tags based on priority
+        """
+        i = 0
+        order = []
+        while i < self.layers:
+            dist = abs(self.target_layer-i)
+            order.append(dist)
+            i += 1
+
+        layer_index = 0
+        priority = 0
+        order_index = 0
+        while layer_index < self.layers:
+            for order_prio in order:
+                if order_prio == priority:
+                    self.tag_priority.append(self.tags[order_index])
+                    layer_index += 1
+                order_index += 1
+            priority += 1
+            order_index = 0
+            
+    
+    def get_host_id_priority(self, host_id):
+        """
+        Assign priority of host_id based on layer
+
+        Parameters:
+            host_id: node id of the desired node
+
+        Returns:
+            Priority: An integer based on tag_priority array, with target node scoring 0, top priority node scoring 1, and subsequent nodes scoring 1 higher
+        """
+        if host_id == self.target_node:
+            return 0
+        layers = self.get_layers()
+        host_layer = layers.get(host_id)
+        priority = -1
+        i = 0
+        for tag in self.tag_priority:
+            if self.tags[host_layer] == tag:
+                priority = i 
+            i += 1
+        return priority + 1
+    
+    def update_reachable_mtd(self):
+        """
+        Updates the Reachable array with only compromised nodes that are reachable after MTD
+        NOTE: Probably can be optimised for speed
+        """
+        self.reachable = self.exposed_endpoints
+        compromised_neighbour_nodes = []
+
+        compromised_hosts = self.hacker.get_compromised()
+
+        # Appends all neighbouring hosts from endpoints
+        for endpoint in self.exposed_endpoints:
+            visible_hosts = list(self.graph.neighbors(endpoint))
+            for host in visible_hosts:
+                for c_host in self.compromised_hosts:
+                    if host == c_host:
+                        compromised_neighbour_nodes.append(host)
+                        self.reachable.append(host)
+            
+        # Checks if neighbouring hosts of compromised node are also compromised, if so add them to the list
+        while len(compromised_neighbour_nodes) != 0:
+            appended_host = compromised_neighbour_nodes.pop(0)
+            visible_hosts = list(self.graph.neighbors(appended_host))
+            for host in visible_hosts:
+                for c_host in compromised_hosts:
+                    if host == c_host:
+                        compromised_neighbour_nodes.append(host)
+                        self.reachable.append(host)
+                
+
+
+
+    def update_reachable_compromise(self, compromised_node_id, compromised_hosts):
+        """
+        Updates the Reachable with the node_id of the compromised node
+        """
+        self.reachable.append(compromised_node_id)
+        print("Reachable Compromised Appended:", self.reachable)
+        appended_host = compromised_node_id
+        self.compromised_hosts = compromised_hosts
+        all_reachable_hosts_added = False
+        compromised_neighbour_nodes = []
+
+        # Checks if neighbouring hosts of compromised node are also compromised, if so add them to the list
+        while all_reachable_hosts_added == False:
+            visible_hosts = list(self.graph.neighbors(appended_host))
+            for host in visible_hosts:
+                for c_host in compromised_hosts:
+                    if host == c_host:
+                        compromised_neighbour_nodes.append(host)
+                        self.reachable.append(host)
+            if len(compromised_neighbour_nodes) == 0:
+                all_reachable_hosts_added = True
+            else:
+                appended_host = compromised_neighbour_nodes.pop(0)
+        print("Reachable Compromised:", self.reachable)
+             
+

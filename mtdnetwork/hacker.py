@@ -74,8 +74,15 @@ class Hacker:
             "Total Vuln Compromises" : self.total_vuln_compromise,
             "Total Reuse Pass Compromises" : self.total_reuse_pass_compromise,
             "Total Password Spray Compromises" : self.total_brute_force_compromise,
-            "Total Actions Blocked by MTD" : self.total_blocked_by_mtd
+            "Total Actions Blocked by MTD" : self.total_blocked_by_mtd,
+            "Compromised hosts" : self.compromised_hosts
         }
+
+    def get_compromised(self):
+        """
+        Returns a list of compromised nodes
+        """
+        return self.compromised_hosts
 
     def log_host_result(self, reason):
         """
@@ -279,7 +286,7 @@ class Hacker:
             hop_time = int(constants.HACKER_HOP_TIME*self.network.get_shortest_distance_from_exposed_or_pivot(
                 self.curr_host_id,
                 pivot_host_id = self.pivot_host_id,
-                graph = self.network.get_hacker_visible_graph(self.compromised_hosts)
+                graph = self.network.get_hacker_visible_graph()
             )) - 1
             if hop_time < 0:
                 hop_time = 0
@@ -442,6 +449,8 @@ class Hacker:
 
         if not self.curr_host_id in self.compromised_hosts:
             self.compromised_hosts.append(self.curr_host_id)
+            print("This host has been compromised: ", self.curr_host_id)
+            self.network.update_reachable_compromise(self.curr_host_id, self.compromised_hosts)
             for user in self.curr_host.get_compromised_users():
                 if not user in self.compromised_users:
                     self.scorer.add_user_account_leak(self.curr_time, user)

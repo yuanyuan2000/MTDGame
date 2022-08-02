@@ -292,7 +292,7 @@ class ActionManager:
                 the host to check if the path to it has been disrupted.
         """
         host_id = host_instance.host_id
-        visible_network = self.network.get_hacker_visible_graph(self.hacker.compromised_hosts)
+        visible_network = self.network.get_hacker_visible_graph()
         try:
             return self.network.get_path_from_exposed(
                 host_id,
@@ -341,8 +341,7 @@ class ActionManager:
         """
         Checks if the IP addresses on a network that are visible to the hacker are the same.
         """
-        visible_network = self.network.get_hacker_visible_graph(self.hacker.compromised_hosts)
-
+        visible_network = self.network.get_hacker_visible_graph()
         ip_addresses = [
             self.network.get_host(visible_node_id).ip
                 for visible_node_id in visible_network.nodes
@@ -359,7 +358,7 @@ class ActionManager:
         just testing ismorphism and not actually if paths are the same. It is close enough though
         for this simulation but do consider changing this implementation
         """
-        visible_network = self.network.get_hacker_visible_graph(self.hacker.compromised_hosts)
+        visible_network = self.network.get_hacker_visible_graph()
         return nx.weisfeiler_lehman_graph_hash(visible_network)
 
     def create_action(self, result, time_to_complete, failed_fn=constants.nothing, failed_fn_args=[], host_instance = None, check_ports = False, 
