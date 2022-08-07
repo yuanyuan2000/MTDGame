@@ -12,12 +12,14 @@ class CompleteTopologyShuffle(MTD):
     def mtd_operation(self):
         self.logger.info("shuffling entire network topology")
         hosts = self.network.get_hosts()
-        colour_map = self.network.colour_map
 
         # Regenerate the network graph
-        self.network.gen_graph()
-        self.network.colour_map = colour_map
+        self.network.regen_graph()
         for host_id, host_instance in hosts.items():
             self.network.graph.nodes[host_id]["host"] = host_instance
         self.network.update_reachable_mtd()
 
+
+        # Set nHosts per layer
+        # Generate new graph with those number of hosts per layer
+        # Replace the new nodes with the old host instances

@@ -13,12 +13,14 @@ from mtdnetwork.scorer import Scorer
 
 class Network:
 
-    def __init__(self, total_nodes, total_endpoints, total_subnets, total_layers, target_layer,
+    def __init__(self, graph, total_nodes, total_endpoints, total_subnets, total_layers, target_layer,
                     users_to_nodes_ratio=constants.USER_TO_NODES_RATIO, prob_user_reuse_pass=constants.USER_PROB_TO_REUSE_PASS, seed=None):
         """
         Initialises the state of the network for the simulation.
 
         Parameters:
+            graph:
+                the graph that is being copied
             total_nodes: 
                 the number of the nodes in the network.
             total_endpoints: 
@@ -80,9 +82,6 @@ class Network:
     def get_layers(self):
         return dict(nx.get_node_attributes(self.graph, "layer"))
 
-    def get_graph_copy(self):
-        return self.graph.copy()
-
     def get_unique_subnets(self):
         subnets = self.get_subnets()
         layers = self.get_layers()
@@ -98,13 +97,6 @@ class Network:
             layer_subnets[layer_id][subnet_id] = layer_subnets[layer_id].get(subnet_id, []) + [host_id]
 
         return layer_subnets
-
-    def get_reachable(self):
-        """
-        Returns:
-            The reachable array
-        """
-        return self.reachable
 
     def get_action_manager(self):
         """
@@ -512,6 +504,7 @@ class Network:
 
 
 
+
     def setup_network(self):
         """
         Using the generated graph, generates a host for each node on the graph.
@@ -697,8 +690,6 @@ class Network:
                 for ex_node in self.exposed_endpoints
                     if not ex_node in compromised_hosts
         ]
-
-        print("Hosts found by scan: ", uncompromised_hosts)
 
         return self.action_manager.create_action(
             uncompromised_hosts,
@@ -907,7 +898,6 @@ class Network:
         Updates the Reachable with the node_id of the compromised node
         """
         self.reachable.append(compromised_node_id)
-        print("Reachable Compromised Appended:", self.reachable)
         appended_host = compromised_node_id
         self.compromised_hosts = compromised_hosts
         all_reachable_hosts_added = False
@@ -933,6 +923,5 @@ class Network:
                 all_reachable_hosts_added = True
             else:
                 appended_host = compromised_neighbour_nodes.pop(0)
-        print("Reachable Compromised:", self.reachable)
-             
+            
 
