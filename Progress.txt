@@ -6,8 +6,6 @@ by the CVSS scoring system, which is a widely adopted metric in the cyber securi
 will then remain in proceeding versions of the service since the vulnerability was introduced for a mean of 10 versions, at which point it was assumed that the vendor
 of the service would of identified and patched the vulnerability."
 
-Host 1 2 3 compromised, when 2 is swapped, attacker can only reach 1?
-
 Variance of entry points 
 
 1. Add attack scenario where targetted node
@@ -20,10 +18,7 @@ Combine IP and Port Scan
 2 Weeks - New Attack Scenario (attacker knows the target host when neighbouring) Set the distance for target node?
 2 weeks - Diversity
 
-Run simulator x times tile % error is less than 5%
-Error - 
-Standard error for nhost compromised
-Vuln/cost required to attack host
+
 
 Things that need to be done:
 
@@ -52,23 +47,18 @@ OS Shuffle -> OS Diversity
 Service Shuffle -> Service Diversity? (Needs to be changed)
 
 Add attack scenario where targetted node Breakdown
-	Add Constant to Host.py of Targetted State
-	Network.py: set function that accepts an int < total_layer that sets a single host as "target" in selected layer
-	Hacker.py: Set "target" host to top of attack list if discovered
 	Scorer.py: Add Target Metrics to scorer (At time target was seen, time target was compromised) 
 	Develop new metrics for effectiveness of shuffle techniques:
 		IP Shuffle: Works Same as before
 		Port Shuffle: Works Same as before
 		Complete Topology Shuffle: 
-
 		Host Shuffle:
 			 
 		OS Diversity:
 		Service Diversity:
 
-
-
 Attackers pop top from Host.stack (hacker.py)
+Delete services with no vulnerabilities
 
 Attacker Scan Network
 	Hacker.py start_network_enum 
@@ -81,16 +71,27 @@ Attacker Scan Network
 
 
 When the exposed nodes are assigned/labelled (Assigned at initiation of network.py using, first nodes) -> Apply topological Sort -> Partition Network (add tags based on proportion)
-		
+    
 Attacker Priority -> Target -> Tag -> First in First Out
 
 
 
-1c Unattackable Queue - After Attempted x times, remove from queue and don't revisit
-    Check attacking Mechanism and how it selects
-1e Run different attack scenarios on same graph 
-    Copy Graph?
+- ask about attacking strategy 
+    - Currently pulls list, then attacks all nodes in order until completed
+    - nAttack before stopping Threshold
+    - Wait for MTD?
 
+Trim Services that don't have vulnerabilities
+Attack doesn't stop until target node is compromised
+Add metrics
+
+Attack node limit amount of times
+Attack attempt counter
+
+1e Run for error checking + dump results
+    Run simulator x times tile % error is less than 5%
+    Error - 
+Vuln/cost required to attack host
 
 2. Metrics
 

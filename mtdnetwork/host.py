@@ -86,6 +86,18 @@ class Host:
 
         return all_vulns
 
+    def get_vulns_for_list(self, list):
+
+        vulns = []
+        for service in list:
+            service_vulns = service.get_all_vulns()
+
+            for v in service_vulns:
+                if not v in vulns:
+                    vulns.append(v)
+
+        return vulns
+
     def setup_network(self, service_generator, keep_ports = False):
         port_addresses = []
         for node_id in range(self.total_nodes):
@@ -268,6 +280,23 @@ class Host:
             service_id : services[service_id]
                 for service_id in exposed_services + adjacent_services
         }
+    
+    def get_services_from_list(self, list):
+        """
+        Gets Service instance from a list of service numbers of host
+
+        Parameters:
+            list:
+                list of shortest path to target node (including target node)
+
+        """
+        target = list.pop(len(list)-1)
+        service_list = []
+        for service_id in list:
+            service = self.graph.nodes.get(service_id, {}).get("service", None)
+            service_list.append(service)
+        return service_list
+
 
     def get_services_from_ports(self, discovered_service_ports, ignore_services=[]):
         """
@@ -542,6 +571,9 @@ class Host:
 
         return shortest_path_length, target_node, exposed_endpoints, adjacent_to_target
 
+    def get_exposed_endpoints(self):
+        return self.exposed_endpoints
+
     def gen_internal_network(self, k_nearest_neighbors_percent, p):
         k = int(self.total_services*k_nearest_neighbors_percent)
         if k < 2:
@@ -554,7 +586,7 @@ class Host:
         self.target_node = results[1]
         self.exposed_endpoints = results[2]
         self.adjacent_to_target = results[3]
-        
+
         other_nodes = [
             node_id for node_id in range(self.total_nodes)
                 if node_id != self.target_node and not node_id in self.exposed_endpoints
@@ -661,3 +693,34 @@ class Host:
         if new_port in existing_ports:
             return Host.get_random_port(existing_ports=existing_ports)
         return new_port
+    
+    def get_path_from_exposed(self):
+        """
+        Gets the shortest path and distance from the exposed endpoints.
+
+        Can also specify a subgraph to use for finding
+
+        Returns:
+            a tuple where the first element is the shortest path and the second element is the distance
+        """
+        graph = self.graph
+
+        shortest_distance = constants.LARGE_INT
+        shortest_path = []
+
+        for ex_service in self.exposed_endpoints:
+            try:
+                path = nx.shortest_path(graph, ex_service, self.target_node)
+                path_len = len(path)
+
+                if path_len < shortest_distance:
+                    shortest_distance = path_len
+                    shortest_path = path
+            except:
+                pass
+
+        # This function is used for sorting so shouldn't raise an exception
+        # some MTD cause this exception to be raised.
+        #
+
+        return shortest_path

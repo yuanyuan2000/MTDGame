@@ -1,4 +1,3 @@
-from tkinter import N
 from mtdnetwork.actions import ActionManager
 import networkx as nx
 import pkg_resources
@@ -13,14 +12,11 @@ from mtdnetwork.scorer import Scorer
 
 class Network:
 
-    def __init__(self, graph, total_nodes, total_endpoints, total_subnets, total_layers, target_layer,
-                    users_to_nodes_ratio=constants.USER_TO_NODES_RATIO, prob_user_reuse_pass=constants.USER_PROB_TO_REUSE_PASS, seed=None):
+    def __init__(self, graph, pos, colour_map, total_nodes, total_endpoints, total_subnets, total_layers):
         """
         Initialises the state of the network for the simulation.
 
         Parameters:
-            graph:
-                the graph that is being copied
             total_nodes: 
                 the number of the nodes in the network.
             total_endpoints: 
@@ -38,30 +34,19 @@ class Network:
             seed:
                 the seed for the random number generator if one needs to be set
         """
-        if seed != None:
-            random.seed(seed)
         self.total_nodes = total_nodes
         self.total_endpoints = total_endpoints
         self.total_subnets = total_subnets
         self.layers = total_layers
-        self.exposed_endpoints = [n for n in range(total_endpoints)]
-        self.target_layer = target_layer
-        self.tags = []
-        self.service_generator = services.ServicesGenerator()
-        self.nodes = [n for n in range(total_nodes)]
+        self.graph = graph.copy()
+        self.pos = pos
+        self.colour_map = colour_map
+        self.exposed_endpoints = [i for i in range(total_endpoints)]
         self.mtd_strategies = []
-        self.tag_priority = []
         self.reachable = []
-        self.compromised_hosts = []
-        self.node_per_layer = []
         self.target_node = -1
         self.action_manager = ActionManager(self)
         self.scorer = Scorer()
-        self.assign_tags()
-        self.assign_tag_priority()
-        self.setup_users(users_to_nodes_ratio, prob_user_reuse_pass, constants.USER_TOTAL_FOR_EACH_HOST)
-        self.gen_graph()
-        self.setup_network()
         self.scorer.set_initial_statistics(self)
 
     def get_scorer(self):
@@ -69,9 +54,6 @@ class Network:
 
     def get_statistics(self):
         return self.scorer.get_statistics()
-
-    def get_service_generator(self):
-        return self.service_generator
 
     def get_hosts(self):
         return dict(nx.get_node_attributes(self.graph, "host"))
@@ -81,6 +63,12 @@ class Network:
 
     def get_layers(self):
         return dict(nx.get_node_attributes(self.graph, "layer"))
+    
+    def get_total_nodes(self):
+        return self.total_nodes
+
+    def get_target_node(self):
+        return self.target_node    
 
     def get_unique_subnets(self):
         subnets = self.get_subnets()
@@ -105,426 +93,6 @@ class Network:
         """
         return self.action_manager
 
-    def setup_users(self, user_to_nodes_ratio, prob_user_reuse_pass, users_per_host):
-        """
-        Randomly generates users that use the network
-
-        Parameters:
-            user_to_nodes_ratio:
-                the percent of users in comparison to host machines.
-                each node will then be given `int(1/user_to_nodes_ratio)` users each (less users more users on each computer).
-            prob_user_reuse_pass:
-                the probability that a user has reused their password.
-            users_per_host:
-                how many users are allocated to each host on the network.
-        """
-        self.total_users = int(self.total_nodes*user_to_nodes_ratio)
-        if self.total_users < 1:
-            self.total_users = 1
-        
-        names = [x.decode() for x in pkg_resources.resource_string('mtdnetwork', "data/first-names.txt").splitlines()]
-
-        random_users = random.choices(names, k=self.total_users)
-        self.users_list = [
-            (user, random.random() < prob_user_reuse_pass)
-                for user in random_users
-        ]
-        
-        self.users_per_host = users_per_host
-
-    def gen_graph(self, min_nodes_per_subnet=3, max_subnets_per_layer=5, subnet_m_ratio=0.2, 
-                    prob_inter_layer_edge=0.4):
-        """
-        Generates a network of subnets using the Barabasi-Albert Random Graph model.
-
-        Parameters:
-            min_nodes_per_subnet:
-                minimum number of computer nodes for each subnet
-            max_subnets_per_layer:
-                the maximum number of subnets per layer
-            subnet_m_ratio:
-                a ratio that is used to determine the parameter m for the barabasi albert graph.
-                m is the number of edges to attach from a new node to existing nodes
-            prob_inter_layer_edge:
-                probability that a node connects to a different layer in the network.
-        """
-        # Decide the number of subnets for each layer of the network
-        subnets_per_layer = []
-        while len(subnets_per_layer) < self.layers:
-            # Adds 1 to start of array if array is empty
-            if len(subnets_per_layer) == 0: subnets_per_layer.append(1)
-            l_subnets = random.randint(1, max_subnets_per_layer)
-            # Only appends value if it doesn't exceed maximum number of subnets possible
-            if self.total_subnets - (sum(subnets_per_layer) + l_subnets) > self.layers - len(subnets_per_layer):
-                subnets_per_layer.append(l_subnets)
-        
-
-        # Randomly adds one to random subnets until there is the correct amount of subnets (Could be Optimised in future)
-        while sum(subnets_per_layer) < self.total_subnets:
-            s_index = random.randint(1,self.layers-1)
-            if subnets_per_layer[s_index] <= max_subnets_per_layer:
-                subnets_per_layer[s_index] = subnets_per_layer[s_index] + 1
-         
-        max_subnet_in_layer = max(subnets_per_layer)
-        
-        # Assign nodes to each layer
-        nodes_per_layer = [self.total_endpoints]
-        # Appends the minimum number of nodes that should be in the layer
-        for subs in subnets_per_layer[1:]:
-            nodes_per_layer.append(min_nodes_per_subnet*subs)
-        
-        # Randomly adds one to random subnets until there is the correct number of nodes (Could be Opitmised in future)
-        while sum(nodes_per_layer) < self.total_nodes:
-            n_index = random.randint(1,self.layers-1)
-            nodes_per_layer[n_index] = nodes_per_layer[n_index] + 1
-            
-        # Assign number of nodes to each subnet
-        subnet_nodes = []
-        for i,subnets in enumerate(subnets_per_layer):
-            # List containing the minimum number of nodes for every subnet in layer
-            temp_subnet_nodes = [min_nodes_per_subnet for _i in range(subnets)]
-            # Randomly adds one to random subnets until correct number of nodes for the layer
-            while sum(temp_subnet_nodes) < nodes_per_layer[i]:
-                n_index = random.randint(0, subnets-1)
-                temp_subnet_nodes[n_index] = temp_subnet_nodes[n_index] + 1
-            subnet_nodes.append(temp_subnet_nodes)
-            
-
-        
-        # self.graphenerate the graph
-        self.graph = nx.Graph()
-        # Node offset
-        node_id = 0
-        self.colour_map = []
-        self.pos = {}
-        attr = {}
-        min_y_pos = 200000
-        max_y_pos = -200000
-        # Layer = i, subnet = j, s_nodes = # of nodes in subnet
-        for i, subnet_node_list in enumerate(subnet_nodes):
-            for j,s_nodes in enumerate(subnet_node_list):
-                m = int(s_nodes*subnet_m_ratio)
-                if m < 1: m = 1
-                elif m >= s_nodes: m = s_nodes - 1
-                subgraph = nx.barabasi_albert_graph(s_nodes, m)
-                new_node_mapping = {k:k+node_id for k in range(s_nodes)}
-                subgraph = nx.relabel_nodes(subgraph, new_node_mapping)
-                new_attr = {k+node_id:{"subnet":j,"layer":i} for k in range(s_nodes)}
-                attr = {**attr, **new_attr}
-                
-                # Setting offset to next empty node
-                node_id += s_nodes
-
-                subgraph_pos = nx.spring_layout(subgraph)
-                if i != 0:
-                    subgraph_pos = {
-                        k:np.array([v[0]+i*2.25, v[1]+j*3 + 1.5*(max_subnet_in_layer - len(subnet_node_list))]) 
-                            for k,v in subgraph_pos.items()
-                    }
-                    
-                    for k,v in subgraph_pos.items():
-                        y = v[1]+j*3 + 1.5*(max_subnet_in_layer - len(subnet_node_list))
-                        subgraph_pos[k] = np.array(
-                            [v[0]+i*2.25, y]
-                        )
-                        if y < min_y_pos:
-                            min_y_pos = y
-                        if y > max_y_pos:
-                            max_y_pos = y
-                else:
-                    subgraph_pos = {
-                        k:np.array([0, k]) 
-                            for k,_v in subgraph_pos.items()
-                    }
-                # Stores all the positions of items from subgraphs    
-                self.pos = {**self.pos, **subgraph_pos}
-                
-                # Selects Target Host
-                if ((i == self.target_layer) and (j == 1)):
-                    self.target_node = node_id - random.randrange(0,s_nodes)
-                    print("Target Node is: ", self.target_node)
-
-                #Assigns Colour of nodes based on constant key
-                for k in range(s_nodes):
-                    self.colour_map.append(constants.NODE_COLOURS[i])
-                   
-                #Adds Subgraph to final graph        
-                self.graph = nx.compose(self.graph, subgraph)
-        
-        #Defines Nodes for whole graph
-        nx.set_node_attributes(self.graph, attr)
-        
-        # Connect the graph
-        def get_other_node(node_list, node_degrees, other_node):
-            n = random.choices(node_list, weights=node_degrees, k=1)[0]
-            if n == other_node:
-                return get_other_node(node_list, node_degrees, other_node)
-            return n
-        
-        while not nx.is_connected(self.graph):
-            node_layers = nx.get_node_attributes(self.graph, "layer")
-            for i in range(self.layers-1):
-                node_a = [n for n in node_layers if node_layers[n] == i]
-                degree_node_a = [self.graph.degree(n) for n in node_a]
-                node_b = [n for n in node_layers if node_layers[n] == i+1]
-                degree_node_b = [self.graph.degree(n) for n in node_b]
-                
-                n_a1 = random.choices(node_a, weights=degree_node_a, k=1)[0]
-                if not nx.is_connected(self.graph.subgraph(node_a + node_b)):
-                    n_b = random.choices(node_b, weights=degree_node_b, k=1)[0]
-                    self.graph.add_edge(n_a1, n_b)
-                if random.random() < prob_inter_layer_edge and subnets_per_layer[i] > 1 and not nx.is_connected(self.graph.subgraph(node_a)):
-                    n_a2 = get_other_node(node_a, degree_node_a, n_a1)
-                    self.graph.add_edge(n_a1, n_a2)
-                
-
-        endpoint_nodes_list = [n for n in range(self.total_endpoints)]
-        blank_endpoints = []
-
-        # Remove edges between endpoint nodes (not needed since adversary can reach them all anyway)
-        # Store all external nodes with no internal nodes into blank_endpoints   
-        for n in endpoint_nodes_list:
-            neighbors = list(self.graph.neighbors(n))
-            for neighbor in neighbors:
-                if neighbor in endpoint_nodes_list:
-                    self.graph.remove_edge(n, neighbor)
-            internal_connection = list(self.graph.neighbors(n))
-            if not internal_connection:
-                blank_endpoints.append(n)
-
-        # Pulls from blank_endpoints until all exposed endpoints are connected
-        node_layers = nx.get_node_attributes(self.graph, "layer")
-        layer1_nodes = [n for n in node_layers if node_layers[n] == 1]
-        layer1_weights= [self.graph.degree(n) for n in layer1_nodes]
-        while len(blank_endpoints):
-            endpoint = blank_endpoints.pop(0)
-            other_node = random.choices(layer1_nodes, weights=layer1_weights, k=1)[0]
-            self.graph.add_edge(endpoint, other_node)
-
-
-        #Removes all blank_endpoints from pos and colourmap
-        #Updates nodes to have all the nodes in the network
-        # self.graph.remove_nodes_from(blank_endpoints)
-        # blank_endpoints_index = 0
-
-        # for n in range(self.total_nodes):
-        #     if n == blank_endpoints[blank_endpoints_index]:
-        #         self.pos.pop(n, None)
-        #         self.colour_map.pop(0)
-        #         blank_endpoints_index += 1
-        #         if blank_endpoints_index == len(blank_endpoints):
-        #             blank_endpoints_index = 0
-        #     else:
-        #         self.nodes.append(n)
-        
-        # Updates Colour of target node to red
-        self.colour_map[self.target_node] = "red"
-
-        # #Updates the total nodes and endpoints with totals without blank_endpoints
-        # self.total_nodes = len(self.nodes)
-        # self.total_endpoints = self.total_endpoints
-        
-        # #Updates exposed_endpoints to not contain removed endpoints
-        # i = 0
-        # while i < self.total_endpoints:
-        #     self.exposed_endpoints.append(self.nodes[i])
-        #     i += 1
-
-        # Fix positions for endpoints
-        for n in range(self.total_endpoints):
-            position = (n+1)/self.total_endpoints*(max_y_pos - min_y_pos) + min_y_pos
-            new_pos = {n: np.array([0, position])}
-            self.pos.update(new_pos)
-
-        # Update Nodes Per Layer for Complete topology shuffling
-        self.node_per_layer = nodes_per_layer.copy()
-        self.node_per_layer[0] = self.total_endpoints
-
-
-
-        # print("Endpoint list:", self.total_endpoints)
-        # print("Node list:", self.nodes)
-        # print("Exposed Endpoint list: ", self.exposed_endpoints)
-        print("nodes per layer: ", self.node_per_layer)
-
-
-    def regen_graph(self, min_nodes_per_subnet=3, max_subnets_per_layer=5, subnet_m_ratio=0.2, prob_inter_layer_edge=0.4):
-
-        # Decide the number of subnets for each layer of the network
-        subnets_per_layer = []
-        while len(subnets_per_layer) < self.layers:
-            # Adds 1 to start of array if array is empty
-            if len(subnets_per_layer) == 0: subnets_per_layer.append(1)
-            l_subnets = random.randint(1, max_subnets_per_layer)
-            # Only appends value if it doesn't exceed maximum number of subnets possible
-            if self.total_subnets - (sum(subnets_per_layer) + l_subnets) > self.layers - len(subnets_per_layer):
-                subnets_per_layer.append(l_subnets)
-        
-
-        # Randomly adds one to random subnets until there is the correct amount of subnets (Could be Optimised in future)
-        while sum(subnets_per_layer) < self.total_subnets:
-            s_index = random.randint(1,self.layers-1)
-            if subnets_per_layer[s_index] <= max_subnets_per_layer:
-                subnets_per_layer[s_index] = subnets_per_layer[s_index] + 1
-         
-        max_subnet_in_layer = max(subnets_per_layer)
-            
-        # Assign number of nodes to each subnet
-        subnet_nodes = []
-        for i,subnets in enumerate(subnets_per_layer):
-            # List containing the minimum number of nodes for every subnet in layer
-            temp_subnet_nodes = [min_nodes_per_subnet for _i in range(subnets)]
-            # Randomly adds one to random subnets until correct number of nodes for the layer
-            while sum(temp_subnet_nodes) < self.node_per_layer[i]:
-                n_index = random.randint(0, subnets-1)
-                temp_subnet_nodes[n_index] = temp_subnet_nodes[n_index] + 1
-            subnet_nodes.append(temp_subnet_nodes)
-            
-        
-        # self.graphenerate the graph
-        self.graph = nx.Graph()
-        # Node offset
-        node_id = 0
-        self.colour_map = []
-        self.pos = {}
-        attr = {}
-        min_y_pos = 200000
-        max_y_pos = -200000
-        # Layer = i, subnet = j, s_nodes = # of nodes in subnet
-        for i, subnet_node_list in enumerate(subnet_nodes):
-            for j,s_nodes in enumerate(subnet_node_list):
-                m = int(s_nodes*subnet_m_ratio)
-                if m < 1: m = 1
-                elif m >= s_nodes: m = s_nodes - 1
-                subgraph = nx.barabasi_albert_graph(s_nodes, m)
-                new_node_mapping = {k:k+node_id for k in range(s_nodes)}
-                subgraph = nx.relabel_nodes(subgraph, new_node_mapping)
-                new_attr = {k+node_id:{"subnet":j,"layer":i} for k in range(s_nodes)}
-                attr = {**attr, **new_attr}
-                
-                # Setting offset to next empty node
-                node_id += s_nodes
-
-                subgraph_pos = nx.spring_layout(subgraph)
-                if i != 0:
-                    subgraph_pos = {
-                        k:np.array([v[0]+i*2.25, v[1]+j*3 + 1.5*(max_subnet_in_layer - len(subnet_node_list))]) 
-                            for k,v in subgraph_pos.items()
-                    }
-                    
-                    for k,v in subgraph_pos.items():
-                        y = v[1]+j*3 + 1.5*(max_subnet_in_layer - len(subnet_node_list))
-                        subgraph_pos[k] = np.array(
-                            [v[0]+i*2.25, y]
-                        )
-                        if y < min_y_pos:
-                            min_y_pos = y
-                        if y > max_y_pos:
-                            max_y_pos = y
-                else:
-                    subgraph_pos = {
-                        k:np.array([0, k]) 
-                            for k,_v in subgraph_pos.items()
-                    }
-                # Stores all the positions of items from subgraphs    
-                self.pos = {**self.pos, **subgraph_pos}
-                
-
-                #Assigns Colour of nodes based on constant key
-                for k in range(s_nodes):
-                    self.colour_map.append(constants.NODE_COLOURS[i])
-                   
-                #Adds Subgraph to final graph        
-                self.graph = nx.compose(self.graph, subgraph)
-        
-        #Defines Nodes for whole graph
-        nx.set_node_attributes(self.graph, attr)
-
-        
-        # Connect the graph
-        def get_other_node(node_list, node_degrees, other_node):
-            n = random.choices(node_list, weights=node_degrees, k=1)[0]
-            if n == other_node:
-                return get_other_node(node_list, node_degrees, other_node)
-            return n
-        
-        while not nx.is_connected(self.graph):
-            node_layers = nx.get_node_attributes(self.graph, "layer")
-            for i in range(self.layers-1):
-                node_a = [n for n in node_layers if node_layers[n] == i]
-                degree_node_a = [self.graph.degree(n) for n in node_a]
-                node_b = [n for n in node_layers if node_layers[n] == i+1]
-                degree_node_b = [self.graph.degree(n) for n in node_b]
-
-                n_a1 = random.choices(node_a, weights=degree_node_a, k=1)[0]
-                if not nx.is_connected(self.graph.subgraph(node_a + node_b)):
-                    n_b = random.choices(node_b, weights=degree_node_b, k=1)[0]
-                    self.graph.add_edge(n_a1, n_b)
-                if random.random() < prob_inter_layer_edge and subnets_per_layer[i] > 1 and not nx.is_connected(self.graph.subgraph(node_a)):
-                    n_a2 = get_other_node(node_a, degree_node_a, n_a1)
-                    self.graph.add_edge(n_a1, n_a2)
-                
-
-        endpoint_nodes_list = [n for n in range(self.total_endpoints)]
-        blank_endpoints = []
-
-        # Remove edges between endpoint nodes (not needed since adversary can reach them all anyway)
-        # Store all external nodes with no internal nodes into blank_endpoints   
-        for n in endpoint_nodes_list:
-            neighbors = list(self.graph.neighbors(n))
-            for neighbor in neighbors:
-                if neighbor in endpoint_nodes_list:
-                    self.graph.remove_edge(n, neighbor)
-            internal_connection = list(self.graph.neighbors(n))
-            if not internal_connection:
-                blank_endpoints.append(n)
-
-        # Pulls from blank_endpoints until all points act as an exposed endpoints
-        node_layers = nx.get_node_attributes(self.graph, "layer")
-        layer1_nodes = [n for n in node_layers if node_layers[n] == 1]
-        layer1_weights= [self.graph.degree(n) for n in layer1_nodes]
-        while len(blank_endpoints) != 0:
-            endpoint = blank_endpoints.pop(0)
-            other_node = random.choices(layer1_nodes, weights=layer1_weights, k=1)[0]
-            self.graph.add_edge(endpoint, other_node)
-
-        
-        # Updates Colour of target node to red
-        self.colour_map[self.target_node - len(blank_endpoints)] = "red"
-
-        #Updates the total nodes and endpoints with totals without blank_endpoints
-        self.total_nodes = len(self.nodes)
-        self.total_endpoints = self.total_endpoints - len(blank_endpoints)
-        
-        # Fix positions for endpoints    
-        for n in range(self.total_endpoints):
-            position = (n+1)/self.total_endpoints*(max_y_pos - min_y_pos) + min_y_pos
-            new_pos = {n: np.array([0, position])}
-            self.pos.update(new_pos)
-
-
-
-
-    def setup_network(self):
-        """
-        Using the generated graph, generates a host for each node on the graph.
-        """
-        ip_addresses = []
-        for host_id in self.nodes:
-            node_os = Host.get_random_os()
-            node_os_version = Host.get_random_os_version(node_os)
-            node_ip = Host.get_random_address(existing_addresses=ip_addresses)
-            ip_addresses.append(node_ip)
-            self.graph.nodes[host_id]["host"] = Host(
-                node_os,
-                node_os_version,
-                host_id,
-                node_ip,
-                random.choices(self.users_list, k=self.users_per_host),
-                self,
-                self.service_generator,
-                self.action_manager
-            )
 
     def set_mtd_trigger_time(self, curr_time):
         """
@@ -570,6 +138,9 @@ class Network:
         """
         Returns the Network graph that is visible to the hacker depending on the hosts that have already been compromised
 
+        Parameters:
+            compromised_hosts:
+                a list of the host IDs that have already been compromised by the hacker
         """
         visible_hosts = []
         for c_host in self.reachable:
@@ -647,7 +218,7 @@ class Network:
         return shortest_path, shortest_distance
         
 
-    def scan(self, compromised_hosts):
+    def scan(self, compromised_hosts, stop_attack):
         """
         Scans the network and returns a sorted list of discovered hosts that have not been compromised yet.
 
@@ -660,6 +231,8 @@ class Network:
         Parameters:
             compromised_hosts:
                 a list of host IDs that have been compromised
+            stop_attack:
+                a list of host IDs which have reached attack threshold and can't be attacked anymore
 
         Returns:
             an action that will return the scanned hosts if not blocked by a MTD
@@ -691,8 +264,10 @@ class Network:
                     if not ex_node in compromised_hosts
         ]
 
+        discovered_hosts =  [n for n in uncompromised_hosts if n not in stop_attack]
+
         return self.action_manager.create_action(
-            uncompromised_hosts,
+            discovered_hosts,
             scan_time,
             check_network_ips = True,
             check_network_paths = True
@@ -798,61 +373,6 @@ class Network:
         plt.figure(1, figsize=(15,12))
         nx.draw(subgraph, pos=self.pos, node_color=colour_map, with_labels=True)
         plt.show()
-
-    def assign_tags(self):
-        """
-        Assigns the tags to layers from constants.py
-        """
-        i = 0
-        while i < self.layers:
-            self.tags.append(constants.HOST_TAGS[i]) 
-            i += 1
-
-    def assign_tag_priority(self):
-        """
-        Orders tags based on priority
-        """
-        i = 0
-        order = []
-        while i < self.layers:
-            dist = abs(self.target_layer-i)
-            order.append(dist)
-            i += 1
-
-        layer_index = 0
-        priority = 0
-        order_index = 0
-        while layer_index < self.layers:
-            for order_prio in order:
-                if order_prio == priority:
-                    self.tag_priority.append(self.tags[order_index])
-                    layer_index += 1
-                order_index += 1
-            priority += 1
-            order_index = 0
-            
-    
-    def get_host_id_priority(self, host_id):
-        """
-        Assign priority of host_id based on layer
-
-        Parameters:
-            host_id: node id of the desired node
-
-        Returns:
-            Priority: An integer based on tag_priority array, with target node scoring 0, top priority node scoring 1, and subsequent nodes scoring 1 higher
-        """
-        if host_id == self.target_node:
-            return 0
-        layers = self.get_layers()
-        host_layer = layers.get(host_id)
-        priority = -1
-        i = 0
-        for tag in self.tag_priority:
-            if self.tags[host_layer] == tag:
-                priority = i 
-            i += 1
-        return priority + 1
     
     def update_reachable_mtd(self):
         """
@@ -923,5 +443,3 @@ class Network:
                 all_reachable_hosts_added = True
             else:
                 appended_host = compromised_neighbour_nodes.pop(0)
-            
-

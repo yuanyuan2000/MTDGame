@@ -82,6 +82,18 @@ class Network:
 
     def get_graph_copy(self):
         return self.graph.copy()
+    
+    def get_pos(self):
+        return self.pos
+
+    def get_colourmap(self):
+        return self.colour_map
+    
+    def get_total_nodes(self):
+        return self.total_nodes
+
+    def get_target_node(self):
+        return self.target_node
 
     def get_unique_subnets(self):
         subnets = self.get_subnets()
@@ -654,7 +666,7 @@ class Network:
         return shortest_path, shortest_distance
         
 
-    def scan(self, compromised_hosts):
+    def scan(self, compromised_hosts, stop_attack):
         """
         Scans the network and returns a sorted list of discovered hosts that have not been compromised yet.
 
@@ -667,6 +679,8 @@ class Network:
         Parameters:
             compromised_hosts:
                 a list of host IDs that have been compromised
+            stop_attack:
+                a list of host IDs which have reached attack threshold and can't be attacked anymore
 
         Returns:
             an action that will return the scanned hosts if not blocked by a MTD
@@ -698,10 +712,10 @@ class Network:
                     if not ex_node in compromised_hosts
         ]
 
-        print("Hosts found by scan: ", uncompromised_hosts)
+        discovered_hosts =  [n for n in uncompromised_hosts if n not in stop_attack]
 
         return self.action_manager.create_action(
-            uncompromised_hosts,
+            discovered_hosts,
             scan_time,
             check_network_ips = True,
             check_network_paths = True
@@ -907,7 +921,6 @@ class Network:
         Updates the Reachable with the node_id of the compromised node
         """
         self.reachable.append(compromised_node_id)
-        print("Reachable Compromised Appended:", self.reachable)
         appended_host = compromised_node_id
         self.compromised_hosts = compromised_hosts
         all_reachable_hosts_added = False
@@ -933,6 +946,7 @@ class Network:
                 all_reachable_hosts_added = True
             else:
                 appended_host = compromised_neighbour_nodes.pop(0)
-        print("Reachable Compromised:", self.reachable)
-             
+    
+    def shortest_path_to_target(self):
+        return self.get_path_from_exposed(self.target_node, self.graph)
 

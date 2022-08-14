@@ -6,13 +6,15 @@ import mtdnetwork.exceptions as exceptions
 
 class Hacker:
 
-    def __init__(self, network):
+    def __init__(self, network, attack_threshold):
         """
         Creates an instance of the Hacker that is trying to penetrate the network
 
         Parameters:
             network:
                 the Network instance that this hacker is trying to compromise
+            attack_threshold:
+                the number of attempts an attacker would attempt to attack a host before giving up
         """
         self.network = network
         self.scorer = self.network.get_scorer()
@@ -22,6 +24,10 @@ class Hacker:
         self.host_stack = []
         self.seen = []
         self.done = False
+
+        self.attack_counter = [0 for n in range(self.network.get_total_nodes())]
+        self.stop_attack = []
+        self.attack_threshold = attack_threshold
 
         self.action_manager = self.network.get_action_manager()
         self.action_manager.register_hacker(self)
@@ -43,6 +49,7 @@ class Hacker:
         self.logger = logging.getLogger(__name__)
 
         self.observed_changes = {}
+
 
     def swap_hosts_in_compromised_hosts(self, host_id, other_host_id):
         new_compromised_hosts = []
@@ -68,6 +75,9 @@ class Hacker:
         """
         Returns statistics for the simulation
         """
+        target_compromised = False
+        if self.network.get_target_node in self.compromised_hosts:
+            target_compromised = True
         return {
             "Total Host Compromises" : len(self.compromised_hosts),
             "Total User Compromises" : len(self.compromised_users),
@@ -75,6 +85,7 @@ class Hacker:
             "Total Reuse Pass Compromises" : self.total_reuse_pass_compromise,
             "Total Password Spray Compromises" : self.total_brute_force_compromise,
             "Total Actions Blocked by MTD" : self.total_blocked_by_mtd,
+            "Target Node Compromised" : target_compromised,
             "Compromised hosts" : self.compromised_hosts
         }
 
@@ -228,7 +239,7 @@ class Hacker:
         if not self.done:
             self.pivot_host_id = -1
             self.logger.info("SCANNING NETWORK FOR HOSTS")
-            self.action = self.network.scan(self.compromised_hosts)
+            self.action = self.network.scan(self.compromised_hosts, self.stop_attack)
             self.action.set_trigger_time(self.curr_time)
             self.action.set_complete_fn(
                 self.setup_host_enum
@@ -281,6 +292,10 @@ class Hacker:
             )
             self.curr_host_id = self.host_stack.pop(0)
             self.curr_host = self.network.get_host(self.curr_host_id)
+            self.attack_counter[self.curr_host_id] += 1
+            if self.attack_counter[self.curr_host_id] == self.attack_threshold:
+                if self.curr_host_id != self.network.get_target_node():
+                    self.stop_attack.append(self.curr_host_id)
             self.curr_ports = []
             self.curr_vulns = []
             hop_time = int(constants.HACKER_HOP_TIME*self.network.get_shortest_distance_from_exposed_or_pivot(
