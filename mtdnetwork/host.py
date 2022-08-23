@@ -61,6 +61,7 @@ class Host:
         )
         self.setup_network(service_generator)
         self.set_host_users(users_list)
+        
 
     def is_exposed_endpoint(self):
         return self.host_id in self.network.exposed_endpoints
@@ -73,16 +74,26 @@ class Host:
     def get_all_services(self):
         return list(dict(nx.get_node_attributes(self.graph, "service")).values())
 
+    def get_test_values(self):
+        return [(nx.get_node_attributes(self.graph, "port")) , (nx.get_node_attributes(self.graph, "service"))]
+    
+    def get_total_nodes(self):
+        return self.total_nodes
+
     def get_all_vulns(self):
         all_services = self.get_all_services()
+
+        total_vulns = 0
 
         all_vulns = []
         for service in all_services:
             service_vulns = service.get_all_vulns()
+            total_vulns += len(service_vulns)
 
             for v in service_vulns:
                 if not v in all_vulns:
                     all_vulns.append(v)
+        # print("Services on this host has average of this many vulns: ", total_vulns/len(all_services))
 
         return all_vulns
 
@@ -186,6 +197,9 @@ class Host:
         )
 
     def is_compromised(self):
+        return self.compromised
+
+    def is_compromised_action(self):
         """
         Returns:
             an action where the adversary has already compromised a host
@@ -243,6 +257,51 @@ class Host:
             check_host_id = True
         )
 
+    def get_service_and_vulns(self):
+        """
+        Returns a dictionary of all non-target nodes and their vulnerabilities
+        """
+        services = nx.get_node_attributes(self.graph, "service")
+        return {
+            service_id : service.get_vulns()
+                for (service_id, service) in services.items()
+        }
+
+    def get_target_node(self):
+        return self.target_node
+
+    def get_exposed_nodes(self):
+        return self.exposed_endpoints
+
+    def remove_no_vuln_nodes(self):
+        """
+        Removes all service nodes with no vulnerabilities
+        EDIT: Removed due to assigning a vulnerability to every service (Random element of adding vulnerabilites caused many graphs to break)
+        """
+        vulns = self.get_service_and_vulns()
+        blank_endpoints = []
+        blank_endpoints_index = 0
+
+        for key, value in vulns.items():
+            if not value: 
+                blank_endpoints.append(key)
+        self.graph.remove_nodes_from(blank_endpoints)
+
+        if blank_endpoints:
+            for n in range(self.total_nodes):
+                if n == blank_endpoints[blank_endpoints_index]:
+                    self.colour_map.pop(n-blank_endpoints_index)
+                    blank_endpoints_index += 1
+                    if blank_endpoints_index == len(blank_endpoints):
+                        blank_endpoints_index = 0
+                    if n in self.exposed_endpoints:
+                        self.exposed_endpoints.remove(n)
+
+        print("Blank endpoints: ", blank_endpoints, "target node: ", self.target_node)
+        self.total_nodes = self.total_nodes - len(blank_endpoints)
+
+
+    
     def get_services(self, just_exploited=False):
         """
         Gets the services on the host

@@ -84,9 +84,14 @@ Attacker Priority -> Target -> Tag -> First in First Out
 Trim Services that don't have vulnerabilities
 Attack doesn't stop until target node is compromised
 Add metrics
+Check Vuln Numbers
 
 Attack node limit amount of times
 Attack attempt counter
+
+Target Network: Target node compromised = stop
+Other Network: 80% of network is compromised? = stop
+UML of Simulator
 
 1e Run for error checking + dump results
     Run simulator x times tile % error is less than 5%

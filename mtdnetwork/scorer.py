@@ -129,6 +129,7 @@ class Scorer:
         self.host_reuse_pass_compromises = CompromiseStatistics("Reuse Password Compromises")
         self.host_pass_spray_compromises = CompromiseStatistics("Password Spray Compromises")
         self.user_account_leaks = Statistics("User Account Has Been Leaked By Compromise")
+        self.attack_path_exposure = []
 
         # Gather statistics on the types of vulnerabilities that were exploited
         # eg. RoA score, impact and complexity
@@ -199,6 +200,9 @@ class Scorer:
 
     def add_vuln_compromise(self, curr_time, vuln):
         self.vuln_compromises.add_event(curr_time, vuln)
+    
+    def add_attack_path_exposure(self, score):
+        self.attack_path_exposure.append(score)
 
     def set_initial_statistics(self, network):
         """
@@ -251,8 +255,8 @@ class Scorer:
                 vulns_per_os[host_os][host_os_type] = len(roa_list)
                 avg_roa_per_os[host_os][host_os_type] = sum(roa_list) / len(roa_list)
 
-        self.stats["Total Initial Vulnerabilities"] = total_vulns
-        self.stats["Initial Vulns Per OS"] = vulns_per_os
+        self.stats["Total Initial Vulnerabilities (Sum of all Vulns on all hosts)"] = total_vulns
+        self.stats["Initial Vulns Per OS (Sum of all Vulns on those OS)"] = vulns_per_os
         self.stats["Average Initial RoA Per OS"] = avg_roa_per_os
         self.stats["OS Types In Initial Network"] = os_types_in_network
         self.stats["Initial Hosts Without Vulnerabilities"] = hosts_without_vulns
@@ -278,5 +282,6 @@ class Scorer:
             mtd_statistic.get_dict()["total blocks"]
                 for mtd_statistic in self.mtd_statistics
         ])
+        stats["Attack Path Exposure Scores"] = self.attack_path_exposure
 
         return stats

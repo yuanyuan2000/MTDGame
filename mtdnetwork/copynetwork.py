@@ -45,6 +45,8 @@ class Network:
         self.mtd_strategies = []
         self.reachable = []
         self.target_node = -1
+        # Network type 0 is a targetted attack, Network type 1 is a general attack (no target node)
+        self.network_type = 1
         self.action_manager = ActionManager(self)
         self.scorer = Scorer()
         self.scorer.set_initial_statistics(self)
@@ -68,7 +70,10 @@ class Network:
         return self.total_nodes
 
     def get_target_node(self):
-        return self.target_node    
+        return self.target_node
+
+    def get_network_type(self):
+        return self.network_type  
 
     def get_unique_subnets(self):
         subnets = self.get_subnets()
@@ -168,7 +173,7 @@ class Network:
 
     def is_compromised(self, compromised_hosts):
         """
-        Checks if the Network has been completely compromised.
+        Checks if the Network has been 80% compromised.
 
         Parameters:
             compromised_hosts:
@@ -252,10 +257,10 @@ class Network:
                             and len(self.get_path_from_exposed(neighbor, graph=visible_network)[0]) > 0
             ]
 
-        # Sorts array based on tag, putting target first
+        # Add random element from 0 to 1 so the scan does not return the same order of hosts each time for the hacker
         uncompromised_hosts = sorted(
             uncompromised_hosts,
-            key = lambda host_id : self.get_host_id_priority(host_id) + random.random()
+            key = lambda host_id : self.get_path_from_exposed(host_id, graph=visible_network)[1] + random.random()
         )
 
         uncompromised_hosts = uncompromised_hosts + [

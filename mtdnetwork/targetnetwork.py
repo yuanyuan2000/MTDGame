@@ -53,6 +53,8 @@ class Network:
         self.compromised_hosts = []
         self.node_per_layer = []
         self.target_node = -1
+        # Network type 0 is a targetted attack, Network type 1 is a general attack (no target node)
+        self.network_type = 0
         self.action_manager = ActionManager(self)
         self.scorer = Scorer()
         self.assign_tags()
@@ -61,6 +63,8 @@ class Network:
         self.gen_graph()
         self.setup_network()
         self.scorer.set_initial_statistics(self)
+        self.add_attack_path_exposure()
+        
 
     def get_scorer(self):
         return self.scorer
@@ -94,6 +98,9 @@ class Network:
 
     def get_target_node(self):
         return self.target_node
+    
+    def get_network_type(self):
+        return self.network_type   
 
     def get_unique_subnets(self):
         subnets = self.get_subnets()
@@ -124,6 +131,13 @@ class Network:
             the ActionManager for the network
         """
         return self.action_manager
+
+
+    def add_attack_path_exposure(self):
+        """
+        Adds the Attack Path Exposure Score to statistics
+        """
+        self.scorer.add_attack_path_exposure(self.attack_path_exposure())
 
     def setup_users(self, user_to_nodes_ratio, prob_user_reuse_pass, users_per_host):
         """
@@ -365,7 +379,7 @@ class Network:
         # print("Endpoint list:", self.total_endpoints)
         # print("Node list:", self.nodes)
         # print("Exposed Endpoint list: ", self.exposed_endpoints)
-        print("nodes per layer: ", self.node_per_layer)
+        # print("nodes per layer: ", self.node_per_layer)
 
 
     def regen_graph(self, min_nodes_per_subnet=3, max_subnets_per_layer=5, subnet_m_ratio=0.2, prob_inter_layer_edge=0.4):
@@ -613,6 +627,12 @@ class Network:
         """
 
         return self.graph.nodes.get(host_id, {}).get("host", None)
+
+    def is_target_compromised(self):
+        if self.get_host(self.target_node).is_compromised():
+            return True
+        else:
+            return False
 
     def is_compromised(self, compromised_hosts):
         """
@@ -947,6 +967,42 @@ class Network:
             else:
                 appended_host = compromised_neighbour_nodes.pop(0)
     
-    def shortest_path_to_target(self):
-        return self.get_path_from_exposed(self.target_node, self.graph)
+    def attack_path_exposure(self):
+        """
+        Gets the total attack path exposure, scoring each node based on the % of new vulnerabilities found in each node on the shortest path to the target_node out of 1
+
+        Returns:
+            ave_score: Score of each host added up, divided by the number of hosts
+        """
+        shortest_path  = self.get_path_from_exposed(self.target_node, self.graph)[0]
+        vuln_list = []
+        total_score = 0
+        for host_id in shortest_path:
+            host = self.get_host(host_id)
+            service_id_list = host.get_path_from_exposed()
+            services = host.get_services_from_list(service_id_list)
+            not_unique_host_vulns = 0
+            total_host_vulns = 0
+            
+            for service in services:
+                vulns = service.get_vulns()              
+                total_host_vulns = len(vulns) + total_host_vulns
+                
+                for vuln in vulns:
+                    if vuln not in vuln_list:
+                        vuln_list.append(vuln)
+                    else:
+                        not_unique_host_vulns = not_unique_host_vulns + 1
+            if total_host_vulns - not_unique_host_vulns == 0:
+                new_vuln_percent = 0
+            else:
+                new_vuln_percent = (total_host_vulns - not_unique_host_vulns)/total_host_vulns
+            total_score = total_score + new_vuln_percent
+        return total_score/len(shortest_path)
+
+        
+            
+        
+
+
 

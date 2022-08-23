@@ -55,3 +55,6 @@ class HostTopologyShuffle(MTD):
             hacker.swap_hosts_in_compromised_hosts(host_id, other_host_id)
         
         self.network.update_reachable_mtd()
+        
+        # Update Attack Path Exposure
+        self.network.add_attack_path_exposure()

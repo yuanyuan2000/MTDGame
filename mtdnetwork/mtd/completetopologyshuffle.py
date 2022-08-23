@@ -19,6 +19,8 @@ class CompleteTopologyShuffle(MTD):
             self.network.graph.nodes[host_id]["host"] = host_instance
         self.network.update_reachable_mtd()
 
+        # Update Attack Path Exposure
+        self.network.add_attack_path_exposure()
 
         # Set nHosts per layer
         # Generate new graph with those number of hosts per layer
