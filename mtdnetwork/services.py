@@ -41,6 +41,9 @@ class Vulnerability:
 
     def is_exploited(self):
         return self.exploited
+    
+    def get_id(self):
+        return self.id
 
     def can_exploit_with_dependent_vuln(self, vulns):
         """
@@ -138,6 +141,7 @@ class Service:
         self.version = service_version
         self.vulnerabilities = sorted(vulnerabilities, key = lambda v: v.roa(), reverse = True)
         self.exploit_value = 0.0
+        self.id = str(uuid.uuid4())
 
     def copy(self):
         """
@@ -159,6 +163,9 @@ class Service:
 
     def get_all_vulns(self):
         return self.vulnerabilities
+
+    def get_id(self):
+        return self.id
     
     def is_exploited(self):
         self.exploit_value = 0
@@ -233,6 +240,7 @@ class ServicesGenerator:
         self.vuln_initial_chances = vuln_initial_chances
         self.max_vuln_probability = max_vuln_probability
         self.gen_services()
+
         
     def get_random_service(self, os_type, os_version):
         """

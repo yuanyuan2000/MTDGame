@@ -8,7 +8,7 @@ import numpy as np
 from mtdnetwork.mtd.portshuffle import PortShuffle
 from mtdnetwork.mtd.ipshuffle import IPShuffle
 from mtdnetwork.mtd.osdiversity import OSDiversity
-from mtdnetwork.mtd.servicediversity import ServiceShuffle
+from mtdnetwork.mtd.servicediversity import ServiceDiversity
 from mtdnetwork.mtd.usershuffle import UserShuffle
 from mtdnetwork.mtd.hosttopologyshuffle import HostTopologyShuffle
 from mtdnetwork.mtd.completetopologyshuffle import CompleteTopologyShuffle
@@ -85,7 +85,7 @@ def create_network(args):
     graph = target_network.get_graph_copy()
     colour_map = target_network.get_colourmap()
     pos = target_network.get_pos()
-    generic_network = copynetwork.Network(graph, pos, colour_map,200, 20, 20, 5)
+    generic_network = copynetwork.Network(graph, pos, colour_map,args.nodes, args.endpoints, args.subnets, args.layers)
 
     mtd_strategies = []
 
@@ -100,13 +100,13 @@ def create_network(args):
         target_network.register_mtd(IPShuffle)
         generic_network.register_mtd(IPShuffle)
 
-    if "osshuffle" in mtd_strategies:
+    if "osdiversity" in mtd_strategies:
         target_network.register_mtd(OSDiversity)
         generic_network.register_mtd(OSDiversity)
 
-    if "serviceshuffle" in mtd_strategies:
-        target_network.register_mtd(ServiceShuffle)
-        generic_network.register_mtd(ServiceShuffle)
+    if "servicediversity" in mtd_strategies:
+        target_network.register_mtd(ServiceDiversity)
+        generic_network.register_mtd(ServiceDiversity)
 
     if "usershuffle" in mtd_strategies:
         target_network.register_mtd(UserShuffle)
@@ -132,6 +132,9 @@ def main():
     nHost_compromised = []
     attack_attempts = []
 
+    target_file_name = "Target-" + args.output
+    generic_file_name = "Generic-" + args.output
+    print(target_file_name, generic_file_name)
 
     while (target_error_threshold_met == False) and (generic_error_threshold_met == False):
         # Target Network Creation + Attacker, running one simulation
@@ -145,6 +148,7 @@ def main():
                 final_time = curr_time
                 if target_adversary.done:
                     break
+            print("TARGET DONE!")
             network_results = target_network.get_statistics()
             network_results["Complete Time"] = final_time
             if args.mtd:
@@ -166,6 +170,7 @@ def main():
                 final_time = curr_time
                 if generic_adversary.done:
                     break
+            print("GENERIC DONE!")
             network_results = generic_network.get_statistics()
             network_results["Complete Time"] = final_time
             if args.mtd:
@@ -180,14 +185,14 @@ def main():
         generic_error = np.std(attack_attempts, ddof=1) / np.sqrt(np.size(attack_attempts))
 
         if target_error < error_threshold:
-            target_file_name = "Target " + args.output
+            
             target_data = open(target_file_name, "w")
             json.dump(target_results, target_data)
             target_data.close()
             print("Target Network has completed")
 
         if generic_error < error_threshold:
-            generic_file_name = "Generic " + args.output
+            
             generic_data = open(generic_file_name, "w")
             json.dump(generic_results, generic_data)
             generic_data.close()

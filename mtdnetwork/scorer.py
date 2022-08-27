@@ -256,6 +256,7 @@ class Scorer:
                 avg_roa_per_os[host_os][host_os_type] = sum(roa_list) / len(roa_list)
 
         self.stats["Total Initial Vulnerabilities (Sum of all Vulns on all hosts)"] = total_vulns
+        self.stats["Total Unique Vulnerabilities"] = len(network.get_vuln_dict())
         self.stats["Initial Vulns Per OS (Sum of all Vulns on those OS)"] = vulns_per_os
         self.stats["Average Initial RoA Per OS"] = avg_roa_per_os
         self.stats["OS Types In Initial Network"] = os_types_in_network

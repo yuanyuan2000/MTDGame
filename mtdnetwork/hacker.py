@@ -318,8 +318,8 @@ class Hacker:
                     self.stop_attack.append(self.curr_host_id)
             
             # Checks if max attack attempts has been reached, empty stacks if reached
-            self.curr_attempts += 1
-            if self.curr_attempts == self.max_attack_attempts:
+            
+            if self.curr_attempts >= self.max_attack_attempts:
                 self.host_stack = []
                 self.done = True
             
@@ -409,6 +409,7 @@ class Hacker:
         self.action = self.curr_host.can_auto_compromise_with_users(
             self.compromised_users
         )
+        self.curr_attempts += 1
         self.action.set_trigger_time(self.curr_time)
         self.action.set_complete_fn(
             self.check_reuse_user_pass
@@ -455,6 +456,7 @@ class Hacker:
         Tries exploiting the vulnerabilities to compromise the host
         """
         self.action = self.curr_host.exploit_vulns(self.curr_vulns)
+        self.curr_attempts += len(self.curr_vulns)
         self.action.set_trigger_time(self.curr_time)
         self.action.set_complete_fn(
             self.check_exploit_host
@@ -487,6 +489,7 @@ class Hacker:
         self.action = self.curr_host.compromise_with_users(
             self.compromised_users
         )
+        self.curr_attempts += 1
         self.action.set_trigger_time(self.curr_time)
         self.action.set_complete_fn(
             self.check_brute_force

@@ -44,9 +44,13 @@ class Network:
         self.exposed_endpoints = [i for i in range(total_endpoints)]
         self.mtd_strategies = []
         self.reachable = []
+        self.nodes = [n for n in range(total_nodes)]
         self.target_node = -1
         # Network type 0 is a targetted attack, Network type 1 is a general attack (no target node)
         self.network_type = 1
+        self.total_vulns = 0
+        self.vuln_dict = {}
+        self.vuln_count = {}
         self.action_manager = ActionManager(self)
         self.scorer = Scorer()
         self.scorer.set_initial_statistics(self)
@@ -170,6 +174,29 @@ class Network:
         """
 
         return self.graph.nodes.get(host_id, {}).get("host", None)
+
+    def get_total_vulns(self):
+        return self.total_vulns
+
+    def get_vuln_dict(self):
+        """
+        Gets all the vulnerabilities for every hosts and puts them in vuln_dict
+
+        Returns:
+            the freuqency of every vuln
+        """
+        for host_id in self.nodes:
+            host = self.get_host(host_id)
+            vulns = host.get_all_vulns()
+            self.total_vulns += len(vulns)
+            self.vuln_dict[host_id] = vulns
+            for v in vulns:
+                v_id = v.get_id()
+                if v_id in self.vuln_count:
+                    self.vuln_count[v.get_id()] += 1
+                else:
+                    self.vuln_count[v.get_id()] = 1
+        return self.vuln_count
 
     def is_compromised(self, compromised_hosts):
         """

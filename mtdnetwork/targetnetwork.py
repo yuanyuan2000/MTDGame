@@ -24,7 +24,7 @@ class Network:
             total_endpoints: 
                 the number of nodes exposed on the internet (hacker can interact directly with them).
                 total_endpoints must be less than total_nodes.
-            total_subdnets: 
+            total_subnets: 
                 how many subnets in the network.
             total_layers:
                 how many layers deep from the exposed endpoints the network is.
@@ -55,6 +55,12 @@ class Network:
         self.target_node = -1
         # Network type 0 is a targetted attack, Network type 1 is a general attack (no target node)
         self.network_type = 0
+        self.vuln_dict = {}
+        self.vuln_count = {}
+        self.service_dict = {}
+        self.service_count = {}
+        self.total_vulns = 0
+        self.total_services = 0
         self.action_manager = ActionManager(self)
         self.scorer = Scorer()
         self.assign_tags()
@@ -627,6 +633,52 @@ class Network:
         """
 
         return self.graph.nodes.get(host_id, {}).get("host", None)
+
+    def get_total_vulns(self):
+        return self.total_vulns
+
+    def get_vuln_dict(self):
+        """
+        Gets all the vulnerabilities for every hosts and puts them in vuln_dict
+
+        Returns:
+            the freuqency of every vuln
+        """
+        for host_id in self.nodes:
+            host = self.get_host(host_id)
+            vulns = host.get_all_vulns()
+            self.total_vulns += len(vulns)
+            self.vuln_dict[host_id] = vulns
+            for v in vulns:
+                v_id = v.get_id()
+                if v_id in self.vuln_count:
+                    self.vuln_count[v.get_id()] += 1
+                else:
+                    self.vuln_count[v.get_id()] = 1
+        return self.vuln_count
+
+    def get_total_services(self):
+        return self.total_services
+
+    def get_service_dict(self):
+        """
+        Gets all the services for every hosts and puts them in service_dict
+
+        Returns:
+            the freuqency of every service
+        """
+        for host_id in self.nodes:
+            host = self.get_host(host_id)
+            services = host.get_all_services()
+            self.total_services += len(services)
+            self.service_dict[host_id] = services
+            for s in services:
+                s_id = s.get_id()
+                if s_id in self.service_count:
+                    self.service_count[s.get_id()] += 1
+                else:
+                    self.service_count[s.get_id()] = 1
+        return self.service_count
 
     def is_target_compromised(self):
         if self.get_host(self.target_node).is_compromised():
