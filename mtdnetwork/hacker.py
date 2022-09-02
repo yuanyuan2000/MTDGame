@@ -31,6 +31,7 @@ class Hacker:
 
         self.action_manager = self.network.get_action_manager()
         self.action_manager.register_hacker(self)
+
         self.action = None
 
         self.curr_time = 0
@@ -89,7 +90,8 @@ class Hacker:
             "Total Actions Blocked by MTD" : self.total_blocked_by_mtd,
             "Target Node Compromised" : self.target_compromised,
             "Compromised hosts" : self.compromised_hosts,
-            "Average Attempts Required to Compromise": self.attacks_required_per_compromise()[0]
+            "Average Attempts Required to Compromise": self.attacks_required_per_compromise()[0],
+            "Number of Hosts Attacker has given up on": len(self.stop_attack)
         }
 
     def get_compromised(self):

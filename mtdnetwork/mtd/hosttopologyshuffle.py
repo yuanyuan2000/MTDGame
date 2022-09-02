@@ -56,5 +56,6 @@ class HostTopologyShuffle(MTD):
         
         self.network.update_reachable_mtd()
         
-        # Update Attack Path Exposure
-        self.network.add_attack_path_exposure()
+        # Update Attack Path Exposure for target networks
+        if (self.network.get_network_type() == 0):
+            self.network.add_attack_path_exposure()

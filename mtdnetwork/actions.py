@@ -263,6 +263,9 @@ class ActionManager:
     def get_hacker(self):
         return self.hacker
 
+    def get_network(self):
+        return self.network
+
     def check_ports_on_host(self, host_instance):
         """
         Returns the ports of the host_instance to see if they have been changed.

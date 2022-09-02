@@ -109,6 +109,12 @@ class Host:
 
         return vulns
 
+    def swap_action_manager(self, action_manager):
+        self.action_manager = action_manager
+    
+    def swap_network(self, network):
+        self.network = network
+
     def setup_network(self, service_generator, keep_ports = False):
         port_addresses = []
         for node_id in range(self.total_nodes):
@@ -132,6 +138,7 @@ class Host:
         else:
             self.change_node_color(color="green")
 
+        print(self.network.get_action_manager().get_hacker())
         hacker = self.network.get_action_manager().get_hacker()
 
         hacker.remove_host_id_from_compromised(self.host_id)

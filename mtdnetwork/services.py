@@ -226,9 +226,9 @@ class ServicesGenerator:
                 the range from the vuln_patch_mean
             vuln_initial_chances:
                 for the first version of a service it iterates vuln_initial_chances testing if the first service gets a new vulnerability
-            os_dependent_vuln_chance:
+            os_dependent_vuln_chance (Unused):
                 the probability of a vulnerability being only enabled on specific OS (if the service is available across platforms)
-            dependent_vuln_chance:
+            dependent_vuln_chance (Unused):
                 the chance that a vulnerability can only be exploited if there is another particular type vulnerability that can also be exploited
         """
         self.services_per_os = services_per_os

@@ -138,6 +138,18 @@ class Network:
         """
         return self.action_manager
 
+    def get_node_per_layer(self):
+        """
+        Returns:
+            Number of nodes per layer
+        """
+        return self.node_per_layer
+
+    def get_users_list(self):
+        return self.users_list
+
+    def get_users_per_host(self):
+        return self.users_per_host
 
     def add_attack_path_exposure(self):
         """
@@ -729,11 +741,10 @@ class Network:
             except:
                 pass
 
-        # This function is used for sorting so shouldn't raise an exception
-        # some MTD cause this exception to be raised.
-        #
+        # This function is used when the attacker can't find a path to host
+
         # if shortest_distance == constants.LARGE_INT:
-        #     raise exceptions.PathToTargetNotFoundError(target_node)
+        #     raise exceptions.ActionBlockedError
 
         return shortest_path, shortest_distance
         
@@ -1050,7 +1061,10 @@ class Network:
             else:
                 new_vuln_percent = (total_host_vulns - not_unique_host_vulns)/total_host_vulns
             total_score = total_score + new_vuln_percent
-        return total_score/len(shortest_path)
+        if len(shortest_path) > 0:
+            return total_score/len(shortest_path)
+        else:
+            return total_score
 
         
             
