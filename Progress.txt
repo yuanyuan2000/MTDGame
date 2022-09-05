@@ -6,8 +6,6 @@ by the CVSS scoring system, which is a widely adopted metric in the cyber securi
 will then remain in proceeding versions of the service since the vulnerability was introduced for a mean of 10 versions, at which point it was assumed that the vendor
 of the service would of identified and patched the vulnerability."
 
-Host 1 2 3 compromised, when 2 is swapped, attacker can only reach 1?
-
 Variance of entry points 
 
 1. Add attack scenario where targetted node
@@ -19,6 +17,8 @@ Research Topological sort
 Combine IP and Port Scan
 2 Weeks - New Attack Scenario (attacker knows the target host when neighbouring) Set the distance for target node?
 2 weeks - Diversity
+
+
 
 Things that need to be done:
 
@@ -47,23 +47,18 @@ OS Shuffle -> OS Diversity
 Service Shuffle -> Service Diversity? (Needs to be changed)
 
 Add attack scenario where targetted node Breakdown
-	Add Constant to Host.py of Targetted State
-	Network.py: set function that accepts an int < total_layer that sets a single host as "target" in selected layer
-	Hacker.py: Set "target" host to top of attack list if discovered
 	Scorer.py: Add Target Metrics to scorer (At time target was seen, time target was compromised) 
 	Develop new metrics for effectiveness of shuffle techniques:
 		IP Shuffle: Works Same as before
 		Port Shuffle: Works Same as before
 		Complete Topology Shuffle: 
-
 		Host Shuffle:
 			 
 		OS Diversity:
 		Service Diversity:
 
-
-
 Attackers pop top from Host.stack (hacker.py)
+Delete services with no vulnerabilities
 
 Attacker Scan Network
 	Hacker.py start_network_enum 
@@ -76,33 +71,89 @@ Attacker Scan Network
 
 
 When the exposed nodes are assigned/labelled (Assigned at initiation of network.py using, first nodes) -> Apply topological Sort -> Partition Network (add tags based on proportion)
-		
+    
 Attacker Priority -> Target -> Tag -> First in First Out
 
 
-3 Queues:
-	Attacker Queues: Attacker.py -> Host_stack
-	Reachable 
-	Compromised nodes: Attacker.py -> Compromised_hosts 
 
-	Spanning Tree on compromised nodes -> All nodes are reachable that have connected
+- ask about attacking strategy 
+    - Currently pulls list, then attacks all nodes in order until completed
+    - nAttack before stopping Threshold
+    - Wait for MTD?
 
+Trim Services that don't have vulnerabilities
+Attack doesn't stop until target node is compromised
+Add metrics
+Check Vuln Numbers
 
-1a New Attack Scenario (Target node)
-	
-	Make shuffles only change nodes within layer
+Attack node limit amount of times
+Attack attempt counter
 
-1b Needs Connection + Compromise not just compromised
-	Network.py: Rewrite get_hacker_visible_graph to return only Reachable nodes (should only run after MTD Operation)
-		Add Reachable list in network.py which:
-			Updates when host is compromised/Network scan (must pick up already compromised hosts)
-			MTD is triggered (DFS Scan to update it)
-		Clear attacker queue if MTD blocks Operation
-			NOTE:Hacker.py stores Compromised Hosts Via Host ID
-	NOTE: Should be completed, just needs to be tested
+Target Network: Target node compromised = stop
+Other Network: 80% of network is compromised? = stop
+UML of Simulator
 
-1c Unattackable Queue - After Attempted x times, remove from queue and don't revisit
-1d If 5% of network isn't exposed, regenerate - connect new nodes
-1e Run different attack scenarios on same graph
+1e Run for error checking + dump results
+    Run simulator x times tile % error is less than 5%
+    Error - 
+Vuln/cost required to attack host
 
 2. Metrics
+
+
+APE
+
+
+Path Number: https://networkx.org/documentation/stable/reference/algorithms/simple_paths.html?highlight=path
+	Questions: 
+		What is max depth?
+		Should we consider it at a vulnerability level or host level?
+
+Expected Path Variant
+
+shortest path -> check the nodes -> vulnerabilities -> evaluate the Variation
+
+1 - 23 - 56
+
+1 - vuln 1, 2, 3, 4, 5 -> subset
+23 - vuln 1, 6, 7, 8, 9
+56 - vuln 2, 3, 8, 10, 11
+
+100%
+
+0%
+
+                 List vulnerabilities required to compromise services on Host
+                    Compare to list of already needed vulnerabilities
+                    Host Score = (# of Vulnerabilities - # of Seen Vulnerabilities) / # of Vulnerabilities
+                    Total Score = Sum of Host Scores/ # of Hosts  
+
+                    Example:
+                    Host 1: 1,2,3,4,5,6
+                    Host 2: 7,2,4,8,9,10,11
+                    Host 3: 12,13,5,6,9
+
+                    Score: ( 1 + (7-2)/7 + (5-3)/5 ) / 3 
+
+                    Problems : 
+                        Doesn't consider the % investment the vulnerability is of the total time investment
+                        Doesn't consider if previous Vulnerabilities which have been exploited but aren't listed as optimal vulnerabilities
+                        Doesn't consider the other paths to target
+
+            Modified Version:
+                For a randomly selected path to target Node
+                    List vulnerabilities required to compromise services on Host
+                    Compare to list of already needed vulnerabilities
+                    Host Score = (1 - Sum of RoA of seen Vulnerabilities/ Sum of RoA of Vulnerabillities Used) 
+                    Total Score = Sum of Host Scores/ # of Hosts  
+
+                    Example:
+                    Host 1: 1,2,3,4,5,6
+                    Host 2: 7,2,4,8,9,10,11
+                    Host 3: 12,13,5,6,9
+
+                    Score: ( 1 + (1-0.3) + (1-0.6) ) / 3
+
+                    Problems: 
+                        Doesn't Consider if previous Vulnerabilities which have been exploited but aren't listed as optimal vulnerabilities
+                        Doesn't consider the other paths to target

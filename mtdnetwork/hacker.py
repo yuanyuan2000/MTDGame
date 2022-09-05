@@ -6,13 +6,15 @@ import mtdnetwork.exceptions as exceptions
 
 class Hacker:
 
-    def __init__(self, network):
+    def __init__(self, network, attack_threshold):
         """
         Creates an instance of the Hacker that is trying to penetrate the network
 
         Parameters:
             network:
                 the Network instance that this hacker is trying to compromise
+            attack_threshold:
+                the number of attempts an attacker would attempt to attack a host before giving up
         """
         self.network = network
         self.scorer = self.network.get_scorer()
@@ -23,8 +25,13 @@ class Hacker:
         self.seen = []
         self.done = False
 
+        self.attack_counter = [0 for n in range(self.network.get_total_nodes())]
+        self.stop_attack = []
+        self.attack_threshold = attack_threshold
+
         self.action_manager = self.network.get_action_manager()
         self.action_manager.register_hacker(self)
+
         self.action = None
 
         self.curr_time = 0
@@ -39,10 +46,14 @@ class Hacker:
         self.total_reuse_pass_compromise = 0
         self.total_brute_force_compromise = 0
         self.total_blocked_by_mtd = 0
+        self.max_attack_attempts = constants.HACKER_ATTACK_ATTEMPT_MULTIPLER * network.get_total_nodes()
+        self.curr_attempts = 0
+        self.target_compromised = False
 
         self.logger = logging.getLogger(__name__)
 
         self.observed_changes = {}
+
 
     def swap_hosts_in_compromised_hosts(self, host_id, other_host_id):
         new_compromised_hosts = []
@@ -68,14 +79,19 @@ class Hacker:
         """
         Returns statistics for the simulation
         """
+        
         return {
             "Total Host Compromises" : len(self.compromised_hosts),
             "Total User Compromises" : len(self.compromised_users),
             "Total Vuln Compromises" : self.total_vuln_compromise,
+            "Total Attack Attempts" : self.curr_attempts,
             "Total Reuse Pass Compromises" : self.total_reuse_pass_compromise,
             "Total Password Spray Compromises" : self.total_brute_force_compromise,
             "Total Actions Blocked by MTD" : self.total_blocked_by_mtd,
-            "Compromised hosts" : self.compromised_hosts
+            "Target Node Compromised" : self.target_compromised,
+            "Compromised hosts" : self.compromised_hosts,
+            "Average Attempts Required to Compromise": self.attacks_required_per_compromise()[0],
+            "Number of Hosts Attacker has given up on": len(self.stop_attack)
         }
 
     def get_compromised(self):
@@ -83,6 +99,18 @@ class Hacker:
         Returns a list of compromised nodes
         """
         return self.compromised_hosts
+
+    def get_stop_attack(self):
+        """
+        Returns a list of compromised nodes
+        """
+        return self.stop_attack
+        
+    def get_attack_attempts(self):
+        """
+        Returns the number of attack attempts
+        """
+        return self.curr_attempts
 
     def log_host_result(self, reason):
         """
@@ -228,7 +256,7 @@ class Hacker:
         if not self.done:
             self.pivot_host_id = -1
             self.logger.info("SCANNING NETWORK FOR HOSTS")
-            self.action = self.network.scan(self.compromised_hosts)
+            self.action = self.network.scan(self.compromised_hosts, self.stop_attack)
             self.action.set_trigger_time(self.curr_time)
             self.action.set_complete_fn(
                 self.setup_host_enum
@@ -240,9 +268,14 @@ class Hacker:
 
         The order is sorted by distance from the exposed endpoints which is done
         in the function self.network.scan().
+
+        If the scan returns nothing from the scan, then the attacker will stop
         """
         self.host_stack = self.action.get_result()
-        self.start_host_enum()
+        if len(self.host_stack) > 0:
+            self.start_host_enum()
+        else:
+            self.done = True
 
     def start_scan_for_neighbors(self):
         """
@@ -271,7 +304,6 @@ class Hacker:
         """
         Starts enumerating each host by popping off the host id from the top of the host stack
 
-        TODO: Sort host_stack by distance from exposed endpoints AND previous compromised host
         """
         if len(self.host_stack) > 0:
             self.host_stack = self.network.sort_by_distance_from_exposed_and_pivot_host(
@@ -281,6 +313,23 @@ class Hacker:
             )
             self.curr_host_id = self.host_stack.pop(0)
             self.curr_host = self.network.get_host(self.curr_host_id)
+            # Sets node as unattackable if has been attack too many times
+            self.attack_counter[self.curr_host_id] += 1
+            if self.attack_counter[self.curr_host_id] == self.attack_threshold:
+                if self.curr_host_id != self.network.get_target_node():
+                    self.stop_attack.append(self.curr_host_id)
+            
+            # Checks if max attack attempts has been reached, empty stacks if reached
+            
+            if self.curr_attempts >= self.max_attack_attempts:
+                self.host_stack = []
+                self.done = True
+            
+            # Debugging attack attempts
+            if self.curr_attempts % 50 == 0:
+                print("Current attack attempts: ", self.curr_attempts)
+
+
             self.curr_ports = []
             self.curr_vulns = []
             hop_time = int(constants.HACKER_HOP_TIME*self.network.get_shortest_distance_from_exposed_or_pivot(
@@ -294,7 +343,7 @@ class Hacker:
             self.curr_time += hop_time
             self.set_next_pivot_host()
 
-            self.action = self.curr_host.is_compromised()
+            self.action = self.curr_host.is_compromised_action()
             self.action.set_trigger_time(self.curr_time)
             self.action.set_complete_fn(
                 self.check_already_compromised
@@ -302,11 +351,30 @@ class Hacker:
         else:
             self.start_network_enum()
 
+    def attacks_required_per_compromise(self):
+        """
+        Checks the amount of attempts required per compromise
+
+        Returns:
+            ave_attempts: Average number of attacks required to compromise a host
+            return_list: List of all compromised hosts and number of attempts required to compromise
+        """
+        
+        return_list = []
+        total_attempts = 0
+        i = 0
+        for host_id in self.compromised_hosts:
+            append_list = [self.compromised_hosts[i], self.attack_counter[host_id]]
+            i += 1
+            total_attempts += self.attack_counter[host_id]
+            return_list.append(append_list)
+        ave_attempts = total_attempts/len(self.compromised_hosts)
+        
+        return ave_attempts, return_list
+
     def check_already_compromised(self):
         """
         Checks if the Hacker has already compromised and backdoored the target host
-
-        NOTE: this function is deprecated but will be kept for now
         """
         already_compromised = self.action.get_result()
         self.debug_log("CHECK IF COMPROMISED")
@@ -343,6 +411,7 @@ class Hacker:
         self.action = self.curr_host.can_auto_compromise_with_users(
             self.compromised_users
         )
+        self.curr_attempts += 1
         self.action.set_trigger_time(self.curr_time)
         self.action.set_complete_fn(
             self.check_reuse_user_pass
@@ -389,6 +458,7 @@ class Hacker:
         Tries exploiting the vulnerabilities to compromise the host
         """
         self.action = self.curr_host.exploit_vulns(self.curr_vulns)
+        self.curr_attempts += len(self.curr_vulns)
         self.action.set_trigger_time(self.curr_time)
         self.action.set_complete_fn(
             self.check_exploit_host
@@ -421,6 +491,7 @@ class Hacker:
         self.action = self.curr_host.compromise_with_users(
             self.compromised_users
         )
+        self.curr_attempts += 1
         self.action.set_trigger_time(self.curr_time)
         self.action.set_complete_fn(
             self.check_brute_force
@@ -457,4 +528,10 @@ class Hacker:
             self.compromised_users = list(set(self.compromised_users + self.curr_host.get_compromised_users()))
             if self.network.is_compromised(self.compromised_hosts):
                 self.done = True
+            # If target network, set adversary as done once adversary has compromised target node 
+            if self.network.get_target_node() in self.compromised_hosts:    
+                if self.network.get_network_type() == 0:
+                    self.target_compromised = True
+                    self.done = True
+            
         

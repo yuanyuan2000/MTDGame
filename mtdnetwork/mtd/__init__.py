@@ -2,7 +2,7 @@ import random
 import networkx as nx
 import logging
 import mtdnetwork.host as host
-import mtdnetwork.network as network
+import mtdnetwork.targetnetwork as targetnetwork
 import mtdnetwork.constants as constants
 from mtdnetwork.scorer import MTDStatistics
 
