@@ -2,10 +2,17 @@
 Making alterations to MTDSim based on Wenxiao's Proposal:
 
 ### Setup
+
 This was all run on Python 3.9.13 64 Bit. In the root directory in terminal, run the following commands in your virtual environment to setup the environment:
- - python setup.py install
- - pip install -r requirements.txt
- - python -m mtdnetwork.run -m IPShuffle -n 50 -e 10 -s 5 -l 3  results.json
+ - Setup virtualenv
+   - python -m pip install virtualenv venv
+   - python -m virtualenv venv
+   - source venv/bin/activate
+ - Install dependencies
+   - python setup.py install
+   - pip install -r requirements.txt
+ - Run an example
+   - python -m mtdnetwork.run -m IPShuffle -n 50 -e 10 -s 5 -l 3  results.json
 
 The following is only an example of how the function can be made, reference the run.py file or use the –help command to understand the parameters.
 ### Architecture
