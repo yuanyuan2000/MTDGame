@@ -5,7 +5,6 @@ from mtd_event import mtd_trigger_action
 from mtdnetwork.hacker import Hacker
 from mtdnetwork.constants import ATTACKER_THRESHOLD
 from attack_event import host_scan_and_setup_host_enum
-import pandas as pd
 
 # Simulation time in seconds
 SIM_TIME = 1000

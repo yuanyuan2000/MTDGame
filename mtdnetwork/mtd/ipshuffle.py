@@ -5,7 +5,7 @@ class IPShuffle(MTD):
 
     def __init__(self, network):
         self.logger = logging.getLogger("mtd:ipshuffle")
-        super().__init__("IPShuffle", network, 'network', 40)
+        super().__init__(name="IPShuffle", network=network, resource='network', execution_time=40)
 
     def mtd_operation(self):
         self.logger.info("changing IP addresses of hosts")

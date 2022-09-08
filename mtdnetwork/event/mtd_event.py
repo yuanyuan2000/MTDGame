@@ -1,4 +1,3 @@
-import simpy
 import random
 from scipy.stats import norm
 from scipy.stats import expon
@@ -33,8 +32,6 @@ def mtd_execute_action(env, mtd_strategy, resource, mtd_operation_record):
     finish_time = env.now
     duration = env.now - start_time
     print('%s finished in %.1fs at %.1fs.' % (mtd_strategy.name, duration, finish_time))
-    # mtd_operation_record['finished'].append(deployed_time)
-    # mtd_operation_record['duration'].append(duration)
     mtd_operation_record.append({
         'name': mtd_strategy.name,
         'start_time': start_time,

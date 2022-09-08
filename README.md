@@ -1,18 +1,19 @@
-# MTDSim
-Making alterations to MTDSim based on Wenxiao's Proposal:
+# MTDSimTime
 
-### Setup
+Integrating the time domain into MTDSim based on my Research thesis:
 
-This was all run on Python 3.9.13 64 Bit. In the root directory in terminal, run the following commands in your virtual environment to setup the environment:
- - Setup virtualenv
-   - python -m pip install virtualenv venv
-   - python -m virtualenv venv
-   - source venv/bin/activate
- - Install dependencies
-   - python setup.py install
-   - pip install -r requirements.txt
- - Run an example
-   - python -m mtdnetwork.run -m IPShuffle -n 50 -e 10 -s 5 -l 3  results.json
+### Setup this project
+
+1. Install conda: https://conda.io/projects/conda/en/latest/user-guide/install/index.html
+2. Creating conda environment
+   - conda env create -f environment.yml
+3. Activating the environment
+   - conda activate mtdsimtime
+4. Updating the environment
+   - conda env update --name mtdsimtime --file environment.yml --prune
+
+
+
 
 The following is only an example of how the function can be made, reference the run.py file or use the –help command to understand the parameters.
 ### Architecture
@@ -25,3 +26,19 @@ The system uses the 3-layer HARM model to represent the network. This is a repre
 | Services        | An attack tree of vulnerabilities. A service is compromised when  the sum of the vulnerabilities exploited impact is above 7             |
 | Vulnerabilities | Generated with a set Attack Complexity and Impact                                                                                        |
 
+
+
+### Setup the previous works only
+
+This was all run on Python 3.9.13 64 Bit. In the root directory in terminal, run the following commands in your virtual environment to setup the environment:
+
+- Setup virtualenv
+   - python -m pip install virtualenv venv
+   - python -m virtualenv venv
+- Activate environemnt
+   - source venv/bin/activate
+- Install dependencies
+   - python setup.py install
+   - pip install -r requirements.txt
+- Run an example
+   - python batchrun.py
