@@ -7,9 +7,11 @@ import mtdnetwork.constants as constants
 from mtdnetwork.scorer import MTDStatistics
 
 class MTD:
-    def __init__(self, name, network):
+    def __init__(self, name, network, resource, execution_time):
         self.network = network
         self.name = name
+        self.resource = resource
+        self.execution_time = execution_time
         self.record = MTDStatistics(self.name)
 
     def mtd_operation(self):

@@ -1,13 +1,13 @@
 from mtdnetwork.mtd import *
 
+
 class HostTopologyShuffle(MTD):
     """
     Swaps hosts in the network.
     """
-
     def __init__(self, network):
         self.logger = logging.getLogger("mtd:hostshuffle")
-        super().__init__("HostTopologyShuffle", network)
+        super().__init__("HostTopologyShuffle", network, resource='network', execution_time=40)
 
     def random_different_host_id(self, curr_host_id, hosts_list):
         other_host_id = random.choice(hosts_list)
@@ -52,10 +52,10 @@ class HostTopologyShuffle(MTD):
             host_id_list_in_layer.remove(host_id)
             host_id_list_in_layer.remove(other_host_id)
 
-            hacker.swap_hosts_in_compromised_hosts(host_id, other_host_id)
-        
+            # hacker.swap_hosts_in_compromised_hosts(host_id, other_host_id)
+
         self.network.update_reachable_mtd()
-        
+
         # Update Attack Path Exposure for target networks
-        if (self.network.get_network_type() == 0):
+        if self.network.get_network_type() == 0:
             self.network.add_attack_path_exposure()

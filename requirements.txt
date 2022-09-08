@@ -84,3 +84,4 @@ wcwidth==0.2.5
 webencodings==0.5.1
 widgetsnbextension==3.5.1
 simpy==4.0.1
+plotly==5.10.0
