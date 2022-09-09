@@ -301,7 +301,7 @@ class ServicesGenerator:
             for os_version in constants.OS_VERSION_DICT[os_type]:
                 self.os_services[os_type][os_version] = {}
         
-        wordlist = ServicesGenerator.get_service_name_list()
+        wordlist = ServicesGenerator.get_service_name_list(self)
         types_of_os = len(constants.OS_TYPES)
         total_services = self.services_per_os * types_of_os
         self.service_names = random.choices(wordlist, k=total_services)

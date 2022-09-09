@@ -1,9 +1,9 @@
 import simpy
-from network.targetnetwork import Network as TargetNetwork
-from network.time_network import TimeNetwork
-from event.mtd_event import mtd_trigger_action
+from mtdnetwork.network.targetnetwork import Network as TargetNetwork
+from mtdnetwork.network.time_network import TimeNetwork
+from mtdnetwork.event.mtd_event import mtd_trigger_action
 from mtdnetwork.constants import ATTACKER_THRESHOLD
-from event.attack_event import Adversary
+from mtdnetwork.event.attack_event import Adversary
 
 # Simulation time in seconds
 SIM_TIME = 1000
@@ -29,9 +29,6 @@ def run_sim():
     # initialise network to perform MTD strategies
     time_network = create_network()
 
-    # initialise adversary
-    # hacker = Hacker(time_network, ATTACKER_THRESHOLD)
-
     # set up event execution environment
     env = simpy.Environment()
     al_resource = simpy.Resource(env, AL_CAPACITY)
@@ -41,7 +38,7 @@ def run_sim():
     mtd_operation_record = []
     attack_operation_record = []
 
-    # triggering attack events
+    # triggering adversary
     adversary = Adversary(env=env, network=time_network, attack_threshold=ATTACKER_THRESHOLD,
                           attack_operation_record=attack_operation_record)
 
