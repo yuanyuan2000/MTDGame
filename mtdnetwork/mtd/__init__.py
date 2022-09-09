@@ -1,10 +1,8 @@
-import random
-import networkx as nx
+from mtdnetwork.irrelevant_stuff.scorer import MTDStatistics
 import logging
-import mtdnetwork.host as host
-import mtdnetwork.targetnetwork as targetnetwork
-import mtdnetwork.constants as constants
-from mtdnetwork.scorer import MTDStatistics
+import random
+from mtdnetwork.network import host, services
+
 
 class MTD:
     def __init__(self, name, network, resource, execution_time):

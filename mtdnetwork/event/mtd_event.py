@@ -32,7 +32,7 @@ def mtd_trigger_action(env, network, al_resource, nl_resource, adversary, mtd_op
         if mtd_strategy.resource == 'network':
             execute_or_suspend(env, mtd_strategy, network, nl_resource, adversary, mtd_operation_record)
         elif mtd_strategy.resource == 'application':
-            execute_or_suspend(env, mtd_strategy, network, al_resource, mtd_operation_record)
+            execute_or_suspend(env, mtd_strategy, network, al_resource,adversary, mtd_operation_record)
 
 
 def execute_or_suspend(env, mtd_strategy, network, resource, adversary, mtd_operation_record):
@@ -67,19 +67,19 @@ def mtd_execute_action(env, mtd_strategy, resource, adversary, mtd_operation_rec
 
     yield env.timeout(execution_time)
     # interrupt adversary attack process
-    if mtd_strategy.resource == 'network':
-        if adversary.port_scan_process is not None:
-            # interrupt port scan
-            adversary.port_scan_process.interrupt()
-            print('Port scan has been interrupted!')
-        elif adversary.exploit_vulnerabilities_process is not None:
-            # interrupt exploit vulnerabilities
-            adversary.exploit_vulnerabilities_process.interrupt()
-            print('Exploit vulnerabilities has been interrupted!')
-        elif adversary.brute_force_process is not None:
-            # interrupt brute force
-            adversary.brute_force_process.interrupt()
-            print('Brute force has been interrupted!')
+    # if mtd_strategy.resource == 'network':
+    #     if adversary.port_scan_process is not None:
+    #         # interrupt port scan
+    #         adversary.port_scan_process.interrupt()
+    #         print('Port scan has been interrupted!')
+    #     elif adversary.exploit_vulnerabilities_process is not None:
+    #         # interrupt exploit vulnerabilities
+    #         adversary.exploit_vulnerabilities_process.interrupt()
+    #         print('Exploit vulnerabilities has been interrupted!')
+    #     elif adversary.brute_force_process is not None:
+    #         # interrupt brute force
+    #         adversary.brute_force_process.interrupt()
+    #         print('Brute force has been interrupted!')
         # elif adversary.
 
     finish_time = env.now

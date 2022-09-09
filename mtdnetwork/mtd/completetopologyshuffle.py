@@ -1,5 +1,6 @@
 from mtdnetwork.mtd import *
 
+
 class CompleteTopologyShuffle(MTD):
     """
     Completely regenerates the network, preserving the hosts from previously.

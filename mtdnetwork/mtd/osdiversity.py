@@ -1,9 +1,10 @@
 from mtdnetwork.mtd import *
+from mtdnetwork import constants
 
 class OSDiversity(MTD):
     def __init__(self, network):
         self.logger = logging.getLogger("mtd:osdiversity")
-        super().__init__("osdiversity", network) 
+        super().__init__("osdiversity", network)
 
     def mtd_operation(self):
         self.logger.info("changing os on hosts")
@@ -24,11 +25,11 @@ class OSDiversity(MTD):
             for node_id in range(host_instance.total_nodes):
                 if node_id == host_instance.target_node:
                     continue
-                
+
                 curr_service = host_instance.graph.nodes[node_id]["service"]
                 if not service_generator.service_is_compatible_with_os(new_os, new_os_version, curr_service):
                     host_instance.graph.nodes[node_id]["service"] = service_generator.get_random_service_latest_version(
-                        host_instance.os_type, 
+                        host_instance.os_type,
                         host_instance.os_version
                     )
         # Update Attack Path Exposure for target networks

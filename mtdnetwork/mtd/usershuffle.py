@@ -1,5 +1,6 @@
 from mtdnetwork.mtd import *
 
+
 class UserShuffle(MTD):
     def __init__(self, network):
         self.logger = logging.getLogger("mtd:usershuffle")
@@ -12,7 +13,7 @@ class UserShuffle(MTD):
         for host_instance in hosts.values():
             host_instance.set_host_users(
                 random.choices(
-                    self.network.users_list, 
+                    self.network.users_list,
                     k=self.network.users_per_host
                 )
             )

@@ -1,9 +1,7 @@
-import logging
-
 import simpy
 
 import mtdnetwork.constants as constants
-from mtdnetwork.hacker import Hacker
+from mtdnetwork.network.hacker import Hacker
 import random
 from scipy.stats import expon
 
@@ -176,7 +174,7 @@ class Adversary(Hacker):
         self.curr_attempts += len(self.curr_vulns)
 
         for vuln in self.curr_vulns:
-            vuln.exploit(host=self.curr_host)
+            vuln.network(host=self.curr_host)
         services = self.curr_host.get_services(just_exploited=True)
         for service_id in services:
             if not service_id in self.curr_host.compromised_services:

@@ -1,5 +1,6 @@
 from mtdnetwork.mtd import *
 
+
 class ServiceDiversity(MTD):
     def __init__(self, network, shuffles=50):
         self.logger = logging.getLogger("mtd:serviceDiversity")
@@ -18,7 +19,7 @@ class ServiceDiversity(MTD):
                 if node_id == host_instance.target_node:
                     continue
                 host_instance.graph.nodes[node_id]["service"] = service_generator.get_random_service_latest_version(
-                    host_instance.os_type, 
+                    host_instance.os_type,
                     host_instance.os_version
                 )
         # Update Attack Path Exposure for target networks

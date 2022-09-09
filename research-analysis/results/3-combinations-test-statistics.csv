@@ -1,5 +1,0 @@
-"\textbf{MTD ($M = \{m_1, m_2, m_3\}$)}",$m_1$,$Z_{ m_1 }$,"\textbf{Reject $H_{ 0,m_1 }$}",$m_2$,$Z_{ m_2 }$,"\textbf{Reject $H_{ 0,m_2 }$}",$m_3$,$Z_{ m_3 }$,"\textbf{Reject $H_{ 0,m_3 }$}",Closest Matching MTD
-"CompleteTopologyShuffle,IPShuffle,PortShuffle",\textit{IPShuffle},21.37,False,\textit{PortShuffle},9.04,False,\textit{CompleteTopologyShuffle},-2.18,True,\textbf{\textit{CompleteTopologyShuffle}}
-"IPShuffle,PortShuffle,ServiceShuffle",\textit{IPShuffle},19.49,False,\textit{PortShuffle},7.76,False,\textit{ServiceShuffle},-6.24,False,\textbf{\textit{ServiceShuffle}}
-"HostTopologyShuffle,IPShuffle,PortShuffle",\textit{IPShuffle},24.55,False,\textit{PortShuffle},13.22,False,\textit{HostTopologyShuffle},-7.88,False,\textbf{\textit{HostTopologyShuffle}}
-"IPShuffle,OSShuffle,PortShuffle",\textit{IPShuffle},11.58,False,\textit{PortShuffle},5.16,False,\textit{OSShuffle},-6.0,False,\textbf{\textit{PortShuffle}}
