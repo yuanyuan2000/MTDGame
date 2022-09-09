@@ -18,7 +18,13 @@ Integrating the time domain into MTDSim based on my research thesis:
 
 ### Setup the previous works only
 
-switch to another branch (MTDSim / New-Attack-Method).
+switch to another branch (MTDSim / New-Attack-Method) or go directly to:
+
+https://github.com/Ccamm/MTDSim
+
+https://github.com/tzewenlee99/MTDSimTze
+
+
 
 This was all run on Python 3.9.13 64 Bit. In the root directory in terminal, run the following commands in your virtual environment to setup the environment:
 

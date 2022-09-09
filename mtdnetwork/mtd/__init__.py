@@ -5,10 +5,10 @@ from mtdnetwork.network import host, services
 
 
 class MTD:
-    def __init__(self, name, network, resource, execution_time):
+    def __init__(self, name, network, resource_type, execution_time):
         self.network = network
         self.name = name
-        self.resource = resource
+        self.resource_type = resource_type
         self.execution_time = execution_time
         self.record = MTDStatistics(self.name)
 
