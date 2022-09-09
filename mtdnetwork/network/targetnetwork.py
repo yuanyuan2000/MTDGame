@@ -560,7 +560,7 @@ class Network:
         """
         ip_addresses = []
         for host_id in self.nodes:
-            node_os = Host.get_random_os()
+            node_os = Host.get_random_os(self)
             node_os_version = Host.get_random_os_version(node_os)
             node_ip = Host.get_random_address(existing_addresses=ip_addresses)
             ip_addresses.append(node_ip)
