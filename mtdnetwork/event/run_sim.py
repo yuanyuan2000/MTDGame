@@ -4,7 +4,7 @@ from time_network import TimeNetwork
 from mtd_event import mtd_trigger_action
 from mtdnetwork.hacker import Hacker
 from mtdnetwork.constants import ATTACKER_THRESHOLD
-from attack_event import host_scan_and_setup_host_enum
+from attack_event import Adversary
 
 # Simulation time in seconds
 SIM_TIME = 1000
@@ -31,7 +31,7 @@ def run_sim():
     time_network = create_network()
 
     # initialise adversary
-    hacker = Hacker(time_network, ATTACKER_THRESHOLD)
+    # hacker = Hacker(time_network, ATTACKER_THRESHOLD)
 
     # set up event execution environment
     env = simpy.Environment()
@@ -41,11 +41,14 @@ def run_sim():
     # set up dataframe for collecting event data
     mtd_operation_record = []
     attack_operation_record = []
-    # triggering mtd events
-    env.process(mtd_trigger_action(env, time_network, al_resource, nl_resource, mtd_operation_record))
 
     # triggering attack events
-    env.process(host_scan_and_setup_host_enum(hacker, env, attack_operation_record))
+    adversary = Adversary(env=env, network=time_network, attack_threshold=ATTACKER_THRESHOLD,
+                          attack_operation_record=attack_operation_record)
+
+    # triggering mtd events
+    env.process(mtd_trigger_action(env=env, network=time_network, al_resource=al_resource, nl_resource=nl_resource,
+                                   adversary=adversary, mtd_operation_record=mtd_operation_record))
 
     # Execute!
     env.run(until=SIM_TIME)

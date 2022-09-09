@@ -8,4 +8,7 @@
 
 ## Attack event:
 
- - Trigger Attack: 
+ - Trigger Attack: host_scan_and_setup_host_enum
+ - Port scan: start_and_process_port_scan
+ - Exploit vulnerabilities: find_and_exploit_vulns
+ - Brute force: brute_force_users_login
