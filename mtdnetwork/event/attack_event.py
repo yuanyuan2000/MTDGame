@@ -5,26 +5,24 @@ from mtdnetwork.network.hacker import Hacker
 import random
 from scipy.stats import expon
 
-HOST_SCAN = 0.01
-HOST_ENUM = 0.01
-CHECK_COMPROMISE = 0.01
-CHECK_CREDENTIAL_REUSE = 0.01
-SCAN_NEIGHBOUR = 0.01
+HOST_SCAN = 5
+HOST_ENUM = 5
+SCAN_NEIGHBOUR = 0
 PORT_SCAN = 10
 EXPLOIT_VULNERABILITIES = 30
 BRUTE_FORCE = 20
+PENALTY = 2
 
 
 class Adversary(Hacker):
     def __init__(self, env, network, attack_threshold, attack_operation_record):
         super().__init__(network, attack_threshold)
-        self.interrupted_by = None
+        self.interrupted_by = ''
+        self.interrupted_in = ''
         self.attack_operation_record = attack_operation_record
         self.env = env
         self.attack_process = env.process(self.host_scan_and_setup_host_enum(env, attack_operation_record))
         self.curr_process = 'host_scan'
-
-        # env.process(self.interrupt_attack())
 
     def host_scan_and_setup_host_enum(self, env, attack_operation_record):
         """
@@ -37,9 +35,21 @@ class Adversary(Hacker):
 
         If the scan returns nothing from the scan, then the attacker will stop
         """
+
+        start_time = env.now
+        try:
+            print("Adversary: Start Host Scan at %.1fs." % start_time)
+            yield env.timeout(HOST_SCAN)
+        except simpy.Interrupt:
+            env.process(self.handling_interruption(env, start_time, 'HostScan', attack_operation_record))
+            return
+        finish_time = env.now
+        print("Adversary: Processed host scan at %.1fs." % finish_time)
+        self.handle_attack_operation_record(attack_operation_record, 'HostScan', start_time, finish_time)
+
         self.pivot_host_id = -1
         self.host_stack = self.network.host_scan(self.compromised_hosts, self.stop_attack)
-        yield env.timeout(HOST_SCAN)
+
         # print("Adversary: Processed host scan at %.1fs." % env.now)
         if len(self.host_stack) > 0:
             self.attack_process = env.process(self.start_host_enumeration(env, attack_operation_record))
@@ -51,7 +61,19 @@ class Adversary(Hacker):
         """
         Starts enumerating each host by popping off the host id from the top of the host stack
         time for host hopping required
+        Checks if the Hacker has already compromised and backdoored the target host
         """
+        start_time = env.now
+        try:
+            print("Adversary: Start Host Enum at %.1fs." % start_time)
+            yield env.timeout(HOST_ENUM)
+        except simpy.Interrupt:
+            env.process(self.handling_interruption(env, start_time, 'HostEnum', attack_operation_record))
+            return
+        finish_time = env.now
+        print("Adversary: Processed host enum at %.1fs." % finish_time)
+        self.handle_attack_operation_record(attack_operation_record, 'HostEnum', start_time, finish_time)
+
         if len(self.host_stack) > 0:
             self.host_stack = self.network.sort_by_distance_from_exposed_and_pivot_host(
                 self.host_stack,
@@ -77,74 +99,48 @@ class Adversary(Hacker):
             self.curr_ports = []
             self.curr_vulns = []
             self.set_next_pivot_host()
-            yield env.timeout(HOST_ENUM)
             # print("Adversary: Processed host enum at %.1fs." % env.now)
-            self.attack_process = env.process(self.check_host_already_compromised(env, attack_operation_record))
-            self.curr_process = 'check_compromise'
+            already_compromised = self.curr_host.compromised
+            if already_compromised:
+                self.update_progress_state_info(env.now)
+                self.pivot_host_id = self.curr_host_id
+                self.attack_process = env.process(self.start_host_enumeration(env, attack_operation_record))
+                self.curr_process = 'host_enum'
+            else:
+                # Attack event triggered
+                self.attack_process = env.process(self.start_and_process_port_scan(env, attack_operation_record))
+                self.curr_process = 'port_scan'
         else:
             self.attack_process = env.process(self.host_scan_and_setup_host_enum(env, attack_operation_record))
             self.curr_process = 'host_scan'
 
-    def check_host_already_compromised(self, env, attack_operation_record):
-        """
-        Checks if the Hacker has already compromised and backdoored the target host
-        """
-        already_compromised = self.curr_host.is_compromised()
-        yield env.timeout(CHECK_COMPROMISE)
-        # print("Adversary: Processed check compromise at %.1fs." % env.now)
-        if already_compromised:
-            # update_progress_state_info(self, env)
-            # self.pivot_host_id = self.curr_host_id
-            self.attack_process = env.process(self.start_host_enumeration(env, attack_operation_record))
-            self.curr_process = 'host_enum'
-        else:
-            # Attack event triggered
-            self.attack_process = env.process(self.start_and_process_port_scan(env, attack_operation_record))
-            self.curr_process = 'port_scan'
-
     def start_and_process_port_scan(self, env, attack_operation_record):
         """
         Starts a port scan on the target host
+        Checks if a compromised user has reused their credentials on the target host
         Phase 1
         """
+        start_time = env.now
         try:
-            start_time = env.now
-            print("Adversary: Start port scan at %.1fs." % env.now)
-            self.curr_host.port_scan()
+            print("Adversary: Start port scan at %.1fs." % start_time)
             yield env.timeout(PORT_SCAN)
-            print("Adversary: Processed port scan at %.1fs." % env.now)
-            finish_time = env.now
-            duration = env.now - start_time
-            attack_operation_record.append({
-                'name': 'PortScan',
-                'start_time': start_time,
-                'finish_time': finish_time,
-                'duration': duration
-            })
         except simpy.Interrupt:
-            self.handling_interruption(env, attack_operation_record)
+            env.process(self.handling_interruption(env, start_time, 'PortScan', attack_operation_record))
             return
-        self.attack_process = env.process(self.start_credential_reuse_check(env, attack_operation_record))
-        self.curr_process = 'check_credential'
+        finish_time = env.now
+        print("Adversary: Processed port scan at %.1fs." % finish_time)
+        self.handle_attack_operation_record(attack_operation_record, 'PortScan', start_time, finish_time)
 
-    def start_credential_reuse_check(self, env, attack_operation_record):
-        """
-        Checks if a compromised user has reused their credentials on the target host
-        """
-        yield env.timeout(CHECK_CREDENTIAL_REUSE)
-        # print("Adversary: Processed credential reuse check at %.1fs." % env.now)
-        if self.curr_host.possible_user_compromise():
-            c_reused_comp = True in [reused_pass for (username, reused_pass) in self.curr_host.users.items() if
-                                     username
-                                     in self.compromised_users]
-            if c_reused_comp:
-                self.log_host_result("USER REUSED PASS COMPROMISE")
-                # update_progress_state_info(self, env)
-                self.pivot_host_id = self.curr_host_id
-                self.total_reuse_pass_compromise += 1
-                # self.scorer.add_host_reuse_pass_compromise(self.curr_time, self.curr_host)
-                self.attack_process = env.process(self.scan_and_setup_new_neighbors(env, attack_operation_record))
-                self.curr_process = 'neighbor_scan'
+        self.curr_ports = self.curr_host.port_scan()
+        user_reuse = self.curr_host.can_auto_compromise_with_users(self.compromised_users)
+        if user_reuse:
+            self.update_progress_state_info(env.now)
+            self.pivot_host_id = self.curr_host_id
+            self.total_reuse_pass_compromise += 1
+            # self.scorer.add_host_reuse_pass_compromise(self.curr_time, self.curr_host)
+            self.attack_process = env.process(self.scan_and_setup_new_neighbors(env, attack_operation_record))
+            self.curr_process = 'neighbor_scan'
+            return
 
         self.attack_process = env.process(self.find_and_exploit_vulns(env, attack_operation_record))
         self.curr_process = 'vulnerability_exploit'
@@ -156,58 +152,28 @@ class Adversary(Hacker):
         Checks if the adversary was able to successfully compromise the host
         Phase 2
         """
+        start_time = env.now
         try:
-            start_time = env.now
-            print("Adversary: Start vulnerability exploitation at %.1fs." % env.now)
-            services_dict = self.curr_host.get_services_from_ports(self.curr_ports, [])
-            vulns = []
-            discovery_time = 0
-            for service_dict in services_dict:
-                service = service_dict["service"]
-                vulns = vulns + service.get_vulns(roa_threshold=0)
-                discovery_time += service.discover_vuln_time(roa_threshold=0)
-            new_vulns = []
-            for vuln in vulns:
-                if vuln.has_dependent_vulns:
-                    if vuln.can_exploit_with_dependent_vuln(vulns):
-                        new_vulns.append(vuln)
-                else:
-                    new_vulns.append(vuln)
-
-            self.curr_vulns = new_vulns
-            self.curr_attempts += len(self.curr_vulns)
-
-            for vuln in self.curr_vulns:
-                vuln.network(host=self.curr_host)
-            services = self.curr_host.get_services(just_exploited=True)
-            for service_id in services:
-                if not service_id in self.curr_host.compromised_services:
-                    self.curr_host.compromised_services.append(service_id)
-                    self.curr_host.colour_map[service_id] = "red"
-                if self.curr_host.target_node in list(self.curr_host.graph.neighbors(service_id)):
-                    self.curr_host.set_compromised()
-            is_exploited = self.curr_host.compromised
+            print("Adversary: Start vulnerability exploitation at %.1fs." % start_time)
             exploit_time = expon.rvs(scale=EXPLOIT_VULNERABILITIES, size=1)[0]
             yield env.timeout(exploit_time)
-            print('Adversary: Processed vulnerabilities exploitation at %.1fs' % env.now)
-            finish_time = env.now
-            duration = env.now - start_time
-            attack_operation_record.append({
-                'name': 'VulnerabilitiesExploit',
-                'start_time': start_time,
-                'finish_time': finish_time,
-                'duration': duration
-            })
         except simpy.Interrupt:
-            self.handling_interruption(env, attack_operation_record)
+            env.process(self.handling_interruption(env, start_time, 'VulnerabilitiesExploit', attack_operation_record))
             return
+        print('Adversary: Processed vulnerabilities exploitation at %.1fs' % env.now)
+        finish_time = env.now
+        self.handle_attack_operation_record(attack_operation_record,
+                                            'VulnerabilityExploitation', start_time, finish_time)
+        self.curr_vulns = self.curr_host.get_vulns(self.curr_ports)
+        is_exploited = self.curr_host.exploit_vulns(self.curr_vulns)
+        self.curr_attempts += len(self.curr_vulns)
+
         for vuln in self.curr_vulns:
             if vuln.is_exploited():
                 # self.scorer.add_vuln_compromise(self.curr_time, vuln)
                 pass
         if is_exploited:
-            print('Adversary: VULNERABILITY COMPROMISE AT %.1fs.' % env.now)
-            # update_progress_state_info(self, env)
+            self.update_progress_state_info(env.now)
             self.pivot_host_id = self.curr_host_id
             self.total_vuln_compromise += 1
             # self.scorer.add_host_vuln_compromise(self.curr_time, self.curr_host)
@@ -223,30 +189,22 @@ class Adversary(Hacker):
         Checks if credentials for a user account has been successfully compromised.
         Phase 3
         """
-        self.curr_attempts += 1
-        attempt_users = [username for username in self.curr_host.users.keys() if
-                         username in self.compromised_users]
+        start_time = env.now
         try:
-            start_time = env.now
-            print("Adversary: Start brute force at %.1fs." % env.now)
+            print("Adversary: Start brute force at %.1fs." % start_time)
             yield env.timeout(BRUTE_FORCE)
-            print('Adversary: Processed brute force user at %.1fs.' % env.now)
-            finish_time = env.now
-            duration = env.now - start_time
-            attack_operation_record.append({
-                'name': 'BruteForce',
-                'start_time': start_time,
-                'finish_time': finish_time,
-                'duration': duration
-            })
         except simpy.Interrupt:
-            self.handling_interruption(env, attack_operation_record)
+            env.process(self.handling_interruption(env, start_time, 'BruteForce', attack_operation_record))
             return
-        if random.random() < constants.HOST_MAX_PROB_FOR_USER_COMPROMISE * len(
-                attempt_users) / self.curr_host.total_users:
+        finish_time = env.now
+        print('Adversary: Processed brute force user at %.1fs.' % finish_time)
+        self.handle_attack_operation_record(attack_operation_record,
+                                            'BruteForce', start_time, finish_time)
+
+        brute_force_result = self.curr_host.compromise_with_users(self.compromised_users)
+        if brute_force_result:
             print('Adversary: BRUTE FORCE SUCCESS AT %.1fs.' % env.now)
-            self.curr_host.set_compromised()
-            # update_progress_state_info(self, env)
+            self.update_progress_state_info(env.now)
             self.pivot_host_id = self.curr_host_id
             self.total_brute_force_compromise += 1
             # self.scorer.add_host_pass_spray_compromise(self.curr_time, self.curr_host)
@@ -261,52 +219,67 @@ class Adversary(Hacker):
         Starts scanning for neighbors from a host that the hacker can pivot to
         Puts the new neighbors discovered to the start of the host stack.
         """
-
-        found_neighbors = list(self.curr_host.network.graph.neighbors(self.curr_host.host_id))
+        yield env.timeout(SCAN_NEIGHBOUR)
+        # print('Adversary: Processed scan neighbour at %.1f.' % env.now)
+        found_neighbors = self.curr_host.discover_neighbors()
         new_host_stack = found_neighbors + [
             node_id
             for node_id in self.host_stack
             if not node_id in found_neighbors
         ]
         self.host_stack = new_host_stack
-        yield env.timeout(SCAN_NEIGHBOUR)
-        # print('Adversary: Processed scan neighbour at %.1f.' % env.now)
         self.attack_process = env.process(self.start_host_enumeration(env, attack_operation_record))
         self.curr_process = 'host_enum'
 
-    def handling_interruption(self, env, attack_operation_record):
-        if self.interrupted_by == 'network':
+    def handling_interruption(self, env, start_time, name, attack_operation_record):
+        self.handle_attack_operation_record(attack_operation_record, name, start_time, env.now)
+
+        # confusion penalty caused by MTD operation
+        yield env.timeout(PENALTY)
+
+        if self.interrupted_in == 'Network Layer' or self.curr_process == 'host_enum' or self.curr_process == 'host_scan':
+            self.interrupted_in = ''
+            self.interrupted_by = ''
             print('Adversary: Restarting with host scan operation!')
             self.attack_process = env.process(self.host_scan_and_setup_host_enum(env, attack_operation_record))
             self.curr_process = 'host_scan'
-        elif self.interrupted_by == 'application':
+        elif self.interrupted_in == 'Application Layer':
+            self.interrupted_in = ''
+            self.interrupted_by = ''
             print('Adversary: Restarting with port scan operation!')
             self.attack_process = env.process(self.start_and_process_port_scan(env, attack_operation_record))
             self.curr_process = 'port_scan'
 
-    # def interrupt_attack(self):
-    #     while True:
-    #         if self.done:
-    #             self.process.interrupt()
-    #
-    # def update_progress_state_info(self, env):
-    #     """
-    #     Updates the Hackers progress state when it compromises a host.
-    #     """
-    #
-    #     if not self.curr_host_id in self.compromised_hosts:
-    #         self.compromised_hosts.append(self.curr_host_id)
-    #         print("Adversary: This host has been compromised at %.1f: " % env.now, self.curr_host_id)
-    #         self.network.update_reachable_compromise(self.curr_host_id, self.compromised_hosts)
-    #         for user in self.curr_host.get_compromised_users():
-    #             if not user in self.compromised_users:
-    #                 # self.scorer.add_user_account_leak(self.curr_time, user)
-    #                 pass
-    #         self.compromised_users = list(set(self.compromised_users + self.curr_host.get_compromised_users()))
-    #         if self.network.is_compromised(self.compromised_hosts):
-    #             return
-    #         # If target network, set adversary as done once adversary has compromised target node
-    #         if self.network.get_target_node() in self.compromised_hosts:
-    #             if self.network.get_network_type() == 0:
-    #                 self.target_compromised = True
-    #                 return
+    def handle_attack_operation_record(self, attack_operation_record, name, start_time, finish_time):
+
+        duration = finish_time - start_time
+        attack_operation_record.append({
+            'name': name,
+            'start_time': start_time,
+            'finish_time': finish_time,
+            'duration': duration,
+            'interrupted_in': self.interrupted_in,
+            'interrupted_by': self.interrupted_by
+        })
+        return attack_operation_record
+
+    def update_progress_state_info(self, compromised_time):
+        """
+        Updates the Hackers progress state when it compromises a host.
+        """
+        if self.curr_host_id not in self.compromised_hosts:
+            self.compromised_hosts.append(self.curr_host_id)
+            print("Adversary: Host %i has been compromised at %.1fs!: " % (self.curr_host_id, compromised_time))
+            self.network.update_reachable_compromise(self.curr_host_id, self.compromised_hosts)
+            for user in self.curr_host.get_compromised_users():
+                if user not in self.compromised_users:
+                    # self.scorer.add_user_account_leak(self.curr_time, user)
+                    pass
+            self.compromised_users = list(set(self.compromised_users + self.curr_host.get_compromised_users()))
+            if self.network.is_compromised(self.compromised_hosts):
+                return
+            # If target network, set adversary as done once adversary has compromised target node
+            # if self.network.get_target_node() in self.compromised_hosts:
+            #     if self.network.get_network_type() == 0:
+            #         self.target_compromised = True
+            #         return

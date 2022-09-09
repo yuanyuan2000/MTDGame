@@ -1,9 +1,12 @@
 import random
 from scipy.stats import norm
 from scipy.stats import expon
+from mtdnetwork.mtd.completetopologyshuffle import CompleteTopologyShuffle
 from mtdnetwork.mtd.ipshuffle import IPShuffle
 from mtdnetwork.mtd.hosttopologyshuffle import HostTopologyShuffle
 from mtdnetwork.mtd.portshuffle import PortShuffle
+from mtdnetwork.mtd.osdiversity import OSDiversity
+from mtdnetwork.mtd.servicediversity import ServiceDiversity
 
 # parameters for mtd triggering
 MTD_TRIGGER_MEAN = 30
@@ -11,7 +14,8 @@ MTD_TRIGGER_MEAN = 30
 # parameters for capacity of application layer and network layer
 AL_CAPACITY = 1
 NL_CAPACITY = 1
-MTD_STRATEGIES = [IPShuffle, HostTopologyShuffle, PortShuffle]
+MTD_STRATEGIES = [CompleteTopologyShuffle, IPShuffle, HostTopologyShuffle,
+                  PortShuffle, OSDiversity, ServiceDiversity]
 
 
 def mtd_trigger_action(env, network, al_resource, nl_resource, adversary, mtd_operation_record):
@@ -80,11 +84,11 @@ def mtd_execute_action(env, mtd_strategy, resource, adversary, mtd_operation_rec
     resource.release(occupied_resource)
 
     # interrupt adversary attack process
-    if mtd_strategy.resource_type == 'network':
-        adversary.interrupted_by = 'network'
-        if adversary.attack_process is not None and adversary.attack_process.is_alive:
-            # interrupt port scan
-            adversary.attack_process.interrupt()
-            print('MTD: Interrupted %s at %.1fs!' % (adversary.curr_process, env.now))
+    if adversary.attack_process is not None and adversary.attack_process.is_alive:
+        adversary.interrupted_in = 'Network Layer' if mtd_strategy.resource_type == 'network' else 'Application Layer'
+        adversary.interrupted_by = mtd_strategy.name
+        adversary.attack_process.interrupt()
+        print('MTD: Interrupted %s at %.1fs!' % (adversary.curr_process, env.now))
+
 
         # elif adversary.
