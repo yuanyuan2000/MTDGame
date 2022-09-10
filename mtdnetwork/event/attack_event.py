@@ -258,6 +258,9 @@ class Adversary(Hacker):
             'duration': duration,
             'interrupted_in': self.interrupted_in,
             'interrupted_by': self.interrupted_by,
+            'current_host': self.curr_host_id,
+            'current_host_attempt': self.attack_counter[self.curr_host_id],
+            'current_total_attempt': self.curr_attempts,
             'compromise_host': ''
         })
 
