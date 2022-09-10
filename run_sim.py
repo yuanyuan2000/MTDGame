@@ -6,7 +6,7 @@ from mtdnetwork.constants import ATTACKER_THRESHOLD
 from mtdnetwork.event.attack_event import Adversary
 
 # Simulation time in seconds
-SIM_TIME = 1000
+SIM_TIME = 10000
 # parameters for network layer capacity and application layer capacity
 NL_CAPACITY = 1
 AL_CAPACITY = 1
@@ -33,22 +33,17 @@ def run_sim():
     # initialise network to perform MTD strategies
     time_network = create_network(env)
 
-    # set up dataframe for collecting event data
-    mtd_operation_record = []
-    attack_operation_record = []
-
     # triggering adversary
-    adversary = Adversary(env=env, network=time_network, attack_threshold=ATTACKER_THRESHOLD,
-                          attack_operation_record=attack_operation_record)
+    adversary = Adversary(env=env, network=time_network, attack_threshold=ATTACKER_THRESHOLD)
 
     # triggering mtd events
     env.process(mtd_trigger_action(env=env, network=time_network,
-                                   adversary=adversary, mtd_operation_record=mtd_operation_record))
+                                   adversary=adversary))
 
     # Execute!
     env.run(until=SIM_TIME)
 
-    return mtd_operation_record, attack_operation_record
+    return time_network.mtd_stats, adversary.attack_stats
 
 
 if __name__ == "__main__":

@@ -18,7 +18,7 @@ MTD_STRATEGIES = [CompleteTopologyShuffle, IPShuffle, HostTopologyShuffle,
                   PortShuffle, OSDiversity, ServiceDiversity, UserShuffle]
 
 
-def mtd_trigger_action(env, network, adversary, mtd_operation_record):
+def mtd_trigger_action(env, network, adversary):
     """
     trigger an MTD strategy in a given exponential time (next_mtd)
 
@@ -36,15 +36,15 @@ def mtd_trigger_action(env, network, adversary, mtd_operation_record):
         mtd_strategy = network.trigger_mtd()
         print('MTD: %s triggered %.1fs' % (mtd_strategy.name, env.now))
         if mtd_strategy.resource is None or len(mtd_strategy.resource.users) == 0:
-            env.process(mtd_execute_action(env, mtd_strategy, adversary, mtd_operation_record))
+            env.process(mtd_execute_action(env, mtd_strategy, network, adversary))
         else:
             # suspend
-            network.suspended_queue.append(mtd_strategy)
+            network.suspend_mtd(mtd_strategy)
             print('MTD: %s suspended at %.1fs due to resource occupation' % (mtd_strategy.name, env.now))
             # discard todo
 
 
-def mtd_execute_action(env, mtd_strategy, adversary, mtd_operation_record):
+def mtd_execute_action(env, mtd_strategy, network, adversary):
     """
     Action for executing MTD
     """
@@ -59,18 +59,20 @@ def mtd_execute_action(env, mtd_strategy, adversary, mtd_operation_record):
     finish_time = env.now
     duration = env.now - start_time
     print('MTD: %s finished in %.1fs at %.1fs.' % (mtd_strategy.name, duration, finish_time))
-    mtd_operation_record.append({
-        'name': mtd_strategy.name,
-        'start_time': start_time,
-        'finish_time': finish_time,
-        'duration': duration
-    })
+    # append execution records
+    network.mtd_stats.append_mtd_operation_record(mtd_strategy, start_time, finish_time, duration)
     # release resource
     mtd_strategy.resource.release(occupied_resource)
 
     # interrupt adversary attack process
     if adversary.attack_process is not None and adversary.attack_process.is_alive:
-        adversary.interrupted_in = 'Network Layer' if mtd_strategy.resource_type == 'network' else 'Application Layer'
-        adversary.interrupted_by = mtd_strategy.name
-        adversary.attack_process.interrupt()
-        print('MTD: Interrupted %s at %.1fs!' % (adversary.curr_process, env.now))
+        if mtd_strategy.resource_type == 'network':
+            adversary.interrupted_mtd = mtd_strategy
+            adversary.attack_process.interrupt()
+            print('MTD: Interrupted %s at %.1fs!' % (adversary.curr_process, env.now))
+            network.mtd_stats.total_attack_interrupted += 1
+        elif mtd_strategy.resource_type == 'application' and adversary.curr_process not in ['host_scan', 'host_enum']:
+            adversary.interrupted_mtd = mtd_strategy
+            adversary.attack_process.interrupt()
+            print('MTD: Interrupted %s at %.1fs!' % (adversary.curr_process, env.now))
+            network.mtd_stats.total_attack_interrupted += 1

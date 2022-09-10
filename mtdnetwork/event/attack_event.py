@@ -2,6 +2,7 @@ import simpy
 
 from mtdnetwork.network.hacker import Hacker
 from mtdnetwork.event.time_generator import exponential_variates
+from mtdnetwork.stats.attack_stats import AttackStatistics
 
 HOST_SCAN = 5
 HOST_ENUM = 5
@@ -14,11 +15,10 @@ PENALTY = 2
 
 
 class Adversary(Hacker):
-    def __init__(self, env, network, attack_threshold, attack_operation_record):
+    def __init__(self, env, network, attack_threshold):
         super().__init__(network, attack_threshold)
-        self.interrupted_by = ''
-        self.interrupted_in = ''
-        self.attack_operation_record = attack_operation_record
+        self.interrupted_mtd = None
+        self.attack_stats = AttackStatistics()
         self.env = env
         self.attack_process = env.process(self.host_scan_and_setup_host_enum(env))
         self.curr_process = 'host_scan'
@@ -38,13 +38,13 @@ class Adversary(Hacker):
         start_time = env.now
         try:
             print("Adversary: Start Host Scan at %.1fs." % start_time)
-            yield env.timeout(HOST_SCAN)
+            yield env.timeout(HOST_ENUM)
         except simpy.Interrupt:
-            env.process(self.handling_interruption(env, start_time, 'HostScan'))
+            env.process(self.handling_interruption(env, start_time, 'HostEnum'))
             return
         finish_time = env.now
         print("Adversary: Processed host scan at %.1fs." % finish_time)
-        self.handle_attack_operation_record('HostScan', start_time, finish_time)
+        self.attack_stats.append_attack_operation_record('HostScan', start_time, finish_time, self)
 
         self.pivot_host_id = -1
         self.host_stack = self.network.host_scan(self.compromised_hosts, self.stop_attack)
@@ -72,7 +72,8 @@ class Adversary(Hacker):
             return
         finish_time = env.now
         print("Adversary: Processed host enum at %.1fs." % finish_time)
-        self.handle_attack_operation_record('HostEnum', start_time, finish_time)
+        self.attack_stats.append_attack_operation_record('HostEnum',
+                                                         start_time, finish_time, self)
 
         if len(self.host_stack) > 0:
             self.host_stack = self.network.sort_by_distance_from_exposed_and_pivot_host(
@@ -110,6 +111,7 @@ class Adversary(Hacker):
                 # Attack event triggered
                 self.attack_process = env.process(self.start_and_process_port_scan(env))
                 self.curr_process = 'port_scan'
+
         else:
             self.attack_process = env.process(self.host_scan_and_setup_host_enum(env))
             self.curr_process = 'host_scan'
@@ -129,7 +131,8 @@ class Adversary(Hacker):
             return
         finish_time = env.now
         print("Adversary: Processed port scan at %.1fs." % finish_time)
-        self.handle_attack_operation_record('PortScan', start_time, finish_time)
+        self.attack_stats.append_attack_operation_record('PortScan',
+                                                         start_time, finish_time, self)
 
         self.curr_ports = self.curr_host.port_scan()
         user_reuse = self.curr_host.can_auto_compromise_with_users(self.compromised_users)
@@ -161,9 +164,12 @@ class Adversary(Hacker):
             return
         print('Adversary: Processed vulnerabilities exploitation at %.1fs' % env.now)
         finish_time = env.now
-        self.handle_attack_operation_record('VulnerabilityExploit', start_time, finish_time)
+        self.attack_stats.append_attack_operation_record('VulnerabilityExploit',
+                                                         start_time, finish_time, self)
+
         self.curr_vulns = self.curr_host.get_vulns(self.curr_ports)
         is_exploited = self.curr_host.exploit_vulns(self.curr_vulns)
+        # cumulative vulnerability exploitation attempts
         self.curr_attempts += len(self.curr_vulns)
 
         for vuln in self.curr_vulns:
@@ -196,7 +202,8 @@ class Adversary(Hacker):
             return
         finish_time = env.now
         print('Adversary: Processed brute force user at %.1fs.' % finish_time)
-        self.handle_attack_operation_record('BruteForce', start_time, finish_time)
+        self.attack_stats.append_attack_operation_record('BruteForce',
+                                                         start_time, finish_time, self)
 
         brute_force_result = self.curr_host.compromise_with_users(self.compromised_users)
         if brute_force_result:
@@ -228,41 +235,28 @@ class Adversary(Hacker):
         self.curr_process = 'host_enum'
 
     def handling_interruption(self, env, start_time, name):
-        self.handle_attack_operation_record(name, start_time, env.now)
-
+        self.attack_stats.append_attack_operation_record(name, start_time, env.now, self)
         # confusion penalty caused by MTD operation
         yield env.timeout(PENALTY)
 
-        if self.interrupted_in == 'Network Layer' or self.curr_process == 'host_enum' or self.curr_process == 'host_scan':
+        if self.interrupted_mtd.resource_type == 'network':
             self.reset_interrupt_state()
+            self.reset_host_state()
             print('Adversary: Restarting with host scan operation!')
             self.attack_process = env.process(self.host_scan_and_setup_host_enum(env))
             self.curr_process = 'host_scan'
-        elif self.interrupted_in == 'Application Layer':
+        elif self.interrupted_mtd.resource_type == 'application':
             self.reset_interrupt_state()
             print('Adversary: Restarting with port scan operation!')
             self.attack_process = env.process(self.start_and_process_port_scan(env))
             self.curr_process = 'port_scan'
 
     def reset_interrupt_state(self):
-        self.interrupted_in = ''
-        self.interrupted_by = ''
+        self.interrupted_mtd = None
 
-    def handle_attack_operation_record(self, name, start_time, finish_time):
-
-        duration = finish_time - start_time
-        self.attack_operation_record.append({
-            'name': name,
-            'start_time': start_time,
-            'finish_time': finish_time,
-            'duration': duration,
-            'interrupted_in': self.interrupted_in,
-            'interrupted_by': self.interrupted_by,
-            'current_host': self.curr_host_id,
-            'current_host_attempt': self.attack_counter[self.curr_host_id],
-            'current_total_attempt': self.curr_attempts,
-            'compromise_host': ''
-        })
+    def reset_host_state(self):
+        self.curr_host_id = -1
+        self.curr_host = None
 
     def update_progress_state_info(self, compromised_time):
         """
@@ -270,7 +264,7 @@ class Adversary(Hacker):
         """
         if self.curr_host_id not in self.compromised_hosts:
             self.compromised_hosts.append(self.curr_host_id)
-            self.attack_operation_record[-1]['compromise_host'] = self.curr_host_id
+            self.attack_stats.update_compromise_host(self.curr_host_id)
             print("Adversary: Host %i has been compromised at %.1fs!: " % (self.curr_host_id, compromised_time))
             self.network.update_reachable_compromise(self.curr_host_id, self.compromised_hosts)
             for user in self.curr_host.get_compromised_users():

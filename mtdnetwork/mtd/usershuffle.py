@@ -4,8 +4,8 @@ from mtdnetwork.mtd import *
 class UserShuffle(MTD):
     def __init__(self, network):
         self.logger = logging.getLogger("mtd:usershuffle")
-        super().__init__(name="UserShuffle", network=network, resource_type='network',
-                         resource=network.application_layer_resource, execution_time_mean=10, execution_time_std=0.5)
+        super().__init__(name="UserShuffle", network=network, resource_type='reserve',
+                         resource=network.reserve_resource, execution_time_mean=10, execution_time_std=0.5)
 
     def mtd_operation(self):
         self.logger.info("changing users on hosts")

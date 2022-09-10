@@ -2,6 +2,7 @@ from collections import deque
 import random
 from mtdnetwork.network.copynetwork import Network
 import simpy
+from mtdnetwork.stats.mtd_stats import MTDStatistics
 
 NETWORK_LAYER_CAPACITY = 1
 APPLICATION_LAYER_CAPACITY = 1
@@ -17,6 +18,8 @@ class TimeNetwork(Network):
         self.suspended_queue = deque()
         self.application_layer_resource = simpy.Resource(env, APPLICATION_LAYER_CAPACITY)
         self.network_layer_resource = simpy.Resource(env, NETWORK_LAYER_CAPACITY)
+        self.reserve_resource = simpy.Resource(env, 1)
+        self.mtd_stats = MTDStatistics()
         super().__init__(graph, pos, colour_map, total_nodes, total_endpoints, total_subnets,
                          total_layers, node_per_layer, users_list, users_per_host)
 
@@ -36,9 +39,14 @@ class TimeNetwork(Network):
         pop up the MTD and trigger it.
         :return:
         """
+        self.mtd_stats.total_triggered += 1
         if len(self.suspended_queue) != 0:
             return self.suspended_queue.popleft()
         return self.mtd_strategy_queue.popleft()
+
+    def suspend_mtd(self, mtd_strategy):
+        self.mtd_stats.total_suspended += 1
+        self.suspended_queue.append(mtd_strategy)
 
     def host_scan(self, compromised_hosts, stop_attack):
         """
