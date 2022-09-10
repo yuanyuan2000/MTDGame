@@ -1,26 +1,21 @@
-from mtdnetwork.irrelevant_stuff.scorer import MTDStatistics
 import logging
 import random
 from mtdnetwork.network import host, services
 
 
 class MTD:
-    def __init__(self, name, network, resource_type, execution_time):
+    def __init__(self, name, network, resource_type, resource, execution_time_mean, execution_time_std):
         self.network = network
         self.name = name
         self.resource_type = resource_type
-        self.execution_time = execution_time
-        self.record = MTDStatistics(self.name)
+        self.resource = resource
+        self.execution_time_mean = execution_time_mean
+        self.execution_time_std = execution_time_std
 
     def mtd_operation(self):
         raise NotImplementedError
 
-    def add_trigger_event(self, curr_time):
-        # Only adding 1 as the value since we already know what MTD strategy was triggered
-        self.record.add_event(curr_time, 1)
-
     def __str__(self):
-        return self.name
+        return self.name + ' ' + self.resource_type + ' ' + self.execution_time_mean
 
-    def get_record(self):
-        return self.record
+

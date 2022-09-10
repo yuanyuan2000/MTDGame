@@ -5,7 +5,7 @@ import mtdnetwork.constants as constants
 
 class Host:
     def __init__(self, operating_system, os_version, host_id, host_ip, users_list,
-                 network, service_generator, action_manager, k_nearest_neighbors_percent=0.5,
+                 network, service_generator, k_nearest_neighbors_percent=0.5,
                  prob_strogatz_rewire=0.5):
         """
         Initialises the host with the specified Operating System with a random network of internal
@@ -34,8 +34,6 @@ class Host:
                 the Network instance of the simulation
             service_generator:
                 the ServiceGenerator instance for generating new services
-            action_manager:
-                the ActionManager instance that manages actions during the simulation
             k_nearest_neighbors_percent:
                 the ratio for the k nearest neighbors when generating the internal graph using Watts-Strogatz random graph
             prob_strogatz_rewire:
@@ -48,7 +46,6 @@ class Host:
         self.network = network
         self.p_u_compromise = False
         self.total_users = 0
-        self.action_manager = action_manager
         self.uuid = str(uuid.uuid4())
 
         self.total_services = random.randint(constants.HOST_SERVICES_MIN, constants.HOST_SERVICES_MAX)
@@ -108,9 +105,6 @@ class Host:
                     vulns.append(v)
 
         return vulns
-
-    def swap_action_manager(self, action_manager):
-        self.action_manager = action_manager
 
     def swap_network(self, network):
         self.network = network
@@ -176,7 +170,6 @@ class Host:
         Returns:
             an action that returns if the brute force worked
         """
-        test_time = len(compromised_users) * constants.HOST_USER_COMPROMISE_TIME
         attempt_users = [username for username in self.users.keys() if username in compromised_users]
 
         if random.random() < constants.HOST_MAX_PROB_FOR_USER_COMPROMISE * len(attempt_users) / self.total_users:

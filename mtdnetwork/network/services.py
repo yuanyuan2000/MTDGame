@@ -3,6 +3,7 @@ import mtdnetwork.constants as constants
 import pkg_resources
 import uuid
 
+
 class Vulnerability:
     def __init__(self, can_have_os_dependency=False, os_list=[]):
         """
@@ -19,29 +20,30 @@ class Vulnerability:
         """
         # 0 for easy, 1 for impossible
         # Change to fit distributions
-        self.complexity = constants.VULN_MIN_COMPLEXITY + (1-constants.VULN_MIN_COMPLEXITY) * random.random()
+        self.complexity = constants.VULN_MIN_COMPLEXITY + (1 - constants.VULN_MIN_COMPLEXITY) * random.random()
         # 1 for complete compromise
         # 0 for nothing
-        self.impact = random.random()*10
-        self.cvss = (self.complexity + self.impact)/2
+        self.impact = random.random() * 10
+        self.cvss = (self.complexity + self.impact) / 2
         self.exploit_attempt = 0
         self.exploited = False
         self.has_os_dependency = False
         self.vuln_os_list = []
         self.has_dependent_vulns = random.random() < constants.VULN_PROB_DEPENDS_ON_OTHER_VULNS
-        self.dependent_vuln_id = random.choice([x for x in range(0, 101, int(100*constants.VULN_PROB_DEPENDS_ON_OTHER_VULNS))])
+        self.dependent_vuln_id = random.choice(
+            [x for x in range(0, 101, int(100 * constants.VULN_PROB_DEPENDS_ON_OTHER_VULNS))])
         self.dependent_vulns = []
-        
+
         self.id = str(uuid.uuid4())
         self.logger = logging.getLogger("vuln-{}".format(self.id))
         if can_have_os_dependency and len(os_list) > 1:
             if random.random() < constants.VULN_PROB_DEPENDS_ON_OS:
                 self.has_os_dependency = True
-                self.vuln_os_list = random.choices(os_list, k=random.randint(1,len(os_list)-1))
+                self.vuln_os_list = random.choices(os_list, k=random.randint(1, len(os_list) - 1))
 
     def is_exploited(self):
         return self.exploited
-    
+
     def get_id(self):
         return self.id
 
@@ -62,7 +64,7 @@ class Vulnerability:
             if v.dependent_vuln_id == self.dependent_vuln_id and not v == self:
                 return True
         return False
-        
+
     def exploit_time(self):
         """"
         Returns:
@@ -72,8 +74,9 @@ class Vulnerability:
         if self.exploited:
             return constants.VULN_MIN_EXPLOIT_TIME
         return constants.VULN_MIN_EXPLOIT_TIME + \
-                (constants.VULN_MAX_EXPLOIT_TIME - constants.VULN_MIN_EXPLOIT_TIME)*(1-self.complexity)/(self.exploit_attempt+1)
-    
+               (constants.VULN_MAX_EXPLOIT_TIME - constants.VULN_MIN_EXPLOIT_TIME) * (1 - self.complexity) / (
+                           self.exploit_attempt + 1)
+
     def network(self, host=None):
         """
         Tries to exploit the vulnerability
@@ -98,7 +101,7 @@ class Vulnerability:
                 self.logger.info("OS DEPENDENT VULNERABILITY EXPLOITED!")
             return self.impact
         return 0.0
-    
+
     def roa(self):
         """
         Psuedo return on attack metric
@@ -109,12 +112,14 @@ class Vulnerability:
         
         The x100 is because impact is expressed as a value 1-10 on CVE
         """
-        return (self.complexity * self.impact)/self.exploit_time()
+        return (self.complexity * self.impact) / self.exploit_time()
 
     def initial_roa(self):
-        return (self.complexity * self.impact)/(constants.VULN_MIN_EXPLOIT_TIME + \
-                (constants.VULN_MAX_EXPLOIT_TIME - constants.VULN_MIN_EXPLOIT_TIME)*(1-self.complexity))
-    
+        return (self.complexity * self.impact) / (constants.VULN_MIN_EXPLOIT_TIME +
+                                                  (
+                                                              constants.VULN_MAX_EXPLOIT_TIME - constants.VULN_MIN_EXPLOIT_TIME) * (
+                                                              1 - self.complexity))
+
     def __eq__(self, other):
         """
         Checks if two instances a Vulnerability are equal
@@ -122,6 +127,7 @@ class Vulnerability:
         if not isinstance(other, Vulnerability):
             return False
         return other.id == self.id
+
 
 class Service:
 
@@ -139,7 +145,7 @@ class Service:
         """
         self.name = service_name
         self.version = service_version
-        self.vulnerabilities = sorted(vulnerabilities, key = lambda v: v.roa(), reverse = True)
+        self.vulnerabilities = sorted(vulnerabilities, key=lambda v: v.roa(), reverse=True)
         self.exploit_value = 0.0
         self.id = str(uuid.uuid4())
 
@@ -149,31 +155,31 @@ class Service:
             a copy of this service instance
         """
         return Service(self.name, self.version, [v for v in self.vulnerabilities])
-    
+
     def get_vulns(self, roa_threshold=0):
         """
         Returns:
             the top X vulnerabilities in terms of RoA of the service that have not been exploited yet
         """
         return [
-            v 
-                for v in self.vulnerabilities  
-                    if v.roa() > roa_threshold and not v.is_exploited()
-        ][:constants.SERVICE_TOP_X_VULNS_TO_RETURN]
+                   v
+                   for v in self.vulnerabilities
+                   if v.roa() > roa_threshold and not v.is_exploited()
+               ][:constants.SERVICE_TOP_X_VULNS_TO_RETURN]
 
     def get_all_vulns(self):
         return self.vulnerabilities
 
     def get_id(self):
         return self.id
-    
+
     def is_exploited(self):
         self.exploit_value = 0
         for vuln in self.vulnerabilities:
             if vuln.exploited:
                 self.exploit_value += vuln.impact
         return self.exploit_value > constants.SERVICE_COMPROMISED_THRESHOLD
-    
+
     def total_exploit_time(self, roa_threshold=0):
         time = 0
         if roa_threshold == None:
@@ -184,9 +190,9 @@ class Service:
                 if vuln.roa() > roa_threshold:
                     time += vuln.exploit_time()
         return time
-    
+
     def discover_vuln_time(self, roa_threshold=0):
-        return len(self.get_vulns(roa_threshold=roa_threshold))*constants.SERVICE_DISCOVER_EACH_VULN_TIME
+        return len(self.get_vulns(roa_threshold=roa_threshold)) * constants.SERVICE_DISCOVER_EACH_VULN_TIME
 
     def get_highest_roa_vuln(self):
         vuln_len = len(self.get_vulns())
@@ -199,15 +205,16 @@ class Service:
             return False
         return other.name == self.name and other.version == self.version
 
+
 class ServicesGenerator:
 
-    def __init__(self, 
-                 services_per_os=constants.SERVICE_NO_OF_SERVICES_PER_OS, 
-                 percent_cross_platform=constants.VULN_PERCENT_CROSS_PLATFORM, 
-                 max_vuln_probability=constants.VULN_MAX_PROB_FOR_OCCURING_FOR_SERVICE_VERSION, 
-                 vuln_patch_mean=constants.VULN_PATCH_MEAN, 
-                 vuln_patch_range=constants.VULN_PATCH_RANGE, 
-                 vuln_initial_chances=constants.VULN_INITIAL_CHANCES, 
+    def __init__(self,
+                 services_per_os=constants.SERVICE_NO_OF_SERVICES_PER_OS,
+                 percent_cross_platform=constants.VULN_PERCENT_CROSS_PLATFORM,
+                 max_vuln_probability=constants.VULN_MAX_PROB_FOR_OCCURING_FOR_SERVICE_VERSION,
+                 vuln_patch_mean=constants.VULN_PATCH_MEAN,
+                 vuln_patch_range=constants.VULN_PATCH_RANGE,
+                 vuln_initial_chances=constants.VULN_INITIAL_CHANCES,
                  os_dependent_vuln_chance=constants.VULN_PROB_DEPENDS_ON_OS,
                  dependent_vuln_chance=constants.VULN_PROB_DEPENDS_ON_OTHER_VULNS):
         """
@@ -241,7 +248,6 @@ class ServicesGenerator:
         self.max_vuln_probability = max_vuln_probability
         self.gen_services()
 
-        
     def get_random_service(self, os_type, os_version):
         """
         Gets a random service for a given OS type and version
@@ -295,24 +301,24 @@ class ServicesGenerator:
         """
         Generates all of the services for each OS type and version for the simulation
         """
-        self.os_services = {os_name : {} for os_name in constants.OS_TYPES}
+        self.os_services = {os_name: {} for os_name in constants.OS_TYPES}
 
         for os_type in constants.OS_TYPES:
             for os_version in constants.OS_VERSION_DICT[os_type]:
                 self.os_services[os_type][os_version] = {}
-        
+
         wordlist = ServicesGenerator.get_service_name_list(self)
         types_of_os = len(constants.OS_TYPES)
         total_services = self.services_per_os * types_of_os
         self.service_names = random.choices(wordlist, k=total_services)
-        
+
         s_versions = constants.SERVICE_VERSIONS
         s_versions_len = len(s_versions)
-        
+
         self.services = {}
         for s_index, service in enumerate(self.service_names):
-            os_list = [constants.OS_TYPES[s_index//self.services_per_os]]
-            
+            os_list = [constants.OS_TYPES[s_index // self.services_per_os]]
+
             if random.random() < self.percent_cross_platform:
                 os_list = constants.OS_TYPES
 
@@ -326,15 +332,15 @@ class ServicesGenerator:
                 if random.random() < self.max_vuln_probability:
                     vuln_patch_dist = i + random.randint(-self.vuln_patch_range, self.vuln_patch_range)
                     vulns[vuln_patch_dist] = Vulnerability(
-                        can_have_os_dependency=can_have_os_depend_vuln, 
+                        can_have_os_dependency=can_have_os_depend_vuln,
                         os_list=os_list
                     )
-            
+
             # Adding Vuln at version 99 to ensure there is a vuln in every version
             vulns[99] = Vulnerability(
-                        can_have_os_dependency=can_have_os_depend_vuln, 
-                        os_list=os_list
-                    )
+                can_have_os_dependency=can_have_os_depend_vuln,
+                os_list=os_list
+            )
             for sv_index in range(s_versions_len):
                 service_version = s_versions[sv_index]
                 # version_scale = (s_versions_len - sv_index)/s_versions_len
@@ -345,17 +351,17 @@ class ServicesGenerator:
                 #         can_have_os_dependency=can_have_os_depend_vuln, 
                 #         os_list=os_list
                 #     )
-                    
+
                 active_vulns = [vulns[i] for i in vulns if i >= sv_index]
                 self.services[service] = self.services[service] + [Service(service, service_version, active_vulns)]
-            
 
             for os_name in os_list:
                 os_versions = constants.OS_VERSION_DICT[os_name]
                 total_os_versions = len(os_versions)
                 version_split = s_versions_len // total_os_versions
                 for os_version_index, os_version in enumerate(os_versions):
-                    service_versions = self.services[service][s_versions_len-(os_version_index+1)*version_split:s_versions_len - os_version_index*version_split]
+                    service_versions = self.services[service][s_versions_len - (
+                                os_version_index + 1) * version_split:s_versions_len - os_version_index * version_split]
                     self.os_services[os_name][os_version][service] = service_versions
 
     def get_service_name_list(self):

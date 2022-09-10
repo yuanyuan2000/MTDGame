@@ -5,7 +5,8 @@ class ServiceDiversity(MTD):
     def __init__(self, network, shuffles=50):
         self.logger = logging.getLogger("mtd:serviceDiversity")
         self.shuffles = shuffles
-        super().__init__(name="serviceDiversity", network=network,  resource_type='application', execution_time=40)
+        super().__init__(name="serviceDiversity", network=network,  resource_type='application',
+                         resource=network.application_layer_resource, execution_time_mean=40, execution_time_std=0.5)
 
     def mtd_operation(self):
         self.logger.info("changing services on hosts")

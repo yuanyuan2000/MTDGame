@@ -8,7 +8,8 @@ class CompleteTopologyShuffle(MTD):
 
     def __init__(self, network):
         self.logger = logging.getLogger("mtd:basictopologyshuffle")
-        super().__init__(name="CompleteTopologyShuffle", network=network, resource_type='network', execution_time=70)
+        super().__init__(name="CompleteTopologyShuffle", network=network, resource_type='network',
+                         resource=network.network_layer_resource, execution_time_mean=70, execution_time_std=0.5)
 
     def mtd_operation(self):
         self.logger.info("shuffling entire network topology")

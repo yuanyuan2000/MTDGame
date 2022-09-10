@@ -1,4 +1,4 @@
-import mtdnetwork.irrelevant_stuff.exceptions as exceptions
+# import mtdnetwork.irrelevant_stuff.exceptions as exceptions
 
 
 class Statistics:
@@ -20,17 +20,18 @@ class Statistics:
         self.y_list.append(y)
 
     def get_dict(self):
-        cumul_y = [i+1 for i in range(len(self.y_list))]
+        cumul_y = [i + 1 for i in range(len(self.y_list))]
         return {
-            "record name" : self.record_type,
-            "x" : self.x_list,
-            "y" : self.y_list,
-            "cumulative y" : cumul_y,
-            "total events" : len(self.y_list)
+            "record name": self.record_type,
+            "x": self.x_list,
+            "y": self.y_list,
+            "cumulative y": cumul_y,
+            "total events": len(self.y_list)
         }
 
     def __str__(self):
         return self.record_type
+
 
 class CompromiseStatistics(Statistics):
 
@@ -49,20 +50,21 @@ class CompromiseStatistics(Statistics):
         self.y_list.append(host_id)
 
     def get_dict(self):
-        cumul_y = [i+1 for i in range(len(self.y_list))]
-        cumul_non_exposed_y = [i+1 for i in range(len(self.non_exposed_y))]
+        cumul_y = [i + 1 for i in range(len(self.y_list))]
+        cumul_non_exposed_y = [i + 1 for i in range(len(self.non_exposed_y))]
 
         return {
-            "record name" : self.record_type,
-            "x" : self.x_list,
-            "y" : self.y_list,
-            "cumulative y" : cumul_y,
-            "total events" : len(self.y_list),
-            "not exposed x" : self.non_exposed_x,
-            "not exposed y" : self.non_exposed_y,
-            "cumulative not exposed y" : cumul_non_exposed_y,
-            "total not exposed events" : len(self.non_exposed_y)
+            "record name": self.record_type,
+            "x": self.x_list,
+            "y": self.y_list,
+            "cumulative y": cumul_y,
+            "total events": len(self.y_list),
+            "not exposed x": self.non_exposed_x,
+            "not exposed y": self.non_exposed_y,
+            "cumulative not exposed y": cumul_non_exposed_y,
+            "total not exposed events": len(self.non_exposed_y)
         }
+
 
 class VulnStatistics(Statistics):
     def __init__(self, record_type):
@@ -82,18 +84,19 @@ class VulnStatistics(Statistics):
         self.has_dependent_vulns += 1 if vuln.has_dependent_vulns else 0
 
     def get_dict(self):
-        cumulative_exploited_vulns = [i+1 for i in range(len(self.x_list))]
+        cumulative_exploited_vulns = [i + 1 for i in range(len(self.x_list))]
         return {
-            "record name" : self.record_type,
-            "x" : self.x_list,
-            "cumulative exploited vulns" : cumulative_exploited_vulns,
-            "roa" : self.roa_list,
-            "impact" : self.impact_list,
-            "complexity" : self.complexity_list,
-            "total had os dependency" : self.has_os_dependency,
-            "total were dependent on another vuln" : self.has_dependent_vulns
+            "record name": self.record_type,
+            "x": self.x_list,
+            "cumulative exploited vulns": cumulative_exploited_vulns,
+            "roa": self.roa_list,
+            "impact": self.impact_list,
+            "complexity": self.complexity_list,
+            "total had os dependency": self.has_os_dependency,
+            "total were dependent on another vuln": self.has_dependent_vulns
         }
-    
+
+
 class MTDStatistics(Statistics):
 
     def __init__(self, record_type):
@@ -106,19 +109,20 @@ class MTDStatistics(Statistics):
         self.blocked_y_list.append(y)
 
     def get_dict(self):
-        cumul_y = [i+1 for i in range(len(self.y_list))]
-        cumul_blocked_y = [i+1 for i in range(len(self.blocked_y_list))]
+        cumul_y = [i + 1 for i in range(len(self.y_list))]
+        cumul_blocked_y = [i + 1 for i in range(len(self.blocked_y_list))]
         return {
-            "record name" : self.record_type,
-            "x" : self.x_list,
-            "y" : self.y_list,
-            "cumulative y" : cumul_y,
-            "total events" : len(self.y_list),
-            "blocked times" : self.blocked_x_list,
-            "total blocks" : len(self.blocked_x_list),
-            "blocked values" : self.blocked_y_list,
-            "cumulative blocked" : cumul_blocked_y
+            "record name": self.record_type,
+            "x": self.x_list,
+            "y": self.y_list,
+            "cumulative y": cumul_y,
+            "total events": len(self.y_list),
+            "blocked times": self.blocked_x_list,
+            "total blocks": len(self.blocked_x_list),
+            "blocked values": self.blocked_y_list,
+            "cumulative blocked": cumul_blocked_y
         }
+
 
 class Scorer:
 
@@ -152,21 +156,21 @@ class Scorer:
 
         self.last_mtd = None
 
-    def add_mtd_blocked_event(self, curr_time):
-        if not self.last_mtd == None:
-            self.last_mtd.add_blocked_event(curr_time, str(self.last_mtd))
-        else:
-            raise exceptions.CannotAddMTDEventToScorerError
+    # def add_mtd_blocked_event(self, curr_time):
+    #     if not self.last_mtd == None:
+    #         self.last_mtd.add_blocked_event(curr_time, str(self.last_mtd))
+    #     else:
+    #         raise exceptions.CannotAddMTDEventToScorerError
 
-    def add_mtd_event(self, curr_time):
-        """
-        Logs when an MTD event is triggered
-        """
-        if not self.last_mtd == None:
-            self.last_mtd.add_event(curr_time, 1)
-        else:
-            raise exceptions.CannotAddMTDEventToScorerError
- 
+    # def add_mtd_event(self, curr_time):
+    #     """
+    #     Logs when an MTD event is triggered
+    #     """
+    #     if not self.last_mtd == None:
+    #         self.last_mtd.add_event(curr_time, 1)
+    #     else:
+    #         raise exceptions.CannotAddMTDEventToScorerError
+
     def add_host_compromise(self, curr_time, host_instance):
         # host_os_type = host_instance.os_type
         # host_os_version = host_instance.os_version
@@ -199,7 +203,7 @@ class Scorer:
 
     def add_vuln_compromise(self, curr_time, vuln):
         self.vuln_compromises.add_event(curr_time, vuln)
-    
+
     def add_attack_path_exposure(self, score):
         self.attack_path_exposure.append(score)
 
@@ -222,7 +226,7 @@ class Scorer:
         for host_id, host_instance in hosts.items():
             host_os = host_instance.os_type
             host_version = host_instance.os_version
-            
+
             os_type = "{} {}".format(host_os, host_version)
             os_types_in_network[os_type] = os_types_in_network.get(os_type, 0) + 1
             host_vulns = host_instance.get_all_vulns()
@@ -238,8 +242,9 @@ class Scorer:
                     host_os_type_and_version_vuln_roa[host_os] = {}
 
                 if not v in host_os_type_and_version_vuln_roa[host_os].get(host_version, []):
-                    host_os_type_and_version_vuln_roa[host_os][host_version] = host_os_type_and_version_vuln_roa[host_os].get(host_version, []) + [roa]
-
+                    host_os_type_and_version_vuln_roa[host_os][host_version] = host_os_type_and_version_vuln_roa[
+                                                                                   host_os].get(host_version, []) + [
+                                                                                   roa]
 
         vulns_per_os = {}
         avg_roa_per_os = {}
@@ -272,15 +277,15 @@ class Scorer:
         stats["Vulnerabilities Exploited"] = self.vuln_compromises.get_dict()
         stats["MTD Statistics"] = [
             mtd_statistic.get_dict()
-                for mtd_statistic in self.mtd_statistics
+            for mtd_statistic in self.mtd_statistics
         ]
         stats["Total MTD Events"] = sum([
             mtd_statistic.get_dict()["total events"]
-                for mtd_statistic in self.mtd_statistics
+            for mtd_statistic in self.mtd_statistics
         ])
         stats["Total MTD Blocking Hacker Events"] = sum([
             mtd_statistic.get_dict()["total blocks"]
-                for mtd_statistic in self.mtd_statistics
+            for mtd_statistic in self.mtd_statistics
         ])
         stats["Attack Path Exposure Scores"] = self.attack_path_exposure
 

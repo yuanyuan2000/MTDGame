@@ -1,7 +1,6 @@
 import logging
 
 import mtdnetwork.constants as constants
-import mtdnetwork.irrelevant_stuff.exceptions as exceptions
 
 
 class Hacker:
@@ -28,11 +27,6 @@ class Hacker:
         self.attack_counter = [0 for n in range(self.network.get_total_nodes())]
         self.stop_attack = []
         self.attack_threshold = attack_threshold
-
-        self.action_manager = self.network.get_action_manager()
-        self.action_manager.register_hacker(self)
-
-        self.action = None
 
         self.curr_time = 0
 
@@ -184,51 +178,6 @@ class Hacker:
 
         return 1 - constants.HACKER_BLOCKED_BY_MTD_MAX_DISCOUNT * \
                average_observations / constants.HACKER_BLOCKED_BY_MTD_BLOCKS_TO_MAX_DISCOUNT
-
-    # def handle_change(self, blocked_exceptions):
-    #     """
-    #     Responds to the changes that blocked the action and goes back to a previous
-    #     action to remediate the issue.
-    #
-    #     Parameters:
-    #         blocked_exceptions:
-    #             a list of exceptions that explain what was changed in the network that blocked the action
-    #     """
-    #     self.logger.info("MTD operation blocked action!")
-    #     self.scorer.add_mtd_blocked_event(self.curr_time)
-    #     self.total_blocked_by_mtd += 1
-    #
-    #     # Temporarily add constants.HACKER_BLOCKED_BY_MTD_PENALITY to self.curr_time to add on the penality time for
-    #     # being blocked by the MTD defense strategy which would waste time.
-    #     time_penality = int(
-    #         constants.HACKER_BLOCKED_BY_MTD_PENALITY * self.get_mtd_penality_discount(blocked_exceptions))
-    #     self.logger.info("Time Penality: {}".format(time_penality))
-    #     self.curr_time += time_penality
-    #
-    #     if exceptions.HostIPChangeError in blocked_exceptions or \
-    #             exceptions.PathToHostChangeError in blocked_exceptions:
-    #         self.logger.info("Re-doing host discovery")
-    #         self.start_network_enum()
-    #         return
-    #
-    #     if exceptions.PortsOnHostChangeError in blocked_exceptions or \
-    #             exceptions.ServicesOnHostChangeError in blocked_exceptions or \
-    #             exceptions.OSOnHostChangeError in blocked_exceptions:
-    #         self.logger.info("Re-doing port scan on host {}".format(self.curr_host_id))
-    #         self.start_port_scan()
-    #         return
-    #
-    #     if exceptions.UsersOnHostChangeError in blocked_exceptions:
-    #         # If the hacker was just checking if a user has reused their password they should continue
-    #         # to trying to discover vulnerabilities on the host.
-    #         if self.action.complete_fn == self.check_reuse_user_pass:
-    #             self.logger.info("Skipping checking if users have reused passwords!")
-    #             self.find_vulns()
-    #         else:
-    #             self.logger.info("Giving up bruteforcing credentials on host {}! Moving to next target host!".format(
-    #                 self.curr_host_id))
-    #             self.start_host_enum()
-    #         return
 
     def attacks_required_per_compromise(self):
         """

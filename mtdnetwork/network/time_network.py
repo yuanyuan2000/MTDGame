@@ -1,16 +1,22 @@
 from collections import deque
 import random
 from mtdnetwork.network.copynetwork import Network
+import simpy
+
+NETWORK_LAYER_CAPACITY = 1
+APPLICATION_LAYER_CAPACITY = 1
 
 
 class TimeNetwork(Network):
 
-    def __init__(self, graph, pos, colour_map, total_nodes, total_endpoints, total_subnets, total_layers,
+    def __init__(self, env, graph, pos, colour_map, total_nodes, total_endpoints, total_subnets, total_layers,
                  node_per_layer, users_list, users_per_host):
         # default parameters
         # self.mtd_strategy_queue = PriorityQueue()
         self.mtd_strategy_queue = deque()
         self.suspended_queue = deque()
+        self.application_layer_resource = simpy.Resource(env, APPLICATION_LAYER_CAPACITY)
+        self.network_layer_resource = simpy.Resource(env, NETWORK_LAYER_CAPACITY)
         super().__init__(graph, pos, colour_map, total_nodes, total_endpoints, total_subnets,
                          total_layers, node_per_layer, users_list, users_per_host)
 
@@ -62,8 +68,8 @@ class TimeNetwork(Network):
             uncompromised_hosts = uncompromised_hosts + [
                 neighbor
                 for neighbor in self.graph.neighbors(c_host)
-                if not neighbor in compromised_hosts and not neighbor in self.exposed_endpoints \
-                   and len(self.get_path_from_exposed(neighbor, graph=visible_network)[0]) > 0
+                if neighbor not in compromised_hosts and neighbor not in self.exposed_endpoints and
+                   len(self.get_path_from_exposed(neighbor, graph=visible_network)[0]) > 0
             ]
 
         # Add random element from 0 to 1 so the scan does not return the same order of hosts each time for the hacker
@@ -75,10 +81,9 @@ class TimeNetwork(Network):
         uncompromised_hosts = uncompromised_hosts + [
             ex_node
             for ex_node in self.exposed_endpoints
-            if not ex_node in compromised_hosts
+            if ex_node not in compromised_hosts
         ]
 
         discovered_hosts = [n for n in uncompromised_hosts if n not in stop_attack]
 
         return discovered_hosts
-

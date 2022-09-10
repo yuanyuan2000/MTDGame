@@ -12,7 +12,7 @@ NL_CAPACITY = 1
 AL_CAPACITY = 1
 
 
-def create_network():
+def create_network(env):
     target_network = TargetNetwork(total_nodes=200, total_endpoints=20, total_subnets=20, total_layers=5,
                                    target_layer=2)
     graph = target_network.get_graph_copy()
@@ -21,18 +21,17 @@ def create_network():
     node_per_layer = target_network.get_node_per_layer()
     users_list = target_network.get_users_list()
     users_per_host = target_network.get_users_per_host()
-    time_network = TimeNetwork(graph, pos, colour_map, 200, 20, 20, 5, node_per_layer, users_list, users_per_host)
+    time_network = TimeNetwork(env, graph, pos, colour_map, 200, 20, 20, 5, node_per_layer, users_list, users_per_host)
     return time_network
 
 
 def run_sim():
-    # initialise network to perform MTD strategies
-    time_network = create_network()
 
     # set up event execution environment
     env = simpy.Environment()
-    al_resource = simpy.Resource(env, AL_CAPACITY)
-    nl_resource = simpy.Resource(env, NL_CAPACITY)
+
+    # initialise network to perform MTD strategies
+    time_network = create_network(env)
 
     # set up dataframe for collecting event data
     mtd_operation_record = []
@@ -43,7 +42,7 @@ def run_sim():
                           attack_operation_record=attack_operation_record)
 
     # triggering mtd events
-    env.process(mtd_trigger_action(env=env, network=time_network, al_resource=al_resource, nl_resource=nl_resource,
+    env.process(mtd_trigger_action(env=env, network=time_network,
                                    adversary=adversary, mtd_operation_record=mtd_operation_record))
 
     # Execute!
