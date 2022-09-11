@@ -25,7 +25,7 @@ def mtd_trigger_action(env, network, adversary):
     Select Execute or suspend/discard MTD strategy
     based on the given resource occupation condition
     """
-    while True:
+    while not network.is_compromised(adversary.compromised_hosts):
         # exponential distribution for triggering MTD operations
         yield env.timeout(exponential_variates(MTD_TRIGGER_MEAN, MTD_TRIGGER_STD))
 

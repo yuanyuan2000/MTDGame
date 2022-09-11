@@ -7,9 +7,9 @@ from mtdnetwork.event.attack_event import Adversary
 from progressbar import ProgressBar
 import logging
 
-logging.basicConfig(level=logging.INFO)
+# logging.basicConfig(level=logging.INFO)
 # Simulation time in seconds
-SIM_TIME = 100000
+SIM_TIME = 30000
 # parameters for network layer capacity and application layer capacity
 NL_CAPACITY = 1
 AL_CAPACITY = 1
