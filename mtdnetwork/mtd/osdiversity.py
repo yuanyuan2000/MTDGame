@@ -8,7 +8,7 @@ class OSDiversity(MTD):
         super().__init__(name="osdiversity", network=network, resource_type='application',
                          resource=network.application_layer_resource, execution_time_mean=30, execution_time_std=0.5)
 
-    def mtd_operation(self):
+    def mtd_operation(self, adversary=None):
         self.logger.debug("changing os on hosts")
         service_generator = self.network.get_service_generator()
         hosts = self.network.get_hosts()

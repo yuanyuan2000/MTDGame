@@ -3,16 +3,12 @@ from mtdnetwork.network.targetnetwork import Network as TargetNetwork
 from mtdnetwork.network.time_network import TimeNetwork
 from mtdnetwork.event.mtd_event import mtd_trigger_action
 from mtdnetwork.constants import ATTACKER_THRESHOLD
-from mtdnetwork.event.attack_event import Adversary
-from progressbar import ProgressBar
+from mtdnetwork.event.adversary import Adversary
 import logging
 
 # logging.basicConfig(level=logging.INFO)
 # Simulation time in seconds
 SIM_TIME = 30000
-# parameters for network layer capacity and application layer capacity
-NL_CAPACITY = 1
-AL_CAPACITY = 1
 
 
 def create_network(env):

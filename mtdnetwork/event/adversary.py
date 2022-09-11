@@ -1,8 +1,9 @@
 import simpy
-from mtdnetwork.network.hacker import Hacker
 from mtdnetwork.event.time_generator import exponential_variates
 from mtdnetwork.stats.attack_stats import AttackStatistics
 import logging
+
+HACKER_ATTACK_ATTEMPT_MULTIPLER = 5
 
 SCAN_HOST = 5
 ENUM_HOST = 2
@@ -14,9 +15,31 @@ BRUTE_FORCE = 20
 PENALTY = 2
 
 
-class Adversary(Hacker):
+class Adversary:
     def __init__(self, env, network, attack_threshold):
-        super().__init__(network, attack_threshold)
+        self.network = network
+        self.compromised_users = []
+        self.compromised_hosts = []
+
+        self.host_stack = []
+
+        self.attack_counter = [0 for n in range(self.network.get_total_nodes())]
+        self.stop_attack = []
+        self.attack_threshold = attack_threshold
+
+        self.pivot_host_id = -1
+        self.curr_host_id = -1
+        self.curr_host = None
+        self.curr_ports = []
+        self.curr_vulns = []
+
+        self.max_attack_attempts = HACKER_ATTACK_ATTEMPT_MULTIPLER * network.get_total_nodes()
+        self.curr_attempts = 0
+        self.target_compromised = False
+
+        self.observed_changes = {}
+
+        # time-based attributes
         self.interrupted_mtd = None
         self.attack_stats = AttackStatistics()
         self.env = env
@@ -168,10 +191,14 @@ class Adversary(Hacker):
         # Checks if max attack attempts has been reached, empty stacks if reached
         if self.curr_attempts >= self.max_attack_attempts:
             self.host_stack = []
-            self.done = True
+            return
         self.curr_ports = []
         self.curr_vulns = []
+
+        # Sets the next host that the Hacker will pivot from to compromise other hosts
+        # The pivot host needs to be a compromised host that the hacker can access
         self.set_next_pivot_host()
+
         if self.curr_host.compromised:
             self.update_compromise_progress()
             self.enum_host()
@@ -244,3 +271,72 @@ class Adversary(Hacker):
         ]
         self.host_stack = new_host_stack
         self.enum_host()
+
+    def set_next_pivot_host(self):
+        """
+        Sets the next host that the Hacker will pivot from to compromise other hosts
+        The pivot host needs to be a compromised host that the hacker can access
+        """
+        neighbors = list(self.network.get_neighbors(self.curr_host_id))
+        if self.pivot_host_id in neighbors:
+            return
+        for n in neighbors:
+            if n in self.compromised_hosts:
+                self.pivot_host_id = n
+                return
+        self.pivot_host_id = -1
+
+    def swap_hosts_in_compromised_hosts(self, host_id, other_host_id):
+        new_compromised_hosts = []
+
+        for i in self.compromised_hosts:
+            if i == host_id:
+                new_compromised_hosts.append(other_host_id)
+            elif i == other_host_id:
+                new_compromised_hosts.append(host_id)
+            else:
+                new_compromised_hosts.append(i)
+
+        self.compromised_hosts = new_compromised_hosts
+
+    # def debug_log(self, reason):
+    #     """
+    #     Debug messages for hosts
+    #
+    #     Parameters:
+    #         reason:
+    #             the reason for the debug message
+    #     """
+    #     self.logger.debug("{}:{}:{}:{}".format(
+    #         reason,
+    #         self.curr_host.host_id,
+    #         self.curr_host.os_type,
+    #         self.curr_host.os_version
+    #     ))
+
+    # def get_mtd_penality_discount(self, blocked_exceptions):
+    #     """
+    #     Gets the discount for the MTD blocked action penality depending on how many times the adversary has
+    #     seen that change on the network or a host before.
+    #
+    #     Parameters:
+    #         blocked_exceptions:
+    #             a list of exceptions that explain what was changed in the network that blocked the action
+    #
+    #     Returns:
+    #         the discount as a decimal to be multiplied with constants.HACKER_BLOCKED_BY_MTD_PENALITY
+    #     """
+    #     total_observations = 0
+    #     total_types_of_changes = len(blocked_exceptions)
+    #
+    #     for blocked_reason in blocked_exceptions:
+    #         total_observations += self.observed_changes.get(blocked_reason, 0)
+    #         self.observed_changes[blocked_reason] = self.observed_changes.get(blocked_reason, 0) + 1
+    #
+    #     average_observations = total_observations / total_types_of_changes
+    #
+    #     if average_observations > constants.HACKER_BLOCKED_BY_MTD_BLOCKS_TO_MAX_DISCOUNT:
+    #         average_observations = constants.HACKER_BLOCKED_BY_MTD_BLOCKS_TO_MAX_DISCOUNT
+    #
+    #     return 1 - constants.HACKER_BLOCKED_BY_MTD_MAX_DISCOUNT * \
+    #            average_observations / constants.HACKER_BLOCKED_BY_MTD_BLOCKS_TO_MAX_DISCOUNT

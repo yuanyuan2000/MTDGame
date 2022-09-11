@@ -5,6 +5,7 @@ class HostTopologyShuffle(MTD):
     """
     Swaps hosts in the network.
     """
+
     def __init__(self, network):
         self.logger = logging.getLogger("mtd:hostshuffle")
         super().__init__(name="HostTopologyShuffle", network=network, resource_type='network',
@@ -16,7 +17,7 @@ class HostTopologyShuffle(MTD):
             return self.random_different_host_id(curr_host_id, hosts_list)
         return other_host_id
 
-    def mtd_operation(self):
+    def mtd_operation(self, adversary=None):
         self.logger.debug("swapping hosts")
         hosts = self.network.get_hosts()
         layer_dict = self.network.get_layers()
@@ -52,7 +53,7 @@ class HostTopologyShuffle(MTD):
             host_id_list_in_layer.remove(host_id)
             host_id_list_in_layer.remove(other_host_id)
 
-            # hacker.swap_hosts_in_compromised_hosts(host_id, other_host_id)
+            adversary.swap_hosts_in_compromised_hosts(host_id, other_host_id)
 
         self.network.update_reachable_mtd()
 

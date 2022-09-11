@@ -11,7 +11,7 @@ class CompleteTopologyShuffle(MTD):
         super().__init__(name="CompleteTopologyShuffle", network=network, resource_type='network',
                          resource=network.network_layer_resource, execution_time_mean=70, execution_time_std=0.5)
 
-    def mtd_operation(self):
+    def mtd_operation(self, adversary=None):
         self.logger.debug("shuffling entire network topology")
         hosts = self.network.get_hosts()
 

@@ -12,7 +12,7 @@ class MTD:
         self.execution_time_mean = execution_time_mean
         self.execution_time_std = execution_time_std
 
-    def mtd_operation(self):
+    def mtd_operation(self, adversary=None):
         raise NotImplementedError
 
     def __str__(self):

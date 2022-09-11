@@ -56,7 +56,8 @@ def mtd_execute_action(env, mtd_strategy, network, adversary):
     logging.info('MTD: %s deployed in the network at %.1fs.' % (mtd_strategy.name, start_time))
     yield env.timeout(exponential_variates(mtd_strategy.execution_time_mean, mtd_strategy.execution_time_std))
     # execute mtd
-    mtd_strategy.mtd_operation()
+    mtd_strategy.mtd_operation(adversary)
+
     finish_time = env.now
     duration = env.now - start_time
     logging.info('MTD: %s finished in %.1fs at %.1fs.' % (mtd_strategy.name, duration, finish_time))
