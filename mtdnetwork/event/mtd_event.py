@@ -73,7 +73,8 @@ def mtd_execute_action(env, mtd_strategy, network, adversary):
             adversary.attack_process.interrupt()
             logging.info('MTD: Interrupted %s at %.1fs!' % (adversary.curr_process, env.now))
             network.mtd_stats.total_attack_interrupted += 1
-        elif mtd_strategy.resource_type == 'application' and adversary.curr_process not in ['SCAN_HOST', 'ENUM_HOST']:
+        elif mtd_strategy.resource_type == 'application' and adversary.curr_process not in ['SCAN_HOST', 'ENUM_HOST',
+                                                                                            'SCAN_NEIGHBOR']:
             adversary.interrupted_mtd = mtd_strategy
             adversary.attack_process.interrupt()
             logging.info('MTD: Interrupted %s at %.1fs!' % (adversary.curr_process, env.now))
