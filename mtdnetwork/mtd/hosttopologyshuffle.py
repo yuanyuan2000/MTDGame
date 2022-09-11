@@ -17,7 +17,7 @@ class HostTopologyShuffle(MTD):
         return other_host_id
 
     def mtd_operation(self):
-        self.logger.info("swapping hosts")
+        self.logger.debug("swapping hosts")
         hosts = self.network.get_hosts()
         layer_dict = self.network.get_layers()
         cur_layer = -1

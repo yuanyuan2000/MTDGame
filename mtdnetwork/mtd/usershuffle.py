@@ -8,7 +8,7 @@ class UserShuffle(MTD):
                          resource=network.reserve_resource, execution_time_mean=10, execution_time_std=0.5)
 
     def mtd_operation(self):
-        self.logger.info("changing users on hosts")
+        self.logger.debug("changing users on hosts")
         hosts = self.network.get_hosts()
 
         for host_instance in hosts.values():

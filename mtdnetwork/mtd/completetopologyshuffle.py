@@ -12,7 +12,7 @@ class CompleteTopologyShuffle(MTD):
                          resource=network.network_layer_resource, execution_time_mean=70, execution_time_std=0.5)
 
     def mtd_operation(self):
-        self.logger.info("shuffling entire network topology")
+        self.logger.debug("shuffling entire network topology")
         hosts = self.network.get_hosts()
 
         # Regenerate the network graph

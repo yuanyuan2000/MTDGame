@@ -113,7 +113,7 @@ class Hacker:
             reason:
                 the reason the host got compromised
         """
-        self.logger.info("{}:{}:{}:{}".format(
+        self.logger.debug("{}:{}:{}:{}".format(
             reason,
             self.curr_host.host_id,
             self.curr_host.os_type,

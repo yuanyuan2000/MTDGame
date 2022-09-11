@@ -9,7 +9,7 @@ class OSDiversity(MTD):
                          resource=network.application_layer_resource, execution_time_mean=30, execution_time_std=0.5)
 
     def mtd_operation(self):
-        self.logger.info("changing os on hosts")
+        self.logger.debug("changing os on hosts")
         service_generator = self.network.get_service_generator()
         hosts = self.network.get_hosts()
         for host_id, host_instance in hosts.items():

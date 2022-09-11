@@ -9,7 +9,7 @@ class IPShuffle(MTD):
                          resource=network.network_layer_resource, execution_time_mean=50, execution_time_std=0.5)
 
     def mtd_operation(self):
-        self.logger.info("changing IP addresses of hosts")
+        self.logger.debug("changing IP addresses of hosts")
 
         hosts = self.network.get_hosts()
 

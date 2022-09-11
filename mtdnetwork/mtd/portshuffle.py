@@ -9,7 +9,7 @@ class PortShuffle(MTD):
                          resource=network.application_layer_resource, execution_time_mean=40, execution_time_std=0.5)
 
     def mtd_operation(self):
-        self.logger.info("changing ports of services on hosts")
+        self.logger.debug("changing ports of services on hosts")
         hosts = self.network.get_hosts()
 
         for host_id, host_instance in hosts.items():
