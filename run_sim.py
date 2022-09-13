@@ -6,7 +6,7 @@ from mtdnetwork.constants import ATTACKER_THRESHOLD
 from mtdnetwork.event.adversary import Adversary
 import logging
 
-# logging.basicConfig(level=logging.INFO)
+# logging.basicConfig(format='%(message)s', level=logging.INFO)
 # Simulation time in seconds
 SIM_TIME = 30000
 

@@ -3,9 +3,9 @@
 1. set up new discrete event simulation structure:
    - get rid of the original `ActionManager` structure,
    - use `SimPy` to manage the time simulation, event processing, process interaction (interruption)
-   - implement time generator for generating exponential/normal/uniform/weibull/poisson variate
+   - implement time generator to generate exponential/normal/uniform/weibull/poisson variate
 
-2. set up new mtd deployment behavior:
+2. set up new mtd action flow:
    - introduce resource occupation mechanism:
      - MTD fetch resource when it executes, release resource when it completes
      - each resource has a `capacity` parameter (default=1)
@@ -33,14 +33,15 @@
 
 ## todo
 ### MTD related 
-1. MTD priority event queue ? (randomly select or base on resource type / priority)
+1. MTD triggering strategy -> priority event queue ? (randomly select or base on resource type / priority)
 2. MTD suspend / discard choice ?
 3. Resource capacity? (1 or more)
 4. Assign time mean / std / distribution type ? (MTD triggering interval, executing time of specific MTD)
 5. Metrics
+6. Interrupted attack by resource type of MTD or by individual MTD? ()
 
 ### Attack related
-1. Time penalty variation caused by MTD interruption (currently it is constant)
+1. refactor time penalty variation caused by MTD interruption (currently it is constant)
 2. Extract attack event statistics from record (Implement MTTC)
 3. Assign time mean / std / distribution type (each attack action) ?
 4. Metrics

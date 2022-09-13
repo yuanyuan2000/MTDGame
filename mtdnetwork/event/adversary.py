@@ -96,62 +96,6 @@ class Adversary:
         self.curr_process = 'SCAN_NEIGHBOR'
         self.attack_process = self.env.process(self.execute_attack_action(SCAN_NEIGHBOR, self.execute_scan_neighbors))
 
-    def handling_interruption(self, start_time, name):
-        """
-        a function to handle the interruption of the attack action caused by MTD operations
-        :param start_time: the start time of the attack action
-        :param name: the name of the attack action
-        """
-        self.attack_stats.append_attack_operation_record(name, start_time, self.env.now, self)
-        # confusion penalty caused by MTD operation
-        yield self.env.timeout(PENALTY)
-
-        if self.interrupted_mtd.resource_type == 'network':
-            self.reset_interrupt_state()
-            self.reset_host_state()
-            logging.info('Adversary: Restarting with host scan operation!')
-            self.scan_host()
-        elif self.interrupted_mtd.resource_type == 'application':
-            self.reset_interrupt_state()
-            logging.info('Adversary: Restarting with host scan operation!')
-            self.scan_port()
-
-    def reset_interrupt_state(self):
-        self.interrupted_mtd = None
-
-    def reset_host_state(self):
-        self.curr_host_id = -1
-        self.curr_host = None
-
-    def update_compromise_progress(self):
-        """
-        Updates the Hackers progress state when it compromises a host.
-        """
-        self.pivot_host_id = self.curr_host_id
-        if self.curr_host_id not in self.compromised_hosts:
-            self.compromised_hosts.append(self.curr_host_id)
-            self.attack_stats.update_compromise_host(self.curr_host_id)
-            logging.info("Adversary: Host %i has been compromised at %.1fs!: " % (self.curr_host_id, self.env.now))
-            self.network.update_reachable_compromise(self.curr_host_id, self.compromised_hosts)
-
-            for user in self.curr_host.get_compromised_users():
-                if user not in self.compromised_users:
-                    # self.scorer.add_user_account_leak(self.curr_time, user)
-                    pass
-            self.compromised_users = list(set(self.compromised_users + self.curr_host.get_compromised_users()))
-            if self.network.is_compromised(self.compromised_hosts):
-                # terminate the whole process todo
-                return
-
-            # If target network, set adversary as done once adversary has compromised target node
-            # if self.network.get_target_node() == self.curr_host_id:
-            # if self.network.get_network_type() == 0:
-            #      # terminate the whole process todo
-            #     self.target_compromised = True
-            #     self.end_event.succeed()
-            #     return
-            #
-
     def execute_scan_host(self):
         """
         Starts the Network enumeration stage.
@@ -165,7 +109,7 @@ class Adversary:
         if len(self.host_stack) > 0:
             self.enum_host()
         else:
-            # terminate the whole process todo
+            # terminate the whole process
             return
 
     def execute_enum_host(self):
@@ -216,7 +160,6 @@ class Adversary:
         user_reuse = self.curr_host.can_auto_compromise_with_users(self.compromised_users)
         if user_reuse:
             self.update_compromise_progress()
-            # self.scorer.add_host_reuse_pass_compromise(self.curr_time, self.curr_host)
             self.scan_neighbors()
             return
         self.exploit_vuln()
@@ -235,11 +178,11 @@ class Adversary:
 
         for vuln in self.curr_vulns:
             if vuln.is_exploited():
+                # todo: record vulnerability roa, impact, and complexity
                 # self.scorer.add_vuln_compromise(self.curr_time, vuln)
                 pass
         if is_exploited:
             self.update_compromise_progress()
-            # self.scorer.add_host_vuln_compromise(self.curr_time, self.curr_host)
             self.scan_neighbors()
         else:
             self.brute_force()
@@ -253,7 +196,6 @@ class Adversary:
         brute_force_result = self.curr_host.compromise_with_users(self.compromised_users)
         if brute_force_result:
             self.update_compromise_progress()
-            # self.scorer.add_host_pass_spray_compromise(self.curr_time, self.curr_host)
             self.scan_neighbors()
         else:
             self.enum_host()
@@ -287,6 +229,9 @@ class Adversary:
         self.pivot_host_id = -1
 
     def swap_hosts_in_compromised_hosts(self, host_id, other_host_id):
+        """
+        update compromised host ids for hosttopology shuffle
+        """
         new_compromised_hosts = []
 
         for i in self.compromised_hosts:
@@ -340,3 +285,51 @@ class Adversary:
     #
     #     return 1 - constants.HACKER_BLOCKED_BY_MTD_MAX_DISCOUNT * \
     #            average_observations / constants.HACKER_BLOCKED_BY_MTD_BLOCKS_TO_MAX_DISCOUNT
+    def handling_interruption(self, start_time, name):
+        """
+        a function to handle the interruption of the attack action caused by MTD operations
+        :param start_time: the start time of the attack action
+        :param name: the name of the attack action
+        """
+        self.attack_stats.append_attack_operation_record(name, start_time, self.env.now, self)
+        # confusion penalty caused by MTD operation
+        yield self.env.timeout(PENALTY)
+
+        if self.interrupted_mtd.resource_type == 'network':
+            self.interrupted_mtd = None
+            self.curr_host_id = -1
+            self.curr_host = None
+            logging.info('Adversary: Restarting with SCAN_HOST at %.1fs!' % self.env.now)
+            self.scan_host()
+        elif self.interrupted_mtd.resource_type == 'application':
+            self.interrupted_mtd = None
+            logging.info('Adversary: Restarting with SCAN_PORT at %.1fs!' % self.env.now)
+            self.scan_port()
+
+    def update_compromise_progress(self):
+        """
+        Updates the Hackers progress state when it compromises a host.
+        """
+        self.pivot_host_id = self.curr_host_id
+        if self.curr_host_id not in self.compromised_hosts:
+            self.compromised_hosts.append(self.curr_host_id)
+            self.attack_stats.update_compromise_host(self.curr_host_id)
+            logging.info("Adversary: Host %i has been compromised at %.1fs!" % (self.curr_host_id, self.env.now))
+            self.network.update_reachable_compromise(self.curr_host_id, self.compromised_hosts)
+
+            for user in self.curr_host.get_compromised_users():
+                if user not in self.compromised_users:
+                    self.attack_stats.update_compromise_user(user)
+            self.compromised_users = list(set(self.compromised_users + self.curr_host.get_compromised_users()))
+            if self.network.is_compromised(self.compromised_hosts):
+                # terminate the whole process
+                return
+
+            # If target network, set adversary as done once adversary has compromised target node
+            # if self.network.get_target_node() == self.curr_host_id:
+            # if self.network.get_network_type() == 0:
+            #      # terminate the whole process
+            #     self.target_compromised = True
+            #     self.end_event.succeed()
+            #     return
+            #

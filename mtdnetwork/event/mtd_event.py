@@ -55,6 +55,11 @@ def mtd_execute_action(env, mtd_strategy, network, adversary):
     start_time = env.now
     logging.info('MTD: %s deployed in the network at %.1fs.' % (mtd_strategy.name, start_time))
     yield env.timeout(exponential_variates(mtd_strategy.execution_time_mean, mtd_strategy.execution_time_std))
+    
+    # if network is already compromised while executing mtd:
+    if network.is_compromised(adversary.compromised_hosts):
+        return
+    
     # execute mtd
     mtd_strategy.mtd_operation(adversary)
 
