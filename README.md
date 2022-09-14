@@ -17,7 +17,7 @@ Integrate time domain into MTDSim based on my research project.
 6. Still developing.....
 
 
-## progress
+## Progresses
 
 1. set up new discrete event simulation structure:
     - get rid of the original `ActionManager` based structure
@@ -50,7 +50,7 @@ Integrate time domain into MTDSim based on my research project.
 5. continuing fix existing known issues and bugs, clean up redundant code, and adjust code structures for further implementations
 
 
-## todo
+## Todos
 ### MTD related
 1. MTD triggering strategy -> priority event queue ? (randomly select or base on resource type / priority)
 2. MTD suspend / discard choice ?
@@ -67,7 +67,7 @@ Integrate time domain into MTDSim based on my research project.
 4. Metrics
 
 
-## Architecture
+## System Architecture
 The system uses the 3-layer HARM model to represent the network. This is a representation of the network, with the lowest levels on the bottom and the highest levels on the top:
 
 | layer           | Description                                                                                                                              |
