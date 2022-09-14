@@ -2,7 +2,7 @@
 
 Integrate time domain into MTDSim based on my research project.
 
-### Setup this project
+## Setup this project
 
 1. Installing [conda](https://conda.io/projects/conda/en/latest/user-guide/install/index.html)
 2. Creating conda environment
@@ -17,14 +17,14 @@ Integrate time domain into MTDSim based on my research project.
 6. Still developing.....
 
 
-### progress
+## progress
 
 1. set up new discrete event simulation structure:
-    - get rid of the original `ActionManager` based structure,
+    - get rid of the original `ActionManager` based structure
     - use [SimPy](https://simpy.readthedocs.io/en/latest/index.html) to manage the time simulation, event processing, interaction (interruption)
     - use [time generator](https://github.com/MoeBuTa/MTDSimTime/blob/main/mtdnetwork/event/time_generator.py) to generate exponential/normal/uniform/weibull/poisson variate
 
-2. set up new mtd action flow:
+2. set up new mtd action flow in [mtd_event](https://github.com/MoeBuTa/MTDSimTime/blob/main/mtdnetwork/event/mtd_event.py):
     - introduce resource occupation mechanism:
         - MTD fetch resource when it executes, release resource when it completes
         - each resource has a `capacity` parameter (default=1) represents the number of available resource in the network.
@@ -40,7 +40,7 @@ Integrate time domain into MTDSim based on my research project.
 3. rework the attack profile to facilitate `SimPy` framework ([hacker](https://github.com/MoeBuTa/MTDSimTime/blob/New-Attack-Method/mtdnetwork/hacker.py) -> [adversary](https://github.com/MoeBuTa/MTDSimTime/blob/main/mtdnetwork/event/adversary.py))
     - scan_host: merged start network enum and set up host enum
     - enum_host: merged start host enum and process host enum
-    - scan_port: merged port scan and check pass reuse ()
+    - scan_port: merged port scan and check pass reuse 
     - exploit_vuln: merged find and exploit vulns
     - brute_force: merged start and process brute force
     - scan_neighbor: merged start and set up new neighbors
@@ -58,6 +58,7 @@ Integrate time domain into MTDSim based on my research project.
 4. Assign time mean / std / distribution type ? (MTD triggering interval, executing time of specific MTD)
 5. Metrics
 6. Interrupt attack by resource type of each MTD strategy or by individual MTD strategy? 
+7. pause and resume the simulation and change the settings.
 
 ### Attack related
 1. refactor time penalty variation caused by MTD interruption (currently it is constant)
@@ -66,17 +67,26 @@ Integrate time domain into MTDSim based on my research project.
 4. Metrics
 
 
+## Architecture
+The system uses the 3-layer HARM model to represent the network. This is a representation of the network, with the lowest levels on the bottom and the highest levels on the top:
+
+| layer           | Description                                                                                                                              |
+|-----------------|------------------------------------------------------------------------------------------------------------------------------------------|
+| Network         | Made up of all the Hosts, connected in an Attack Graph, with exposed and un-exposed hosts that attackers will attempt to compromise      |
+| Host            | Made up of several services (internal and external) in an Attack Graph.  The host is compromised when an internal service is compromised |
+| Services        | An attack tree of vulnerabilities. A service is compromised when  the sum of the vulnerabilities exploited impact is above 7             |
+| Vulnerabilities | Generated with a set Attack Complexity and Impact                                                                                        |
+
+more info: [MTD parameter](https://github.com/MoeBuTa/MTDSimTime/blob/main/docs/MTD%20Parameters.pdf)
 
 
-
-
-### Setup the previous works only
+## Setup the previous works only
 
 switch to another branch (MTDSim / New-Attack-Method) or go directly to:
 
-https://github.com/Ccamm/MTDSim
+[MTDSim](https://github.com/Ccamm/MTDSim)
 
-https://github.com/tzewenlee99/MTDSimTze
+[MTDSimTze](https://github.com/tzewenlee99/MTDSimTze)
 
 
 
@@ -97,12 +107,3 @@ This was all run on Python 3.9.13 64 Bit. In the root directory in terminal, run
      - `python -m mtdnetwork.run -m IPShuffle -n 50 -e 10 -s 5 -l 3 results.json`
 
 
-### Architecture
-The system uses the 3-layer HARM model to represent the network. This is a representation of the network, with the lowest levels on the bottom and the highest levels on the top:
-
-| layer           | Description                                                                                                                              |
-|-----------------|------------------------------------------------------------------------------------------------------------------------------------------|
-| Network         | Made up of all the Hosts, connected in an Attack Graph, with exposed and un-exposed hosts that attackers will attempt to compromise      |
-| Host            | Made up of several services (internal and external) in an Attack Graph.  The host is compromised when an internal service is compromised |
-| Services        | An attack tree of vulnerabilities. A service is compromised when  the sum of the vulnerabilities exploited impact is above 7             |
-| Vulnerabilities | Generated with a set Attack Complexity and Impact                                                                                        |
