@@ -15,34 +15,41 @@ MTD_DIVERSITY = [OSDiversity, ServiceDiversity]
 
 
 class MTDSchedule:
-    def __init__(self, mtd_interval_schedule: int, mtd_strategy_schedule: list):
+    def __init__(self, network, mtd_interval_schedule: int, mtd_strategy_schedule: list):
         self.mtd_interval_schedule = mtd_interval_schedule
         self.mtd_strategy_schedule = mtd_strategy_schedule
         self.timestamps = None
         self.compromised_ratios = None
+        self.network = network
 
     def adapt_schedule_by_time(self, env):
         now = env.now
-        if (self.timestamps[0] <= now < self.timestamps[1] or now >= self.timestamps[1]) and \
-                self.mtd_interval_schedule > 15:
+        if (self.timestamps[0] <= now < self.timestamps[1]) and (self.mtd_interval_schedule > 30):
             self.mtd_interval_schedule /= 2
             logging.info('Shorten the time interval to %.1f at %.1fs!'
                          % (self.mtd_interval_schedule, now))
+            self.network.get_mtd_stats().append_mtd_interval_record(now, self.mtd_interval_schedule)
+        elif (now >= self.timestamps[1]) and (15 < self.mtd_interval_schedule <= 30):
+            self.mtd_interval_schedule /= 2
+            logging.info('Shorten the time interval to %.1f at %.1fs!'
+                         % (self.mtd_interval_schedule, now))
+            self.network.get_mtd_stats().append_mtd_interval_record(now, self.mtd_interval_schedule)
         return self.mtd_interval_schedule
 
     def adapt_schedule_by_compromised_ratio(self, env, compromised_ratio):
         now = env.now
         if (self.compromised_ratios[0] <= compromised_ratio < self.compromised_ratios[1]) and \
                 len(self.mtd_strategy_schedule) < 4:
-            logging.info('Current compromised ratio is %.1f, switch to shuffle mtd strategy schedule at %.1fs!'
+            logging.info('Current compromised ratio is %.2f, switch to shuffle mtd strategy schedule at %.1fs!'
                          % (compromised_ratio, now))
             self.mtd_strategy_schedule = MTD_SHUFFLE
+            self.network.get_mtd_stats().append_mtd_strategy_record(now, 'shuffle')
         elif compromised_ratio >= self.compromised_ratios[1] and \
                 len(self.mtd_strategy_schedule) < 5:
-            logging.info('current compromised ratio is %.1f, switch to hybrid mtd strategy schedule at %.1fs!'
+            logging.info('current compromised ratio is %.2f, switch to hybrid mtd strategy schedule at %.1fs!'
                          % (compromised_ratio, now))
             self.mtd_strategy_schedule = MTD_HYBRID
-
+            self.network.get_mtd_stats().append_mtd_strategy_record(now, 'hybrid')
         return self.mtd_strategy_schedule
 
     def set_timestamps(self, timestamps: list):

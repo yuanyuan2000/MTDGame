@@ -75,7 +75,7 @@ class Vulnerability:
             return constants.VULN_MIN_EXPLOIT_TIME
         return constants.VULN_MIN_EXPLOIT_TIME + \
                (constants.VULN_MAX_EXPLOIT_TIME - constants.VULN_MIN_EXPLOIT_TIME) * (1 - self.complexity) / (
-                           self.exploit_attempt + 1)
+                       self.exploit_attempt + 1)
 
     def network(self, host=None):
         """
@@ -91,14 +91,14 @@ class Vulnerability:
         if self.exploited:
             return self.impact
 
-        if self.has_os_dependency and not host == None:
-            if not host.os_type in self.vuln_os_list:
+        if self.has_os_dependency and host is not None:
+            if host.os_type not in self.vuln_os_list:
                 return 0.0
         self.exploit_attempt += 1
         if random.random() < self.complexity:
             self.exploited = True
             if self.has_os_dependency:
-                self.logger.info("OS DEPENDENT VULNERABILITY EXPLOITED!")
+                self.logger.debug("OS DEPENDENT VULNERABILITY EXPLOITED!")
             return self.impact
         return 0.0
 
@@ -117,8 +117,8 @@ class Vulnerability:
     def initial_roa(self):
         return (self.complexity * self.impact) / (constants.VULN_MIN_EXPLOIT_TIME +
                                                   (
-                                                              constants.VULN_MAX_EXPLOIT_TIME - constants.VULN_MIN_EXPLOIT_TIME) * (
-                                                              1 - self.complexity))
+                                                          constants.VULN_MAX_EXPLOIT_TIME - constants.VULN_MIN_EXPLOIT_TIME) * (
+                                                          1 - self.complexity))
 
     def __eq__(self, other):
         """
@@ -361,7 +361,7 @@ class ServicesGenerator:
                 version_split = s_versions_len // total_os_versions
                 for os_version_index, os_version in enumerate(os_versions):
                     service_versions = self.services[service][s_versions_len - (
-                                os_version_index + 1) * version_split:s_versions_len - os_version_index * version_split]
+                            os_version_index + 1) * version_split:s_versions_len - os_version_index * version_split]
                     self.os_services[os_name][os_version][service] = service_versions
 
     def get_service_name_list(self):

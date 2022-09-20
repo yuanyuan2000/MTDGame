@@ -27,10 +27,12 @@ class TimeNetwork(Network):
 
     def initialise_mtd_schedule(self, mtd_interval_schedule, mtd_strategy_schedule,
                                 timestamps=None, compromised_ratios=None):
-        self.mtd_schedule = MTDSchedule(mtd_interval_schedule=mtd_interval_schedule,
+        self.mtd_schedule = MTDSchedule(network=self, mtd_interval_schedule=mtd_interval_schedule,
                                         mtd_strategy_schedule=mtd_strategy_schedule)
         self.mtd_schedule.set_timestamps(timestamps)
         self.mtd_schedule.set_compromised_ratios(compromised_ratios)
+        self.mtd_stats.append_mtd_interval_record(0, mtd_interval_schedule)
+        self.mtd_stats.append_mtd_strategy_record(0, 'diversity')
 
     def register_mtd(self, mtd_strategy):
         """
@@ -110,3 +112,6 @@ class TimeNetwork(Network):
 
     def get_mtd_schedule(self):
         return self.mtd_schedule
+
+    def get_mtd_stats(self):
+        return self.mtd_stats
