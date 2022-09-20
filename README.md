@@ -45,9 +45,13 @@ Integrate time domain into MTDSim based on my research project.
     - brute_force: merged start and process brute force
     - scan_neighbor: merged start and set up new neighbors
 
-4. refactoring and updating [data collection methods](https://github.com/MoeBuTa/MTDSimTime/tree/main/mtdnetwork/stats)
+4. Initially implement MTD scheduling mechanism, aims to adaptively adjust MTD interval and deploying strategy, currently based on 2 factors:
+    - Simulation timestamp - change mtd interval schedule
+    - compromised ratio (compromised hosts / total hosts) - change mtd strategy schedule
 
-5. continuing fix existing known issues and bugs, clean up redundant code, and adjust code structures for further implementations
+6. refactoring and updating [data collection methods](https://github.com/MoeBuTa/MTDSimTime/tree/main/mtdnetwork/stats)
+
+7. continuing fix existing known issues and bugs, clean up redundant code, and adjust code structures for further implementations
 
 
 ## Todos

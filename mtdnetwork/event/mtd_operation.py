@@ -1,36 +1,31 @@
 import random
 from mtdnetwork.event.time_generator import exponential_variates
-from mtdnetwork.mtd.completetopologyshuffle import CompleteTopologyShuffle
-from mtdnetwork.mtd.ipshuffle import IPShuffle
-from mtdnetwork.mtd.hosttopologyshuffle import HostTopologyShuffle
-from mtdnetwork.mtd.portshuffle import PortShuffle
-from mtdnetwork.mtd.osdiversity import OSDiversity
-from mtdnetwork.mtd.servicediversity import ServiceDiversity
-from mtdnetwork.mtd.usershuffle import UserShuffle
+from mtdnetwork.network.time_network import TimeNetwork
+from mtdnetwork.event.adversary import Adversary
 import logging
 
-# parameters for mtd triggering
-MTD_TRIGGER_MEAN = 30
 MTD_TRIGGER_STD = 0.5
 
-# parameters for capacity of application layer and network layer
-MTD_STRATEGIES = [CompleteTopologyShuffle, IPShuffle, HostTopologyShuffle,
-                  PortShuffle, OSDiversity, ServiceDiversity, UserShuffle]
 
-
-def mtd_trigger_action(env, network, adversary):
+def mtd_trigger_action(env, network: TimeNetwork, adversary: Adversary):
     """
     trigger an MTD strategy in a given exponential time (next_mtd)
 
     Select Execute or suspend/discard MTD strategy
     based on the given resource occupation condition
     """
-    while not network.is_compromised(adversary.compromised_hosts):
+    mtd_interval = network.get_mtd_schedule().get_mtd_interval_schedule()
+    mtd_strategies = network.get_mtd_schedule().get_mtd_strategy_schedule()
+    while not network.is_compromised(adversary.get_compromised_hosts()):
+        mtd_interval = network.get_mtd_schedule().adapt_schedule_by_time(env)
+        mtd_strategies = network.get_mtd_schedule().adapt_schedule_by_compromised_ratio(
+            env, network.compromised_ratio(len(adversary.get_compromised_hosts())))
+
         # exponential distribution for triggering MTD operations
-        yield env.timeout(exponential_variates(MTD_TRIGGER_MEAN, MTD_TRIGGER_STD))
+        yield env.timeout(exponential_variates(mtd_interval, MTD_TRIGGER_STD))
 
         # register an MTD to the queue
-        network.register_mtd(random.choice(MTD_STRATEGIES))
+        network.register_mtd(random.choice(mtd_strategies))
 
         # trigger MTD
         mtd_strategy = network.trigger_mtd()

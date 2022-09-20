@@ -1,14 +1,19 @@
 import simpy
 from mtdnetwork.network.targetnetwork import Network as TargetNetwork
 from mtdnetwork.network.time_network import TimeNetwork
-from mtdnetwork.event.mtd_event import mtd_trigger_action
+from mtdnetwork.event.mtd_operation import mtd_trigger_action
 from mtdnetwork.constants import ATTACKER_THRESHOLD
 from mtdnetwork.event.adversary import Adversary
+from mtdnetwork.mtd.osdiversity import OSDiversity
+from mtdnetwork.mtd.servicediversity import ServiceDiversity
 import logging
 
 logging.basicConfig(format='%(message)s', level=logging.INFO)
 # Simulation time in seconds
 SIM_TIME = 30000
+
+# parameters for mtd triggering
+MTD_TRIGGER_MEAN = 60
 
 
 def create_network(env):
@@ -30,6 +35,10 @@ def run_sim():
 
     # initialise network to perform MTD strategies
     time_network = create_network(env)
+    time_network.initialise_mtd_schedule(mtd_interval_schedule=MTD_TRIGGER_MEAN,
+                                         mtd_strategy_schedule=[OSDiversity, ServiceDiversity],
+                                         timestamps=[10000, 20000],
+                                         compromised_ratios=[0.2, 0.5])
 
     # triggering adversary
     adversary = Adversary(env=env, network=time_network, attack_threshold=ATTACKER_THRESHOLD)

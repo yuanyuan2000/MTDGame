@@ -1,3 +1,5 @@
+import pandas as pd
+
 class AttackStatistics:
     def __init__(self):
         self.attack_operation_record = []
@@ -29,3 +31,11 @@ class AttackStatistics:
 
     def update_compromise_user(self, user):
         self.attack_operation_record[-1]['compromise_users'].append(user)
+
+    def get_record(self):
+        return self.attack_operation_record
+
+    def get_compromised_attack_operation_counts(self):
+        record = pd.DataFrame(self.attack_operation_record)
+        return record[~record['compromise_host'].isnull()]['name'].str.split(
+            expand=True).stack().value_counts().reset_index().rename(columns={'index': 'name', 0: 'frequency'})

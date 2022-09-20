@@ -3,6 +3,7 @@ import random
 from mtdnetwork.network.copynetwork import Network
 import simpy
 from mtdnetwork.stats.mtd_stats import MTDStatistics
+from mtdnetwork.event.mtd_schedule import MTDSchedule
 
 NETWORK_LAYER_CAPACITY = 1
 APPLICATION_LAYER_CAPACITY = 1
@@ -20,8 +21,16 @@ class TimeNetwork(Network):
         self.network_layer_resource = simpy.Resource(env, NETWORK_LAYER_CAPACITY)
         self.reserve_resource = simpy.Resource(env, 1)
         self.mtd_stats = MTDStatistics()
+        self.mtd_schedule = None
         super().__init__(graph, pos, colour_map, total_nodes, total_endpoints, total_subnets,
                          total_layers, node_per_layer, users_list, users_per_host)
+
+    def initialise_mtd_schedule(self, mtd_interval_schedule, mtd_strategy_schedule,
+                                timestamps=None, compromised_ratios=None):
+        self.mtd_schedule = MTDSchedule(mtd_interval_schedule=mtd_interval_schedule,
+                                        mtd_strategy_schedule=mtd_strategy_schedule)
+        self.mtd_schedule.set_timestamps(timestamps)
+        self.mtd_schedule.set_compromised_ratios(compromised_ratios)
 
     def register_mtd(self, mtd_strategy):
         """
@@ -95,3 +104,9 @@ class TimeNetwork(Network):
         discovered_hosts = [n for n in uncompromised_hosts if n not in stop_attack]
 
         return discovered_hosts
+
+    def compromised_ratio(self, compromised_hosts):
+        return compromised_hosts / self.total_nodes
+
+    def get_mtd_schedule(self):
+        return self.mtd_schedule

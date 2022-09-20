@@ -9,7 +9,7 @@ SCAN_HOST = 5
 ENUM_HOST = 2
 SCAN_NEIGHBOR = 5
 SCAN_PORT = 10
-EXPLOIT_VULN_MEAN = 30
+EXPLOIT_VULN_MEAN = 20
 EXPLOIT_VULN_STD = 0.8
 BRUTE_FORCE = 20
 PENALTY = 2
@@ -333,3 +333,10 @@ class Adversary:
             #     self.end_event.succeed()
             #     return
             #
+
+    def get_compromised_hosts(self):
+        return self.compromised_hosts
+
+    def get_statistics(self):
+        return self.attack_stats.get_record()
+
