@@ -190,7 +190,7 @@ class Network:
         Returns:
             a tuple where the first element is the shortest path and the second element is the distance
         """
-        if graph == None:
+        if graph is None:
             graph = self.graph
 
         shortest_distance = constants.LARGE_INT

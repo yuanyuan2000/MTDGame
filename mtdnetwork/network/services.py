@@ -238,6 +238,9 @@ class ServicesGenerator:
             dependent_vuln_chance (Unused):
                 the chance that a vulnerability can only be exploited if there is another particular type vulnerability that can also be exploited
         """
+        self.services = None
+        self.service_names = None
+        self.os_services = None
         self.services_per_os = services_per_os
         self.percent_cross_platform = percent_cross_platform
         self.os_dependent_vuln_chance = os_dependent_vuln_chance
@@ -307,7 +310,7 @@ class ServicesGenerator:
             for os_version in constants.OS_VERSION_DICT[os_type]:
                 self.os_services[os_type][os_version] = {}
 
-        wordlist = ServicesGenerator.get_service_name_list(self)
+        wordlist = ServicesGenerator.get_service_name_list()
         types_of_os = len(constants.OS_TYPES)
         total_services = self.services_per_os * types_of_os
         self.service_names = random.choices(wordlist, k=total_services)
@@ -364,5 +367,6 @@ class ServicesGenerator:
                             os_version_index + 1) * version_split:s_versions_len - os_version_index * version_split]
                     self.os_services[os_name][os_version][service] = service_versions
 
-    def get_service_name_list(self):
+    @staticmethod
+    def get_service_name_list():
         return [x.decode() for x in pkg_resources.resource_string('mtdnetwork', "data/words.txt").splitlines()]

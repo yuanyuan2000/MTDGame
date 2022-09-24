@@ -1,5 +1,6 @@
 import pandas as pd
 
+
 class AttackStatistics:
     def __init__(self):
         self.attack_operation_record = []

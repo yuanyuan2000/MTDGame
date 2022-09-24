@@ -24,7 +24,7 @@ Integrate time domain into MTDSim based on my research project.
     - use [SimPy](https://simpy.readthedocs.io/en/latest/index.html) to manage the time simulation, event processing, interaction (interruption)
     - use [time generator](https://github.com/MoeBuTa/MTDSimTime/blob/main/mtdnetwork/event/time_generator.py) to generate exponential/normal/uniform/weibull/poisson variate
 
-2. set up new mtd action flow in [mtd_event](https://github.com/MoeBuTa/MTDSimTime/blob/main/mtdnetwork/event/mtd_event.py):
+2. set up new mtd action flow in [mtd_operation](https://github.com/MoeBuTa/MTDSimTime/blob/main/mtdnetwork/event/mtd_operation.py):
     - introduce resource occupation mechanism:
         - MTD fetch resource when it executes, release resource when it completes
         - each resource has a `capacity` parameter (default=1) represents the number of available resource in the network.

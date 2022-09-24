@@ -12,12 +12,13 @@ MTD_HYBRID = [CompleteTopologyShuffle, IPShuffle, HostTopologyShuffle,
               PortShuffle, OSDiversity, ServiceDiversity, UserShuffle]
 MTD_SHUFFLE = [CompleteTopologyShuffle, IPShuffle, HostTopologyShuffle, PortShuffle]
 MTD_DIVERSITY = [OSDiversity, ServiceDiversity]
+MTD_INTERVAL = 30
 
 
 class MTDSchedule:
-    def __init__(self, network, mtd_interval_schedule: int, mtd_strategy_schedule: list):
-        self.mtd_interval_schedule = mtd_interval_schedule
-        self.mtd_strategy_schedule = mtd_strategy_schedule
+    def __init__(self, network):
+        self.mtd_interval_schedule = MTD_INTERVAL
+        self.mtd_strategy_schedule = MTD_HYBRID
         self.timestamps = None
         self.compromised_ratios = None
         self.network = network
@@ -58,6 +59,12 @@ class MTDSchedule:
     def set_compromised_ratios(self, compromised_ratios):
         self.compromised_ratios = compromised_ratios
 
+    def set_mtd_interval_schedule(self, mtd_interval_schedule):
+        self.mtd_interval_schedule = mtd_interval_schedule
+
+    def set_mtd_strategy_schedule(self, mtd_strategy_schedule):
+        self.mtd_strategy_schedule = mtd_strategy_schedule
+
     def extend_mtd_strategy_schedule(self, mtd_strategies: list):
         self.mtd_strategy_schedule.extend(mtd_strategies)
 
@@ -66,3 +73,4 @@ class MTDSchedule:
 
     def get_mtd_strategy_schedule(self):
         return self.mtd_strategy_schedule
+

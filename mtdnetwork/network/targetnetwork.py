@@ -9,7 +9,7 @@ from mtdnetwork.network.host import Host
 from mtdnetwork.stats.scorer import Scorer
 
 
-class Network:
+class TargetNetwork:
 
     def __init__(self, total_nodes, total_endpoints, total_subnets, total_layers, target_layer,
                  users_to_nodes_ratio=constants.USER_TO_NODES_RATIO,
@@ -35,6 +35,12 @@ class Network:
             seed:
                 the seed for the random number generator if one needs to be set
         """
+        self.graph = None
+        self.colour_map = None
+        self.users_per_host = None
+        self.total_users = None
+        self.users_list = None
+        self.pos = None
         if seed is not None:
             random.seed(seed)
         self.total_nodes = total_nodes
@@ -200,7 +206,8 @@ class Network:
             if self.total_subnets - (sum(subnets_per_layer) + l_subnets) > self.layers - len(subnets_per_layer):
                 subnets_per_layer.append(l_subnets)
 
-        # Randomly adds one to random subnets until there is the correct amount of subnets (Could be Optimised in future)
+        # Randomly adds one to random subnets until there is the correct amount of subnets (Could be Optimised in
+        # future)
         while sum(subnets_per_layer) < self.total_subnets:
             s_index = random.randint(1, self.layers - 1)
             if subnets_per_layer[s_index] <= max_subnets_per_layer:
@@ -282,9 +289,9 @@ class Network:
                 self.pos = {**self.pos, **subgraph_pos}
 
                 # Selects Target Host
-                if ((i == self.target_layer) and (j == 1)):
+                if (i == self.target_layer) and (j == 1):
                     self.target_node = node_id - random.randrange(0, s_nodes)
-                    print("Target Node is: ", self.target_node)
+                    # print("Target Node is: ", self.target_node)
 
                 # Assigns Colour of nodes based on constant key
                 for k in range(s_nodes):
@@ -466,7 +473,7 @@ class Network:
                         k: np.array([0, k])
                         for k, _v in subgraph_pos.items()
                     }
-                # Stores all the positions of items from subgraphs    
+                # Stores all the positions of items from subgraphs
                 self.pos = {**self.pos, **subgraph_pos}
 
                 # Assigns Colour of nodes based on constant key
@@ -507,7 +514,7 @@ class Network:
         blank_endpoints = []
 
         # Remove edges between endpoint nodes (not needed since adversary can reach them all anyway)
-        # Store all external nodes with no internal nodes into blank_endpoints   
+        # Store all external nodes with no internal nodes into blank_endpoints
         for n in endpoint_nodes_list:
             neighbors = list(self.graph.neighbors(n))
             for neighbor in neighbors:
@@ -533,7 +540,7 @@ class Network:
         self.total_nodes = len(self.nodes)
         self.total_endpoints = self.total_endpoints - len(blank_endpoints)
 
-        # Fix positions for endpoints    
+        # Fix positions for endpoints
         for n in range(self.total_endpoints):
             position = (n + 1) / self.total_endpoints * (max_y_pos - min_y_pos) + min_y_pos
             new_pos = {n: np.array([0, position])}
@@ -545,7 +552,7 @@ class Network:
         """
         ip_addresses = []
         for host_id in self.nodes:
-            node_os = Host.get_random_os(self)
+            node_os = Host.get_random_os()
             node_os_version = Host.get_random_os_version(node_os)
             node_ip = Host.get_random_address(existing_addresses=ip_addresses)
             ip_addresses.append(node_ip)
@@ -558,46 +565,6 @@ class Network:
                 self,
                 self.service_generator
             )
-
-    def set_mtd_trigger_time(self, curr_time):
-        """
-        Sets the time for when the next MTD operation will be triggered.
-
-        Parameters:
-            curr_time:
-                the time value that the simulation is currently at
-        """
-        self.trigger_time = curr_time + random.randint(constants.MTD_MIN_TRIGGER_TIME, constants.MTD_MAX_TRIGGER_TIME)
-
-    def register_mtd(self, mtd_strategy):
-        """
-        Registers a MTD strategy that will reconfigure the Network during the simulation to try and thwart the hacker.
-
-        Paramters:
-            mtd_strategy:
-                an instance of MTDStrategy that the network will use to reconfigure the network
-        """
-        if len(self.mtd_strategies) == 0:
-            self.set_mtd_trigger_time(0)
-        mtd_strat = mtd_strategy(self)
-        self.mtd_strategies.append(mtd_strat)
-        self.scorer.register_mtd(mtd_strat)
-
-    def step(self, curr_time):
-        """
-        Checks if a proactive MTD operation is triggered and randomly picks a MTD strategy and runs its operation.
-
-        Paramters:
-            curr_time:
-                the time value that the simulation is currently at
-        """
-        if len(self.mtd_strategies) > 0:
-            if curr_time >= self.trigger_time:
-                mtd_strat = random.choice(self.mtd_strategies)
-                mtd_strat.mtd_operation()
-                self.set_mtd_trigger_time(curr_time)
-                self.scorer.set_last_mtd(mtd_strat)
-                self.scorer.add_mtd_event(curr_time)
 
     def get_hacker_visible_graph(self):
         """
@@ -706,7 +673,7 @@ class Network:
         Returns:
             a tuple where the first element is the shortest path and the second element is the distance
         """
-        if graph == None:
+        if graph is None:
             graph = self.graph
 
         shortest_distance = constants.LARGE_INT
@@ -733,7 +700,7 @@ class Network:
     def get_shortest_distance_from_exposed_or_pivot(self, host_id, pivot_host_id=-1, graph=None):
         if host_id in self.exposed_endpoints:
             return 0
-        if graph == None:
+        if graph is None:
             graph = self.graph
         shortest_distance = self.get_path_from_exposed(host_id, graph=graph)[1]
         if pivot_host_id >= 0:

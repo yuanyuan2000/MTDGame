@@ -569,6 +569,7 @@ class Host:
         """
         return nx.draw_networkx(self.graph, node_color=self.colour_map, with_labels=True)
 
+    @staticmethod
     def get_random_os_version(operating_system):
         """
         Gets a random Operating System version.
@@ -586,14 +587,16 @@ class Host:
         total_versions = len(versions)
         return random.choices(versions, weights=[total_versions - index for index in range(total_versions)], k=1)[0]
 
-    def get_random_os(self):
+    @staticmethod
+    def get_random_os():
         """
         Returns:
             A random OS
         """
         return random.choice(constants.OS_TYPES)
 
-    def get_random_address(existing_addresses=[]):
+    @staticmethod
+    def get_random_address(existing_addresses=None):
         """
         Gets a Random IP address and makes sure that one does not already exist.
 
@@ -604,12 +607,15 @@ class Host:
         Returns:    
             a IPv4 address
         """
+        if existing_addresses is None:
+            existing_addresses = []
         new_ip = "{}.{}.{}.{}".format(*[random.randint(1, 256) for _i in range(4)])
         if new_ip in existing_addresses:
             return Host.get_random_address(existing_addresses=existing_addresses)
         return new_ip
 
-    def get_random_port(existing_ports=[]):
+    @staticmethod
+    def get_random_port(existing_ports=None):
         """
         Gets a random port while checking a port has already been allocated for a host
 
@@ -620,6 +626,8 @@ class Host:
         Returns:
             a new port number for the new service
         """
+        if existing_ports is None:
+            existing_ports = []
         new_port = random.choice(constants.HOST_PORT_RANGE)
         if new_port in existing_ports:
             return Host.get_random_port(existing_ports=existing_ports)

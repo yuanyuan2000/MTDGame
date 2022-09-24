@@ -45,10 +45,19 @@ class Adversary:
         self.env = env
         self.attack_process = None
         self.curr_process = 'SCAN_HOST'
-        self.end_event = self.env.event()
+        self.now = 0
 
-        # start attack!
-        self.scan_host()
+    def proceed_attack(self):
+        if self.curr_process == 'SCAN_HOST':
+            self.scan_host()
+        elif self.curr_process == 'ENUM_HOST':
+            self.enum_host()
+        elif self.curr_process == 'SCAN_NEIGHBOR':
+            self.scan_neighbors()
+        elif self.curr_process == 'EXPLOIT_VULN':
+            self.exploit_vuln()
+        elif self.curr_process == 'BRUTE_FORCE':
+            self.brute_force()
 
     def execute_attack_action(self, time, attack_action):
         """
@@ -56,14 +65,14 @@ class Adversary:
         :param time: The time duration before executing an attack action.
         :param attack_action: attack action
         """
-        start_time = self.env.now
+        start_time = self.env.now + self.now
         try:
             logging.info("Adversary: Start %s at %.1fs." % (self.curr_process, start_time))
             yield self.env.timeout(time)
         except simpy.Interrupt:
             self.env.process(self.handling_interruption(start_time, self.curr_process))
             return
-        finish_time = self.env.now
+        finish_time = self.env.now + self.now
         logging.info("Adversary: Processed %s at %.1fs." % (self.curr_process, finish_time))
         self.attack_stats.append_attack_operation_record(self.curr_process, start_time, finish_time, self)
         attack_action()
@@ -291,7 +300,7 @@ class Adversary:
         :param start_time: the start time of the attack action
         :param name: the name of the attack action
         """
-        self.attack_stats.append_attack_operation_record(name, start_time, self.env.now, self)
+        self.attack_stats.append_attack_operation_record(name, start_time, self.env.now + self.now, self)
         # confusion penalty caused by MTD operation
         yield self.env.timeout(PENALTY)
 
@@ -299,11 +308,11 @@ class Adversary:
             self.interrupted_mtd = None
             self.curr_host_id = -1
             self.curr_host = None
-            logging.info('Adversary: Restarting with SCAN_HOST at %.1fs!' % self.env.now)
+            logging.info('Adversary: Restarting with SCAN_HOST at %.1fs!' % (self.env.now + self.now))
             self.scan_host()
         elif self.interrupted_mtd.resource_type == 'application':
             self.interrupted_mtd = None
-            logging.info('Adversary: Restarting with SCAN_PORT at %.1fs!' % self.env.now)
+            logging.info('Adversary: Restarting with SCAN_PORT at %.1fs!' % (self.env.now + self.now))
             self.scan_port()
 
     def update_compromise_progress(self):
@@ -314,7 +323,7 @@ class Adversary:
         if self.curr_host_id not in self.compromised_hosts:
             self.compromised_hosts.append(self.curr_host_id)
             self.attack_stats.update_compromise_host(self.curr_host_id)
-            logging.info("Adversary: Host %i has been compromised at %.1fs!" % (self.curr_host_id, self.env.now))
+            logging.info("Adversary: Host %i has been compromised at %.1fs!" % (self.curr_host_id, self.env.now+self.now))
             self.network.update_reachable_compromise(self.curr_host_id, self.compromised_hosts)
 
             for user in self.curr_host.get_compromised_users():
@@ -340,3 +349,12 @@ class Adversary:
     def get_statistics(self):
         return self.attack_stats.get_record()
 
+    def clear_properties(self):
+        self.env = None
+        self.interrupted_mtd = None
+        self.attack_process = None
+        return self
+
+    def reconfigure_properties(self, env, now):
+        self.env = env
+        self.now = now

@@ -32,3 +32,4 @@ class MTDStatistics:
             'Switch MTD interval at': self.switch_mtd_interval_at,
             'Switch MTD strategy at': self.switch_mtd_strategy_at
         }
+

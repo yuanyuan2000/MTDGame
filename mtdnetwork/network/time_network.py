@@ -4,9 +4,7 @@ from mtdnetwork.network.copynetwork import Network
 import simpy
 from mtdnetwork.stats.mtd_stats import MTDStatistics
 from mtdnetwork.event.mtd_schedule import MTDSchedule
-
-NETWORK_LAYER_CAPACITY = 1
-APPLICATION_LAYER_CAPACITY = 1
+from mtdnetwork.network.targetnetwork import TargetNetwork
 
 
 class TimeNetwork(Network):
@@ -15,20 +13,36 @@ class TimeNetwork(Network):
                  node_per_layer, users_list, users_per_host):
         # default parameters
         # self.mtd_strategy_queue = PriorityQueue()
+        self.env = env
+        self.now = 0
         self.mtd_strategy_queue = deque()
         self.suspended_queue = deque()
-        self.application_layer_resource = simpy.Resource(env, APPLICATION_LAYER_CAPACITY)
-        self.network_layer_resource = simpy.Resource(env, NETWORK_LAYER_CAPACITY)
-        self.reserve_resource = simpy.Resource(env, 1)
+        self.application_layer_resource = simpy.Resource(self.env, 1)
+        self.network_layer_resource = simpy.Resource(self.env, 1)
+        self.reserve_resource = simpy.Resource(self.env, 1)
         self.mtd_stats = MTDStatistics()
-        self.mtd_schedule = None
+        self.mtd_schedule = MTDSchedule(network=self)
         super().__init__(graph, pos, colour_map, total_nodes, total_endpoints, total_subnets,
                          total_layers, node_per_layer, users_list, users_per_host)
 
+    @staticmethod
+    def create_network(env):
+        target_network = TargetNetwork(total_nodes=200, total_endpoints=20, total_subnets=20, total_layers=5,
+                                       target_layer=2)
+        graph = target_network.get_graph_copy()
+        colour_map = target_network.get_colourmap()
+        pos = target_network.get_pos()
+        node_per_layer = target_network.get_node_per_layer()
+        users_list = target_network.get_users_list()
+        users_per_host = target_network.get_users_per_host()
+        time_network = TimeNetwork(env, graph, pos, colour_map, 200, 20, 20, 5, node_per_layer, users_list,
+                                   users_per_host)
+        return time_network
+
     def initialise_mtd_schedule(self, mtd_interval_schedule, mtd_strategy_schedule,
                                 timestamps=None, compromised_ratios=None):
-        self.mtd_schedule = MTDSchedule(network=self, mtd_interval_schedule=mtd_interval_schedule,
-                                        mtd_strategy_schedule=mtd_strategy_schedule)
+        self.mtd_schedule.set_mtd_interval_schedule(mtd_interval_schedule)
+        self.mtd_schedule.set_mtd_strategy_schedule(mtd_strategy_schedule)
         self.mtd_schedule.set_timestamps(timestamps)
         self.mtd_schedule.set_compromised_ratios(compromised_ratios)
         self.mtd_stats.append_mtd_interval_record(0, mtd_interval_schedule)
@@ -107,6 +121,9 @@ class TimeNetwork(Network):
 
         return discovered_hosts
 
+    def reconfigure_network(self):
+        pass
+
     def compromised_ratio(self, compromised_hosts):
         return compromised_hosts / self.total_nodes
 
@@ -115,3 +132,20 @@ class TimeNetwork(Network):
 
     def get_mtd_stats(self):
         return self.mtd_stats
+
+    def clear_properties(self):
+        self.reserve_resource = None
+        self.application_layer_resource = None
+        self.network_layer_resource = None
+        self.env = None
+        self.mtd_strategy_queue = deque()
+        self.suspended_queue = deque()
+        return self
+
+    def reconfigure_properties(self, env, now):
+        self.env = env
+        self.now = now
+        self.application_layer_resource = simpy.Resource(self.env, 1)
+        self.network_layer_resource = simpy.Resource(self.env, 1)
+        self.reserve_resource = simpy.Resource(self.env, 1)
+
