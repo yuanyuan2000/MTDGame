@@ -15,7 +15,7 @@ logging.basicConfig(format='%(message)s', level=logging.INFO)
 SIM_TIME = 3000
 
 
-def run_sim(time_network=None, adversary=None, now=0):
+def run_state_save_sim(time_network=None, adversary=None, now=0):
     # set up event execution environment
     env = simpy.Environment()
     if now == 0:
@@ -37,21 +37,38 @@ def run_sim(time_network=None, adversary=None, now=0):
     return env.now, time_network, adversary
 
 
-def main():
+def run_state_save_main():
     time_network = None
     adversary = None
     now = 0
     adversary_state = AdversaryState()
     network_state = NetworkState()
     for i in range(10):
-        # time_network = network_state.load_network_state(now)
-        # adversary = adversary_state.load_adversary(now)
-        stop_time, time_network, adversary = run_sim(time_network, adversary, now)
+        time_network = network_state.load_network_state(now)
+        adversary = adversary_state.load_adversary(now)
+        stop_time, time_network, adversary = run_state_save_sim(time_network, adversary, now)
         now += stop_time
         network_state.save_network_state(time_network, now)
         adversary_state.save_adversary(adversary, now)
         if time_network.is_compromised(adversary.compromised_hosts):
             return time_network, adversary
+    return time_network, adversary
+
+
+def main():
+    # set up event execution environment
+    env = simpy.Environment()
+    time_network = TimeNetwork.create_network(env)
+    adversary = Adversary(env=env, network=time_network, attack_threshold=ATTACKER_THRESHOLD)
+
+    # start attack!
+    adversary.proceed_attack()
+    # triggering mtd operations
+    env.process(mtd_trigger_action(env=env, network=time_network,
+                                   adversary=adversary))
+    # Execute!
+    env.run(until=SIM_TIME)
+
     return time_network, adversary
 
 
