@@ -3,10 +3,10 @@ from mtdnetwork.mtd import *
 
 class PortShuffle(MTD):
 
-    def __init__(self, network):
+    def __init__(self, network, mtd_operation):
         self.logger = logging.getLogger("mtd:portshuffle")
         super().__init__(name="PortShuffle", network=network, resource_type='application',
-                         resource=network.application_layer_resource, execution_time_mean=40, execution_time_std=0.5)
+                         resource=mtd_operation.get_application_resource(), execution_time_mean=40, execution_time_std=0.5)
 
     def mtd_operation(self, adversary=None):
         self.logger.debug("changing ports of services on hosts")

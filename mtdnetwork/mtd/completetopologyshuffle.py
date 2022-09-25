@@ -6,10 +6,10 @@ class CompleteTopologyShuffle(MTD):
     Completely regenerates the network, preserving the hosts from previously.
     """
 
-    def __init__(self, network):
+    def __init__(self, network, mtd_operation):
         self.logger = logging.getLogger("mtd:basictopologyshuffle")
         super().__init__(name="CompleteTopologyShuffle", network=network, resource_type='network',
-                         resource=network.network_layer_resource, execution_time_mean=70, execution_time_std=0.5)
+                         resource=mtd_operation.get_network_resource(), execution_time_mean=70, execution_time_std=0.5)
 
     def mtd_operation(self, adversary=None):
         self.logger.debug("shuffling entire network topology")

@@ -18,4 +18,14 @@ class MTD:
     def __str__(self):
         return self.name + ' ' + self.resource_type + ' ' + self.execution_time_mean
 
+    def get_resource_type(self):
+        return self.resource_type
 
+    def get_name(self):
+        return self.name
+
+    def get_execution_time_mean(self):
+        return self.execution_time_mean
+
+    def get_execution_time_std(self):
+        return self.execution_time_std

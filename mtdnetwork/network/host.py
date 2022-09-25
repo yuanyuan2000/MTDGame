@@ -299,8 +299,7 @@ class Host:
                 "service": exposed_services[host_id]
             }
             for host_id in exposed_services
-            if port_numbers[host_id] in discovered_service_ports and \
-               not host_id in ignore_services
+            if port_numbers[host_id] in discovered_service_ports and host_id not in ignore_services
         ]
 
         return sorted(

@@ -1,5 +1,5 @@
 import pickle
-from mtdnetwork.event.adversary import Adversary
+from mtdnetwork.network.adversary import Adversary
 from mtdnetwork.state import State
 
 
@@ -11,7 +11,6 @@ class AdversaryState(State):
         """
         saving adversary state
         """
-        adversary = adversary.clear_properties()
         file_name = self.save_file_by_time('adversary', timestamp)
         with open(file_name, 'wb') as f:
             pickle.dump(adversary, f, pickle.HIGHEST_PROTOCOL)

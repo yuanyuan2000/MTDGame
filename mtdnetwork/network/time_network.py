@@ -1,32 +1,23 @@
-from collections import deque
 import random
 from mtdnetwork.network.copynetwork import Network
-import simpy
 from mtdnetwork.stats.mtd_stats import MTDStatistics
-from mtdnetwork.event.mtd_schedule import MTDSchedule
+from mtdnetwork.network.mtd_schedule import MTDSchedule
 from mtdnetwork.network.targetnetwork import TargetNetwork
 
 
 class TimeNetwork(Network):
 
-    def __init__(self, env, graph, pos, colour_map, total_nodes, total_endpoints, total_subnets, total_layers,
+    def __init__(self, graph, pos, colour_map, total_nodes, total_endpoints, total_subnets, total_layers,
                  node_per_layer, users_list, users_per_host):
         # default parameters
         # self.mtd_strategy_queue = PriorityQueue()
-        self.env = env
-        self.now = 0
-        self.mtd_strategy_queue = deque()
-        self.suspended_queue = deque()
-        self.application_layer_resource = simpy.Resource(self.env, 1)
-        self.network_layer_resource = simpy.Resource(self.env, 1)
-        self.reserve_resource = simpy.Resource(self.env, 1)
-        self.mtd_stats = MTDStatistics()
-        self.mtd_schedule = MTDSchedule(network=self)
+        self._mtd_stats = MTDStatistics()
+        self._mtd_schedule = MTDSchedule(network=self)
         super().__init__(graph, pos, colour_map, total_nodes, total_endpoints, total_subnets,
                          total_layers, node_per_layer, users_list, users_per_host)
 
     @staticmethod
-    def create_network(env):
+    def create_network():
         target_network = TargetNetwork(total_nodes=200, total_endpoints=20, total_subnets=20, total_layers=5,
                                        target_layer=2)
         graph = target_network.get_graph_copy()
@@ -35,43 +26,18 @@ class TimeNetwork(Network):
         node_per_layer = target_network.get_node_per_layer()
         users_list = target_network.get_users_list()
         users_per_host = target_network.get_users_per_host()
-        time_network = TimeNetwork(env, graph, pos, colour_map, 200, 20, 20, 5, node_per_layer, users_list,
+        time_network = TimeNetwork(graph, pos, colour_map, 200, 20, 20, 5, node_per_layer, users_list,
                                    users_per_host)
         return time_network
 
     def initialise_mtd_schedule(self, mtd_interval_schedule, mtd_strategy_schedule,
                                 timestamps=None, compromised_ratios=None):
-        self.mtd_schedule.set_mtd_interval_schedule(mtd_interval_schedule)
-        self.mtd_schedule.set_mtd_strategy_schedule(mtd_strategy_schedule)
-        self.mtd_schedule.set_timestamps(timestamps)
-        self.mtd_schedule.set_compromised_ratios(compromised_ratios)
-        self.mtd_stats.append_mtd_interval_record(0, mtd_interval_schedule)
-        self.mtd_stats.append_mtd_strategy_record(0, 'diversity')
-
-    def register_mtd(self, mtd_strategy):
-        """
-        Registers an MTD strategy that will reconfigure the Network during the simulation to try and thwart the hacker.
-
-        Paramters:
-            mtd_strategy:
-                an instance of MTDStrategy that the network will use to reconfigure the network
-        """
-        mtd_strategy = mtd_strategy(self)
-        self.mtd_strategy_queue.append(mtd_strategy)
-
-    def trigger_mtd(self):
-        """
-        pop up the MTD and trigger it.
-        :return:
-        """
-        self.mtd_stats.total_triggered += 1
-        if len(self.suspended_queue) != 0:
-            return self.suspended_queue.popleft()
-        return self.mtd_strategy_queue.popleft()
-
-    def suspend_mtd(self, mtd_strategy):
-        self.mtd_stats.total_suspended += 1
-        self.suspended_queue.append(mtd_strategy)
+        self._mtd_schedule.set_mtd_interval_schedule(mtd_interval_schedule)
+        self._mtd_schedule.set_mtd_strategy_schedule(mtd_strategy_schedule)
+        self._mtd_schedule.set_timestamps(timestamps)
+        self._mtd_schedule.set_compromised_ratios(compromised_ratios)
+        self._mtd_stats.append_mtd_interval_record(0, mtd_interval_schedule)
+        self._mtd_stats.append_mtd_strategy_record(0, 'diversity')
 
     def host_scan(self, compromised_hosts, stop_attack):
         """
@@ -121,31 +87,11 @@ class TimeNetwork(Network):
 
         return discovered_hosts
 
-    def reconfigure_network(self):
-        pass
-
     def compromised_ratio(self, compromised_hosts):
         return compromised_hosts / self.total_nodes
 
     def get_mtd_schedule(self):
-        return self.mtd_schedule
+        return self._mtd_schedule
 
     def get_mtd_stats(self):
-        return self.mtd_stats
-
-    def clear_properties(self):
-        self.reserve_resource = None
-        self.application_layer_resource = None
-        self.network_layer_resource = None
-        self.env = None
-        self.mtd_strategy_queue = deque()
-        self.suspended_queue = deque()
-        return self
-
-    def reconfigure_properties(self, env, now):
-        self.env = env
-        self.now = now
-        self.application_layer_resource = simpy.Resource(self.env, 1)
-        self.network_layer_resource = simpy.Resource(self.env, 1)
-        self.reserve_resource = simpy.Resource(self.env, 1)
-
+        return self._mtd_stats

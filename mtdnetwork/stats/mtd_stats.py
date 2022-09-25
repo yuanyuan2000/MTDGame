@@ -33,3 +33,8 @@ class MTDStatistics:
             'Switch MTD strategy at': self.switch_mtd_strategy_at
         }
 
+    def append_total_attack_interrupted(self):
+        self.total_attack_interrupted += 1
+
+    def get_record(self):
+        return self.mtd_operation_record

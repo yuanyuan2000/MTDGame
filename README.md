@@ -59,7 +59,10 @@ Integrate time domain into MTDSim based on my research project.
         - env
         - status of occupied resources (application / network)
         - mtd_queues (mtd_strategy_queue, suspended_queue)
-   
+    - **solution**: 
+      - extract mtd_operation object from network object to handle state saving for network attributes
+      - extract attack_operation object from adversary object to handle state saving for adversary attributes
+      - create an StateCheckpoint object to save and load files based on simulation time.
 
 6. refactoring and updating [data collection methods](https://github.com/MoeBuTa/MTDSimTime/tree/main/mtdnetwork/stats)
 
