@@ -1,6 +1,6 @@
 # MTDSimTime
 
-Integrate time domain into MTDSim based on my research project.
+Integrating time domain into MTDSim based on my research project.
 
 ## Setup this project
 
