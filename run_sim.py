@@ -1,9 +1,9 @@
 import simpy
 from mtdnetwork.network.time_network import TimeNetwork
-from mtdnetwork.event.mtd_operation import MTDOperation
+from mtdnetwork.operation.mtd_operation import MTDOperation
 from mtdnetwork.constants import ATTACKER_THRESHOLD
 from mtdnetwork.network.adversary import Adversary
-from mtdnetwork.event.attack_operation import AttackOperation
+from mtdnetwork.operation.attack_operation import AttackOperation
 from mtdnetwork.state.state_checkpoint import StateCheckpoint
 
 import logging
@@ -75,13 +75,13 @@ def main():
     adversary = Adversary(network=time_network, attack_threshold=ATTACKER_THRESHOLD)
     attack_operation = AttackOperation(env=env, adversary=adversary)
     mtd_operation = MTDOperation(env=env, network=time_network, adversary=adversary, attack_operation=attack_operation)
-    state_checkpoint = StateCheckpoint(env=env, checkpoints=[5000, 10000, 15000])
+    state_checkpoint = StateCheckpoint(env=env, checkpoints=[5000, 7000, 10000, 12000, 15000])
+    # save state
+    state_checkpoint.proceed_save(time_network, adversary)
     # start attack!
     attack_operation.proceed_attack()
     # triggering mtd operations
     mtd_operation.proceed_mtd()
-    # save state
-    state_checkpoint.proceed_save(time_network, adversary)
     # Execute!
     env.run(until=SIM_TIME)
 

@@ -3,10 +3,9 @@ from mtdnetwork import constants
 
 
 class OSDiversity(MTD):
-    def __init__(self, network, mtd_operation):
+    def __init__(self, network):
         self.logger = logging.getLogger("mtd:osdiversity")
-        super().__init__(name="osdiversity", network=network, resource_type='application',
-                         resource=mtd_operation.get_application_resource(), execution_time_mean=30, execution_time_std=0.5)
+        super().__init__(name="osdiversity", network=network, resource_type='application', execution_time_mean=30, execution_time_std=0.5)
 
     def mtd_operation(self, adversary=None):
         self.logger.debug("changing os on hosts")

@@ -36,5 +36,11 @@ class MTDStatistics:
     def append_total_attack_interrupted(self):
         self.total_attack_interrupted += 1
 
+    def append_total_suspended(self):
+        self.total_suspended += 1
+
+    def append_total_triggered(self):
+        self.total_triggered += 1
+
     def get_record(self):
         return self.mtd_operation_record

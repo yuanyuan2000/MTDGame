@@ -1,4 +1,5 @@
 import random
+from collections import deque
 from mtdnetwork.network.copynetwork import Network
 from mtdnetwork.stats.mtd_stats import MTDStatistics
 from mtdnetwork.network.mtd_schedule import MTDSchedule
@@ -13,6 +14,9 @@ class TimeNetwork(Network):
         # self.mtd_strategy_queue = PriorityQueue()
         self._mtd_stats = MTDStatistics()
         self._mtd_schedule = MTDSchedule(network=self)
+        self._mtd_strategy_queue = deque()
+        self._mtd_suspended_queue = deque()
+        self._unfinished_mtd = None
         super().__init__(graph, pos, colour_map, total_nodes, total_endpoints, total_subnets,
                          total_layers, node_per_layer, users_list, users_per_host)
 
@@ -95,3 +99,15 @@ class TimeNetwork(Network):
 
     def get_mtd_stats(self):
         return self._mtd_stats
+
+    def get_mtd_strategy_queue(self):
+        return self._mtd_strategy_queue
+
+    def get_mtd_suspended_queue(self):
+        return self._mtd_suspended_queue
+
+    def get_unfinished_mtd(self):
+        return self._unfinished_mtd
+
+    def set_unfinished_mtd(self, mtd):
+        self._unfinished_mtd = mtd

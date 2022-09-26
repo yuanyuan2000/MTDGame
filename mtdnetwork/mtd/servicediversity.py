@@ -2,11 +2,10 @@ from mtdnetwork.mtd import *
 
 
 class ServiceDiversity(MTD):
-    def __init__(self, network, mtd_operation, shuffles=50):
+    def __init__(self, network, shuffles=50):
         self.logger = logging.getLogger("mtd:serviceDiversity")
         self.shuffles = shuffles
-        super().__init__(name="serviceDiversity", network=network,  resource_type='application',
-                         resource=mtd_operation.get_application_resource(), execution_time_mean=40, execution_time_std=0.5)
+        super().__init__(name="serviceDiversity", network=network,  resource_type='application', execution_time_mean=40, execution_time_std=0.5)
 
     def mtd_operation(self, adversary=None):
         self.logger.debug("changing services on hosts")

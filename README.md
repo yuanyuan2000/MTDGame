@@ -22,9 +22,9 @@ Integrate time domain into MTDSim based on my research project.
 1. set up new discrete event simulation structure:
     - get rid of the original `ActionManager` based structure
     - use [SimPy](https://simpy.readthedocs.io/en/latest/index.html) to manage the time simulation, event processing, interaction (interruption)
-    - use [time generator](https://github.com/MoeBuTa/MTDSimTime/blob/main/mtdnetwork/event/time_generator.py) to generate exponential/normal/uniform/weibull/poisson variate
+    - use [time generator](https://github.com/MoeBuTa/MTDSimTime/blob/main/mtdnetwork/operation/time_generator.py) to generate exponential/normal/uniform/weibull/poisson variate
 
-2. set up new mtd action flow in [mtd_operation](https://github.com/MoeBuTa/MTDSimTime/blob/main/mtdnetwork/event/mtd_operation.py):
+2. set up new mtd action flow in [mtd_operation](https://github.com/MoeBuTa/MTDSimTime/blob/main/mtdnetwork/operation/mtd_operation.py):
     - introduce resource occupation mechanism:
         - MTD fetch resource when it executes, release resource when it completes
         - each resource has a `capacity` parameter (default=1) represents the number of available resource in the network.
@@ -59,7 +59,7 @@ Integrate time domain into MTDSim based on my research project.
         - env
         - status of occupied resources (application / network)
         - mtd_queues (mtd_strategy_queue, suspended_queue)
-    - **solution**: 
+    - **solution**: [state saving](https://github.com/MoeBuTa/MTDSimTime/tree/main/mtdnetwork/state) [operation](https://github.com/MoeBuTa/MTDSimTime/tree/main/mtdnetwork/operation)
       - extract mtd_operation object from network object to handle state saving for network attributes
       - extract attack_operation object from adversary object to handle state saving for adversary attributes
       - create an StateCheckpoint object to save and load files based on simulation time.

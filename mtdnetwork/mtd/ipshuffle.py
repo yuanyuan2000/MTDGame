@@ -3,10 +3,9 @@ from mtdnetwork.mtd import *
 
 class IPShuffle(MTD):
 
-    def __init__(self, network, mtd_operation):
+    def __init__(self, network):
         self.logger = logging.getLogger("mtd:ipshuffle")
-        super().__init__(name="IPShuffle", network=network, resource_type='network',
-                         resource=mtd_operation.get_network_resource(), execution_time_mean=50, execution_time_std=0.5)
+        super().__init__(name="IPShuffle", network=network, resource_type='network', execution_time_mean=50, execution_time_std=0.5)
 
     def mtd_operation(self, adversary=None):
         self.logger.debug("changing IP addresses of hosts")

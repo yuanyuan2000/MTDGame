@@ -1,5 +1,5 @@
 import simpy
-from mtdnetwork.event.time_generator import exponential_variates
+from mtdnetwork.operation.time_generator import exponential_variates
 import logging
 
 HACKER_ATTACK_ATTEMPT_MULTIPLER = 5
