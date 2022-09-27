@@ -8,12 +8,12 @@ MTD_TRIGGER_STD = 0.5
 
 class MTDOperation:
 
-    def __init__(self, env, network, adversary, attack_operation):
+    def __init__(self, env, network, adversary, attack_operation, proceed_time=0):
         self.env = env
         self.network = network
         self.adversary = adversary
         self.attack_operation = attack_operation
-        self._proceed_time = 0
+        self._proceed_time = proceed_time
         self.application_layer_resource = simpy.Resource(self.env, 1)
         self.network_layer_resource = simpy.Resource(self.env, 1)
         self.reserve_resource = simpy.Resource(self.env, 1)
@@ -136,9 +136,6 @@ class MTDOperation:
 
     def get_proceed_time(self):
         return self._proceed_time
-
-    def set_proceed_time(self, proceed_time):
-        self._proceed_time = proceed_time
 
     def get_application_resource(self):
         return self.application_layer_resource

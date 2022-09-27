@@ -15,12 +15,12 @@ PENALTY = 2
 
 
 class AttackOperation:
-    def __init__(self, env, adversary):
+    def __init__(self, env, adversary, proceed_time=0):
         self.env = env
         self.adversary = adversary
         self._attack_process = None
         self._interrupted_mtd = None
-        self._proceed_time = 0
+        self._proceed_time = proceed_time
 
     def proceed_attack(self):
         if self.adversary.get_curr_process() == 'SCAN_HOST':

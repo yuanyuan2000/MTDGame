@@ -8,7 +8,8 @@ class HostTopologyShuffle(MTD):
 
     def __init__(self, network):
         self.logger = logging.getLogger("mtd:hostshuffle")
-        super().__init__(name="HostTopologyShuffle", network=network, resource_type='network', execution_time_mean=40, execution_time_std=0.5)
+        super().__init__(name="HostTopologyShuffle", network=network, resource_type='network',
+                         execution_time_mean=30, execution_time_std=0.5)
 
     def random_different_host_id(self, curr_host_id, hosts_list):
         other_host_id = random.choice(hosts_list)

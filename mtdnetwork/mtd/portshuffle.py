@@ -5,7 +5,8 @@ class PortShuffle(MTD):
 
     def __init__(self, network):
         self.logger = logging.getLogger("mtd:portshuffle")
-        super().__init__(name="PortShuffle", network=network, resource_type='application', execution_time_mean=40, execution_time_std=0.5)
+        super().__init__(name="PortShuffle", network=network, resource_type='application',
+                         execution_time_mean=30, execution_time_std=0.5)
 
     def mtd_operation(self, adversary=None):
         self.logger.debug("changing ports of services on hosts")
