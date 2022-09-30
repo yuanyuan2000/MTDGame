@@ -13,7 +13,8 @@ class MTDStatistics:
             'name': mtd_strategy.name,
             'start_time': start_time,
             'finish_time': finish_time,
-            'duration': duration
+            'duration': duration,
+            'executed_at': mtd_strategy.resource_type
         })
         self.total_executed += 1
 

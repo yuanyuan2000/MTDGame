@@ -4,13 +4,13 @@ import logging
 
 HACKER_ATTACK_ATTEMPT_MULTIPLER = 5
 
-SCAN_HOST = 5
-ENUM_HOST = 2
-SCAN_NEIGHBOR = 5
-SCAN_PORT = 10
-EXPLOIT_VULN_MEAN = 20
+SCAN_HOST = 10
+ENUM_HOST = 15
+SCAN_NEIGHBOR = 10
+SCAN_PORT = 20
+EXPLOIT_VULN_MEAN = 25
 EXPLOIT_VULN_STD = 0.8
-BRUTE_FORCE = 20
+BRUTE_FORCE = 15
 PENALTY = 2
 
 
@@ -97,7 +97,7 @@ class AttackOperation:
         """
         self.adversary.get_attack_stats().append_attack_operation_record(name, start_time,
                                                                          self.env.now + self._proceed_time,
-                                                                         self.adversary, self._interrupted_mtd, )
+                                                                         self.adversary, self._interrupted_mtd)
         # confusion penalty caused by MTD operation
         yield self.env.timeout(PENALTY)
 

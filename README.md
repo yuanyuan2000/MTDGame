@@ -11,9 +11,9 @@ Integrating time domain into MTDSim based on my research project.
    - `conda activate mtdsimtime`
 4. Updating the environment
    - `conda env update --name mtdsimtime --file environment.yml --prune`
-5. Running an example: 
-   - `python run_sim.py`
-   - Playing around in [simulation.ipynb](https://github.com/MoeBuTa/MTDSimTime/blob/main/simulation.ipynb)
+5. Running an example:
+   - [data_analysis.ipynb](https://github.com/MoeBuTa/MTDSimTime/blob/main/data_analysis.ipynb)
+   - [simulation.ipynb](https://github.com/MoeBuTa/MTDSimTime/blob/main/simulation.ipynb)
 6. Still developing.....
 
 

@@ -8,9 +8,11 @@ class StateCheckpoint:
     def __init__(self, env=None,  checkpoints=None):
         self.env = env
         self._proceed_time = 0
-        self._checkpoint_stack = deque(checkpoints)
+        self._checkpoint_stack = checkpoints
 
     def proceed_save(self, time_network, adversary):
+        if self._checkpoint_stack is not None:
+            self._checkpoint_stack = deque(self._checkpoint_stack)
         self.env.process(self.save_states(time_network, adversary))
 
     def save_states(self, time_network, adversary):
