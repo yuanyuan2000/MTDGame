@@ -101,18 +101,18 @@ STANDARD_ERROR_BENCHMARK_PERCENT = 5
 ATTACKER_THRESHOLD = 10
 
 # Constants for MTD interval
-MTD_REGISTER_INTERVAL = {
-    'simultaneously': (300, 0.5),
-    'randomly': (40, 0.5),
-    'deterministically': (40, 0.5),
-    'probabilistically': (40, 0.5)
+MTD_REGISTER_DELAY = {
+    'simultaneously': 140,
+    'randomly': 1,
+    'deterministically': 1,
+    'probabilistically': 1
 }
 
 MTD_TRIGGER_INTERVAL = {
-    'simultaneously': (42, 0.5),
-    'randomly': (45, 0.5),
-    'deterministically': (45, 0.5),
-    'probabilistically': (45, 0.5)
+    'simultaneously': (30, 0.5),
+    'randomly': (60, 0.5),
+    'deterministically': (60, 0.5),
+    'probabilistically': (60, 0.5)
 }
 
 

@@ -12,6 +12,7 @@ class TimeNetwork(Network):
         # default parameters
         # self.mtd_strategy_queue = PriorityQueue()
         self._mtd_stats = MTDStatistics()
+        self._mtd_register_number = 0
         self._mtd_strategy_queue = deque()
         self._mtd_suspended_queue = deque()
         self._unfinished_mtd = None
@@ -97,3 +98,9 @@ class TimeNetwork(Network):
 
     def set_unfinished_mtd(self, mtd):
         self._unfinished_mtd = mtd
+
+    def get_mtd_register_number(self):
+        return self._mtd_register_number
+
+    def update_mtd_register_number(self):
+        self._mtd_register_number += 1

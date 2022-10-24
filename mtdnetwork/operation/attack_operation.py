@@ -24,19 +24,19 @@ class AttackOperation:
 
     def proceed_attack(self):
         if self.adversary.get_curr_process() == 'SCAN_HOST':
-            self.scan_host()
+            self._scan_host()
         elif self.adversary.get_curr_process() == 'ENUM_HOST':
-            self.enum_host()
+            self._enum_host()
         elif self.adversary.get_curr_process() == 'SCAN_PORT':
-            self.scan_port()
+            self._scan_port()
         elif self.adversary.get_curr_process() == 'SCAN_NEIGHBOR':
-            self.scan_neighbors()
+            self._scan_neighbors()
         elif self.adversary.get_curr_process() == 'EXPLOIT_VULN':
-            self.exploit_vuln()
+            self._exploit_vuln()
         elif self.adversary.get_curr_process() == 'BRUTE_FORCE':
-            self.brute_force()
+            self._brute_force()
 
-    def execute_attack_action(self, time, attack_action):
+    def _execute_attack_action(self, time, attack_action):
         """
         a function to execute a given time-consuming attack action
         :param time: The time duration before executing an attack action.
@@ -47,7 +47,7 @@ class AttackOperation:
             logging.info("Adversary: Start %s at %.1fs." % (self.adversary.get_curr_process(), start_time))
             yield self.env.timeout(time)
         except simpy.Interrupt:
-            self.env.process(self.handle_interrupt(start_time, self.adversary.get_curr_process()))
+            self.env.process(self._handle_interrupt(start_time, self.adversary.get_curr_process()))
             return
         finish_time = self.env.now + self._proceed_time
         logging.info("Adversary: Processed %s at %.1fs." % (self.adversary.get_curr_process(), finish_time))
@@ -55,41 +55,41 @@ class AttackOperation:
                                                                          finish_time, self.adversary)
         attack_action()
 
-    def scan_host(self):
+    def _scan_host(self):
         self.adversary.set_curr_process('SCAN_HOST')
-        self._attack_process = self.env.process(self.execute_attack_action(SCAN_HOST,
-                                                                           self.execute_scan_host))
+        self._attack_process = self.env.process(self._execute_attack_action(SCAN_HOST,
+                                                                            self._execute_scan_host))
 
-    def enum_host(self):
+    def _enum_host(self):
         if len(self.adversary.get_host_stack()) > 0:
             self.adversary.set_curr_process('ENUM_HOST')
-            self._attack_process = self.env.process(self.execute_attack_action(ENUM_HOST,
-                                                                               self.execute_enum_host))
+            self._attack_process = self.env.process(self._execute_attack_action(ENUM_HOST,
+                                                                                self._execute_enum_host))
         else:
-            self.scan_host()
+            self._scan_host()
 
-    def scan_port(self):
+    def _scan_port(self):
         self.adversary.set_curr_process('SCAN_PORT')
-        self._attack_process = self.env.process(self.execute_attack_action(SCAN_PORT,
-                                                                           self.execute_scan_port))
+        self._attack_process = self.env.process(self._execute_attack_action(SCAN_PORT,
+                                                                            self._execute_scan_port))
 
-    def exploit_vuln(self):
+    def _exploit_vuln(self):
         exploit_time = exponential_variates(EXPLOIT_VULN_MEAN, EXPLOIT_VULN_STD)
         self.adversary.set_curr_process('EXPLOIT_VULN')
-        self._attack_process = self.env.process(self.execute_attack_action(exploit_time,
-                                                                           self.execute_exploit_vuln))
+        self._attack_process = self.env.process(self._execute_attack_action(exploit_time,
+                                                                            self._execute_exploit_vuln))
 
-    def brute_force(self):
+    def _brute_force(self):
         self.adversary.set_curr_process('BRUTE_FORCE')
-        self._attack_process = self.env.process(self.execute_attack_action(BRUTE_FORCE,
-                                                                           self.execute_brute_force))
+        self._attack_process = self.env.process(self._execute_attack_action(BRUTE_FORCE,
+                                                                            self._execute_brute_force))
 
-    def scan_neighbors(self):
+    def _scan_neighbors(self):
         self.adversary.set_curr_process('SCAN_NEIGHBOR')
-        self._attack_process = self.env.process(self.execute_attack_action(SCAN_NEIGHBOR,
-                                                                           self.execute_scan_neighbors))
+        self._attack_process = self.env.process(self._execute_attack_action(SCAN_NEIGHBOR,
+                                                                            self._execute_scan_neighbors))
 
-    def handle_interrupt(self, start_time, name):
+    def _handle_interrupt(self, start_time, name):
         """
         a function to handle the interrupt of the attack action caused by MTD operations
         :param start_time: the start time of the attack action
@@ -106,13 +106,13 @@ class AttackOperation:
             self.adversary.set_curr_host_id(-1)
             self.adversary.set_curr_host(None)
             logging.info('Adversary: Restarting with SCAN_HOST at %.1fs!' % (self.env.now + self._proceed_time))
-            self.scan_host()
+            self._scan_host()
         elif self._interrupted_mtd.get_resource_type() == 'application':
             self._interrupted_mtd = None
             logging.info('Adversary: Restarting with SCAN_PORT at %.1fs!' % (self.env.now + self._proceed_time))
-            self.scan_port()
+            self._scan_port()
 
-    def execute_scan_host(self):
+    def _execute_scan_host(self):
         """
         Starts the Network enumeration stage.
         Sets up the order of hosts that the hacker will attempt to compromise
@@ -124,12 +124,12 @@ class AttackOperation:
         self.adversary.set_host_stack(self.adversary.get_network().host_scan(self.adversary.get_compromised_hosts(),
                                                                              self.adversary.get_stop_attack()))
         if len(self.adversary.get_host_stack()) > 0:
-            self.enum_host()
+            self._enum_host()
         else:
             # terminate the whole process
             return
 
-    def execute_enum_host(self):
+    def _execute_enum_host(self):
         """
         Starts enumerating each host by popping off the host id from the top of the host stack
         time for host hopping required
@@ -144,7 +144,8 @@ class AttackOperation:
         self.adversary.set_curr_host(self.adversary.get_network().get_host(self.adversary.get_curr_host_id()))
         # Sets node as unattackable if has been attack too many times
         self.adversary.get_attack_counter()[self.adversary.get_curr_host_id()] += 1
-        if self.adversary.get_attack_counter()[self.adversary.get_curr_host_id()] == self.adversary.get_attack_threshold():
+        if self.adversary.get_attack_counter()[
+            self.adversary.get_curr_host_id()] == self.adversary.get_attack_threshold():
             # target node feature
             if self.adversary.get_curr_host_id() != self.adversary.get_network().get_target_node():
                 self.adversary.get_stop_attack().append(self.adversary.get_curr_host_id())
@@ -158,16 +159,16 @@ class AttackOperation:
 
         # Sets the next host that the Hacker will pivot from to compromise other hosts
         # The pivot host needs to be a compromised host that the hacker can access
-        self.set_next_pivot_host()
+        self._set_next_pivot_host()
 
         if self.adversary.get_curr_host().compromised:
             self.adversary.update_compromise_progress(self.env.now, self._proceed_time)
-            self.enum_host()
+            self._enum_host()
         else:
             # Attack event triggered
-            self.scan_port()
+            self._scan_port()
 
-    def execute_scan_port(self):
+    def _execute_scan_port(self):
         """
         Starts a port scan on the target host
         Checks if a compromised user has reused their credentials on the target host
@@ -178,11 +179,11 @@ class AttackOperation:
             self.adversary.get_compromised_users())
         if user_reuse:
             self.adversary.update_compromise_progress(self.env.now, self._proceed_time)
-            self.scan_neighbors()
+            self._scan_neighbors()
             return
-        self.exploit_vuln()
+        self._exploit_vuln()
 
-    def execute_exploit_vuln(self):
+    def _execute_exploit_vuln(self):
         """
         Finds the top 5 vulnerabilities based on RoA score and have not been exploited yet that the
         Tries exploiting the vulnerabilities to compromise the host
@@ -201,25 +202,25 @@ class AttackOperation:
                 pass
         if is_exploited:
             self.adversary.update_compromise_progress(self.env.now, self._proceed_time)
-            self.scan_neighbors()
+            self._scan_neighbors()
         else:
-            self.brute_force()
+            self._brute_force()
 
-    def execute_brute_force(self):
+    def _execute_brute_force(self):
         """
         Tries bruteforcing a login for a short period of time using previous passwords from compromised user accounts to guess a new login.
         Checks if credentials for a user account has been successfully compromised.
         Phase 3
         """
-        brute_force_result = self.adversary.get_curr_host().compromise_with_users(
+        _brute_force_result = self.adversary.get_curr_host().compromise_with_users(
             self.adversary.get_compromised_users())
-        if brute_force_result:
+        if _brute_force_result:
             self.adversary.update_compromise_progress(self.env.now, self._proceed_time)
-            self.scan_neighbors()
+            self._scan_neighbors()
         else:
-            self.enum_host()
+            self._enum_host()
 
-    def execute_scan_neighbors(self):
+    def _execute_scan_neighbors(self):
         """
         Starts scanning for neighbors from a host that the hacker can pivot to
         Puts the new neighbors discovered to the start of the host stack.
@@ -231,9 +232,9 @@ class AttackOperation:
             if node_id not in found_neighbors
         ]
         self.adversary.set_host_stack(new__host_stack)
-        self.enum_host()
+        self._enum_host()
 
-    def set_next_pivot_host(self):
+    def _set_next_pivot_host(self):
         """
         Sets the next host that the Hacker will pivot from to compromise other hosts
         The pivot host needs to be a compromised host that the hacker can access
