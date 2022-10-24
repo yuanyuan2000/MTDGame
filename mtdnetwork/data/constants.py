@@ -100,8 +100,19 @@ HACKER_ATTACK_ATTEMPT_MULTIPLER = 5
 STANDARD_ERROR_BENCHMARK_PERCENT = 5
 ATTACKER_THRESHOLD = 10
 
-def nothing():
-    """
-    Does nothing
-    """
-    pass
+# Constants for MTD interval
+MTD_REGISTER_INTERVAL = {
+    'simultaneously': (300, 0.5),
+    'randomly': (40, 0.5),
+    'deterministically': (40, 0.5),
+    'probabilistically': (40, 0.5)
+}
+
+MTD_TRIGGER_INTERVAL = {
+    'simultaneously': (42, 0.5),
+    'randomly': (45, 0.5),
+    'deterministically': (45, 0.5),
+    'probabilistically': (45, 0.5)
+}
+
+

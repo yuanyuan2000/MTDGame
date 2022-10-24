@@ -1,6 +1,6 @@
 import random, uuid
 import networkx as nx
-import mtdnetwork.constants as constants
+import mtdnetwork.data.constants as constants
 
 
 class Host:

@@ -2,33 +2,16 @@ import random
 from collections import deque
 from mtdnetwork.network.copynetwork import Network
 from mtdnetwork.stats.mtd_stats import MTDStatistics
-from mtdnetwork.network.mtd_schedule import MTDSchedule
 from mtdnetwork.network.targetnetwork import TargetNetwork
-from mtdnetwork.mtd.completetopologyshuffle import CompleteTopologyShuffle
-from mtdnetwork.mtd.ipshuffle import IPShuffle
-from mtdnetwork.mtd.hosttopologyshuffle import HostTopologyShuffle
-from mtdnetwork.mtd.portshuffle import PortShuffle
-from mtdnetwork.mtd.osdiversity import OSDiversity
-from mtdnetwork.mtd.servicediversity import ServiceDiversity
-from mtdnetwork.mtd.usershuffle import UserShuffle
-
-mtd_strategies = {
-    'all_mtd': [CompleteTopologyShuffle, IPShuffle, HostTopologyShuffle,
-                PortShuffle, OSDiversity, ServiceDiversity, UserShuffle],
-    'shuffle_diversity': [IPShuffle, HostTopologyShuffle, PortShuffle, OSDiversity],
-    'shuffle': [CompleteTopologyShuffle, IPShuffle, HostTopologyShuffle, PortShuffle],
-    'diversity': [OSDiversity, ServiceDiversity]
-}
 
 
 class TimeNetwork(Network):
 
     def __init__(self, graph, pos, colour_map, total_nodes, total_endpoints, total_subnets, total_layers,
-                 node_per_layer, users_list, users_per_host, mtd_type):
+                 node_per_layer, users_list, users_per_host):
         # default parameters
         # self.mtd_strategy_queue = PriorityQueue()
         self._mtd_stats = MTDStatistics()
-        self._mtd_schedule = MTDSchedule(network=self, mtd_strategy_schedule=mtd_strategies[mtd_type])
         self._mtd_strategy_queue = deque()
         self._mtd_suspended_queue = deque()
         self._unfinished_mtd = None
@@ -36,7 +19,7 @@ class TimeNetwork(Network):
                          total_layers, node_per_layer, users_list, users_per_host)
 
     @staticmethod
-    def create_network(mtd_type):
+    def create_network():
         target_network = TargetNetwork(total_nodes=200, total_endpoints=20, total_subnets=20, total_layers=5,
                                        target_layer=2)
         graph = target_network.get_graph_copy()
@@ -46,17 +29,8 @@ class TimeNetwork(Network):
         users_list = target_network.get_users_list()
         users_per_host = target_network.get_users_per_host()
         time_network = TimeNetwork(graph, pos, colour_map, 200, 20, 20, 5, node_per_layer, users_list,
-                                   users_per_host, mtd_type)
+                                   users_per_host)
         return time_network
-
-    def initialise_mtd_schedule(self, mtd_interval_schedule, mtd_strategy_schedule,
-                                timestamps=None, compromised_ratios=None):
-        self._mtd_schedule.set_mtd_interval_schedule(mtd_interval_schedule)
-        self._mtd_schedule.set_mtd_strategy_schedule(mtd_strategy_schedule)
-        self._mtd_schedule.set_timestamps(timestamps)
-        self._mtd_schedule.set_compromised_ratios(compromised_ratios)
-        self._mtd_stats.append_mtd_interval_record(0, mtd_interval_schedule)
-        self._mtd_stats.append_mtd_strategy_record(0, 'diversity')
 
     def host_scan(self, compromised_hosts, stop_attack):
         """
@@ -75,7 +49,7 @@ class TimeNetwork(Network):
                 a list of host IDs which have reached attack threshold and can't be attacked anymore
 
         Returns:
-            an action that will return the scanned hosts if not blocked by a MTD
+            the scanned hosts
         """
 
         visible_network = self.get_hacker_visible_graph()
@@ -101,16 +75,13 @@ class TimeNetwork(Network):
             for ex_node in self.exposed_endpoints
             if ex_node not in compromised_hosts
         ]
-
         discovered_hosts = [n for n in uncompromised_hosts if n not in stop_attack]
-
         return discovered_hosts
 
-    def compromised_ratio(self, compromised_hosts):
-        return compromised_hosts / self.total_nodes
-
-    def get_mtd_schedule(self):
-        return self._mtd_schedule
+    def is_compromised(self, compromised_hosts):
+        # TODO: refactor terminating condition
+        super().is_compromised(compromised_hosts)
+        pass
 
     def get_mtd_stats(self):
         return self._mtd_stats

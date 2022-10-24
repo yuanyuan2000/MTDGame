@@ -1,14 +1,17 @@
-from mtdnetwork.mtd import *
+from mtdnetwork.mtd import MTD
+import random
 
 
 class UserShuffle(MTD):
     def __init__(self, network):
-        self.logger = logging.getLogger("mtd:usershuffle")
-        super().__init__(name="UserShuffle", network=network, resource_type='reserve',
-                         execution_time_mean=10, execution_time_std=0.5)
+        super().__init__(name="UserShuffle",
+                         mtd_type='shuffle',
+                         resource_type='reserve',
+                         execution_time_mean=40,
+                         execution_time_std=0.5,
+                         network=network)
 
     def mtd_operation(self, adversary=None):
-        self.logger.debug("changing users on hosts")
         hosts = self.network.get_hosts()
 
         for host_instance in hosts.values():

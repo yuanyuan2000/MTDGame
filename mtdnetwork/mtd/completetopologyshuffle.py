@@ -1,4 +1,4 @@
-from mtdnetwork.mtd import *
+from mtdnetwork.mtd import MTD
 
 
 class CompleteTopologyShuffle(MTD):
@@ -7,12 +7,14 @@ class CompleteTopologyShuffle(MTD):
     """
 
     def __init__(self, network):
-        self.logger = logging.getLogger("mtd:basictopologyshuffle")
-        super().__init__(name="CompleteTopologyShuffle", network=network, resource_type='network',
-                         execution_time_mean=70, execution_time_std=0.5)
+        super().__init__(name="CompleteTopologyShuffle",
+                         mtd_type='shuffle',
+                         resource_type='network',
+                         execution_time_mean=40,
+                         execution_time_std=0.5,
+                         network=network)
 
     def mtd_operation(self, adversary=None):
-        self.logger.debug("shuffling entire network topology")
         hosts = self.network.get_hosts()
 
         # Regenerate the network graph

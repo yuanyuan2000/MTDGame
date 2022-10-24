@@ -1,15 +1,18 @@
-from mtdnetwork.mtd import *
-from mtdnetwork import constants
+from mtdnetwork.mtd import MTD
+import random
+from mtdnetwork.data import constants
 
 
 class OSDiversity(MTD):
     def __init__(self, network):
-        self.logger = logging.getLogger("mtd:osdiversity")
-        super().__init__(name="osdiversity", network=network, resource_type='application',
-                         execution_time_mean=30, execution_time_std=0.5)
+        super().__init__(name="osdiversity",
+                         mtd_type='diversity',
+                         resource_type='application',
+                         execution_time_mean=40,
+                         execution_time_std=0.5,
+                         network=network)
 
     def mtd_operation(self, adversary=None):
-        self.logger.debug("changing os on hosts")
         service_generator = self.network.get_service_generator()
         hosts = self.network.get_hosts()
         for host_id, host_instance in hosts.items():

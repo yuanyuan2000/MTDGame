@@ -1,22 +1,24 @@
-from mtdnetwork.mtd import *
+from mtdnetwork.mtd import MTD
+from mtdnetwork.network import host
 
 
 class PortShuffle(MTD):
 
     def __init__(self, network):
-        self.logger = logging.getLogger("mtd:portshuffle")
-        super().__init__(name="PortShuffle", network=network, resource_type='application',
-                         execution_time_mean=35, execution_time_std=0.5)
+        super().__init__(name="PortShuffle",
+                         mtd_type='shuffle',
+                         resource_type='application',
+                         execution_time_mean=40,
+                         execution_time_std=0.5,
+                         network=network)
 
     def mtd_operation(self, adversary=None):
-        self.logger.debug("changing ports of services on hosts")
         hosts = self.network.get_hosts()
 
         for host_id, host_instance in hosts.items():
             # Do not change exposed endpoints as other organisations might
             # require to be fixed
             if host_instance.host_id in self.network.exposed_endpoints:
-                self.logger.debug("changing ports: skipping {} since it is an exposed endpoint".format(host_id))
                 continue
             new_ports = []
             for node_id in host_instance.graph.nodes:

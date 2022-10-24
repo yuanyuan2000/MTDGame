@@ -2,7 +2,7 @@ import networkx as nx
 import matplotlib.pyplot as plt
 import numpy as np
 import random
-import mtdnetwork.constants as constants
+import mtdnetwork.data.constants as constants
 import mtdnetwork.network.services as services
 from mtdnetwork.stats.scorer import Scorer
 

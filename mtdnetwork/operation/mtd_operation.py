@@ -2,16 +2,16 @@ import random
 from mtdnetwork.operation.time_generator import exponential_variates
 import logging
 import simpy
-
-MTD_TRIGGER_STD = 0.5
+from mtdnetwork.network.mtd_scheme import MTDScheme
 
 
 class MTDOperation:
 
-    def __init__(self, env, network, adversary, attack_operation, proceed_time=0):
+    def __init__(self, env, network, adversary, attack_operation, scheme, proceed_time=0):
         self.env = env
         self.network = network
         self.adversary = adversary
+        self._mtd_scheme = MTDScheme(network=network, scheme=scheme)
         self.attack_operation = attack_operation
         self._proceed_time = proceed_time
         self.application_layer_resource = simpy.Resource(self.env, 1)
@@ -22,25 +22,37 @@ class MTDOperation:
         if self.network.get_unfinished_mtd() is not None:
             self.network.get_mtd_suspended_queue().appendleft(self.network.get_unfinished_mtd())
             self.network.set_unfinished_mtd(None)
+        self.env.process(self.mtd_register_action())
         self.env.process(self.mtd_trigger_action())
+
+    def mtd_register_action(self):
+        """
+        Register MTD(s) to the queue based on MTD scheme
+        """
+        while True:
+            # terminate if the network is compromised
+            if self.network.is_compromised(self.adversary.get_compromised_hosts()):
+                return
+            # register an MTD to the queue
+            self._mtd_scheme.call_register_mtd()
+
+            # exponential distribution for triggering MTD operations
+            yield self.env.timeout(exponential_variates(self._mtd_scheme.get_mtd_register_interval(),
+                                                        self._mtd_scheme.get_mtd_register_std()))
 
     def mtd_trigger_action(self):
         """
-        trigger an MTD strategy in a given exponential time (next_mtd)
+        trigger an MTD strategy in a given exponential time (next_mtd) in the queue
         Select Execute or suspend/discard MTD strategy
         based on the given resource occupation condition
         """
-        mtd_interval = self.network.get_mtd_schedule().get_mtd_interval_schedule()
-        mtd_strategies = self.network.get_mtd_schedule().get_mtd_strategy_schedule()
-        while not self.network.is_compromised(self.adversary.get_compromised_hosts()):
-            # mtd_interval = network.get_mtd_schedule().adapt_schedule_by_time(env)
-            # mtd_strategies = network.get_mtd_schedule().adapt_schedule_by_compromised_ratio(
-            # env, network.compromised_ratio(len(adversary.get_compromised_hosts())))
-            # register an MTD to the queue
-            self.register_mtd(random.choice(mtd_strategies))
+        while True:
+            if not self.network.get_mtd_suspended_queue() and not self.network.get_mtd_strategy_queue():
+                continue
+
             # trigger MTD
             mtd_strategy = self.trigger_mtd()
-            logging.info('MTD: %s triggered %.1fs' % (mtd_strategy.name, self.env.now + self._proceed_time))
+            logging.info('MTD: %s triggered %.1fs' % (mtd_strategy.get_name(), self.env.now + self._proceed_time))
             resource = self.mtd_resource(mtd_strategy)
             if resource is None or len(resource.users) == 0:
                 self.env.process(self.mtd_execute_action(self.env, mtd_strategy))
@@ -48,10 +60,11 @@ class MTDOperation:
                 # suspend
                 self.suspend_mtd(mtd_strategy)
                 logging.info('MTD: %s suspended at %.1fs due to resource occupation' %
-                             (mtd_strategy.name, self.env.now + self._proceed_time))
-                # discard todo
+                             (mtd_strategy.get_name(), self.env.now + self._proceed_time))
+                # discard TODO
             # exponential distribution for triggering MTD operations
-            yield self.env.timeout(exponential_variates(mtd_interval, MTD_TRIGGER_STD))
+            yield self.env.timeout(exponential_variates(self._mtd_scheme.get_mtd_trigger_interval(),
+                                                        self._mtd_scheme.get_mtd_trigger_std()))
 
     def mtd_execute_action(self, env, mtd_strategy):
         """
@@ -62,7 +75,7 @@ class MTDOperation:
         request = self.mtd_resource(mtd_strategy).request()
         yield request
         start_time = env.now + self._proceed_time
-        logging.info('MTD: %s deployed in the network at %.1fs.' % (mtd_strategy.name, start_time))
+        logging.info('MTD: %s deployed in the network at %.1fs.' % (mtd_strategy.get_name(), start_time))
         yield env.timeout(exponential_variates(mtd_strategy.get_execution_time_mean(),
                                                mtd_strategy.get_execution_time_std()))
 
@@ -75,7 +88,7 @@ class MTDOperation:
 
         finish_time = env.now + self._proceed_time
         duration = finish_time - start_time
-        logging.info('MTD: %s finished in %.1fs at %.1fs.' % (mtd_strategy.name, duration, finish_time))
+        logging.info('MTD: %s finished in %.1fs at %.1fs.' % (mtd_strategy.get_name(), duration, finish_time))
         # release resource
         self.mtd_resource(mtd_strategy).release(request)
         # append execution records
@@ -83,17 +96,9 @@ class MTDOperation:
         # interrupt adversary
         self.interrupt_adversary(env, mtd_strategy)
 
-    def register_mtd(self, mtd_strategy):
-        """
-        Registers an MTD strategy that will reconfigure the Network
-        during the simulation to try and thwart the hacker.
-        """
-        mtd_strategy = mtd_strategy(self.network)
-        self.network.get_mtd_strategy_queue().append(mtd_strategy)
-
     def trigger_mtd(self):
         """
-        pop up the MTD and trigger it.
+        pop up the MTD from the queue and trigger it.
         """
         self.network.get_mtd_stats().append_total_triggered()
         if len(self.network.get_mtd_suspended_queue()) != 0:
@@ -105,6 +110,7 @@ class MTDOperation:
         self.network.get_mtd_suspended_queue().append(mtd_strategy)
 
     def mtd_resource(self, mtd_strategy):
+        """Get the resource of the mtd"""
         if mtd_strategy.get_resource_type() == 'network':
             return self.network_layer_resource
         elif mtd_strategy.get_resource_type() == 'application':
@@ -145,3 +151,7 @@ class MTDOperation:
 
     def get_reserve_resource(self):
         return self.reserve_resource
+
+    def get_mtd_scheme(self):
+        return self._mtd_scheme
+

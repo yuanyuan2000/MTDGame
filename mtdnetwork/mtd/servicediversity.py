@@ -1,15 +1,18 @@
-from mtdnetwork.mtd import *
+from mtdnetwork.mtd import MTD
+import random
 
 
 class ServiceDiversity(MTD):
     def __init__(self, network, shuffles=50):
-        self.logger = logging.getLogger("mtd:serviceDiversity")
         self.shuffles = shuffles
-        super().__init__(name="serviceDiversity", network=network,  resource_type='application',
-                         execution_time_mean=40, execution_time_std=0.5)
+        super().__init__(name="serviceDiversity",
+                         mtd_type='diversity',
+                         resource_type='application',
+                         execution_time_mean=40,
+                         execution_time_std=0.5,
+                         network=network)
 
     def mtd_operation(self, adversary=None):
-        self.logger.debug("changing services on hosts")
         service_generator = self.network.get_service_generator()
         hosts = self.network.get_hosts()
         for host_id, host_instance in hosts.items():

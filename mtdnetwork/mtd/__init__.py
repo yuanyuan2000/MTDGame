@@ -1,30 +1,30 @@
-import logging
-import random
-from mtdnetwork.network import host, services
-
-
 class MTD:
-    def __init__(self, name, network, resource_type, execution_time_mean, execution_time_std):
+    def __init__(self, name: str, mtd_type: str, resource_type: str, execution_time_mean: float,
+                 execution_time_std: float, network):
+        self._name = name
+        self._mtd_type = mtd_type
+        self._resource_type = resource_type
+        self._execution_time_mean = execution_time_mean
+        self._execution_time_std = execution_time_std
         self.network = network
-        self.name = name
-        self.resource_type = resource_type
-        self.execution_time_mean = execution_time_mean
-        self.execution_time_std = execution_time_std
 
     def mtd_operation(self, adversary=None):
         raise NotImplementedError
 
     def __str__(self):
-        return self.name + ' ' + self.resource_type + ' ' + self.execution_time_mean
+        return self._name + ' ' + self._resource_type + ' ' + str(self._execution_time_mean)
+
+    def get_mtd_type(self):
+        return self._mtd_type
 
     def get_resource_type(self):
-        return self.resource_type
+        return self._resource_type
 
     def get_name(self):
-        return self.name
+        return self._name
 
     def get_execution_time_mean(self):
-        return self.execution_time_mean
+        return self._execution_time_mean
 
     def get_execution_time_std(self):
-        return self.execution_time_std
+        return self._execution_time_std
