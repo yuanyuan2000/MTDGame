@@ -4,12 +4,13 @@ from mtdnetwork.network import host
 
 class PortShuffle(MTD):
 
-    def __init__(self, network):
+    def __init__(self, network, priority=5):
         super().__init__(name="PortShuffle",
                          mtd_type='shuffle',
                          resource_type='application',
                          execution_time_mean=40,
                          execution_time_std=0.5,
+                         priority=priority,
                          network=network)
 
     def mtd_operation(self, adversary=None):

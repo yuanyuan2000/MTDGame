@@ -19,14 +19,14 @@ class MTDOperation:
         self.reserve_resource = simpy.Resource(self.env, 1)
 
     def proceed_mtd(self):
-        if self.network.get_unfinished_mtd() is not None:
-            self.network.get_mtd_suspended_queue().appendleft(self.network.get_unfinished_mtd())
-            self.network.set_unfinished_mtd(None)
-        self.env.process(self._mtd_trigger_action())
-
-    def _mtd_register_action(self):
-        self._mtd_scheme.call_register_mtd()
-        yield self.env.timeout(self._mtd_scheme.get_mtd_register_delay())
+        # if self.network.get_unfinished_mtd() is not None:
+        #     self.network.get_mtd_suspended_queue().appendleft(self.network.get_unfinished_mtd())
+        #     self.network.set_unfinished_mtd(None)
+        # self.env.process(self._mtd_trigger_action())
+        if self._mtd_scheme.get_scheme() == 'simultaneously':
+            self.env.process(self._mtd_batch_trigger_action())
+        else:
+            self.env.process(self._mtd_trigger_action())
 
     def _mtd_trigger_action(self):
         """
@@ -37,25 +37,62 @@ class MTDOperation:
         self._mtd_scheme.call_register_mtd()
         while True:
             # terminate if the network is compromised
-            if self.network.is_compromised(self.adversary.get_compromised_hosts()):
+            if self.network.is_compromised(compromised_hosts=self.adversary.get_compromised_hosts()):
                 return
 
-            if not self.network.get_mtd_suspended_queue() and not self.network.get_mtd_strategy_queue():
-                # register MTD to the queue
-                yield self.env.process(self._mtd_register_action())
-
-            # trigger MTD
-            mtd_strategy = self._trigger_mtd()
+            # register an MTD
+            if not self.network.get_mtd_suspended_dict() and not self.network.get_mtd_strategy_queue().queue:
+                self._mtd_scheme.call_register_mtd()
+            # trigger an MTD
+            if self.network.get_mtd_suspended_dict():
+                mtd_strategy = self._mtd_scheme.trigger_suspended_mtd()
+            else:
+                mtd_strategy = self._mtd_scheme.trigger_mtd()
             logging.info('MTD: %s triggered %.1fs' % (mtd_strategy.get_name(), self.env.now + self._proceed_time))
             resource = self._mtd_resource(mtd_strategy)
-            if resource is None or len(resource.users) == 0:
-                self.env.process(self._mtd_execute_action(self.env, mtd_strategy))
+            if len(resource.users) == 0:
+                self.env.process(self._mtd_execute_action(env=self.env, mtd_strategy=mtd_strategy))
             else:
                 # suspend
-                self._suspend_mtd(mtd_strategy)
+                self._mtd_scheme.suspend_mtd(mtd_strategy)
                 logging.info('MTD: %s suspended at %.1fs due to resource occupation' %
                              (mtd_strategy.get_name(), self.env.now + self._proceed_time))
                 # discard TODO
+            # exponential distribution for triggering MTD operations
+            yield self.env.timeout(exponential_variates(self._mtd_scheme.get_mtd_trigger_interval(),
+                                                        self._mtd_scheme.get_mtd_trigger_std()))
+
+    def _mtd_batch_trigger_action(self):
+        """
+        trigger all MTDs at a time with a fixed priority
+        """
+        while True:
+            # terminate if the network is compromised
+            if self.network.is_compromised(compromised_hosts=self.adversary.get_compromised_hosts()):
+                return
+
+            suspended_dict = self.network.get_mtd_suspended_dict()
+            if suspended_dict:
+                # triggering the suspended MTDs by priority
+                suspended_mtd_priorities = sorted(suspended_dict.keys())
+                for priority in suspended_mtd_priorities:
+                    resource = self._mtd_resource(mtd_strategy=suspended_dict[priority])
+                    if len(resource.users) == 0:
+                        mtd = self._mtd_scheme.trigger_suspended_mtd()
+                        yield self.env.process(self._mtd_execute_action(env=self.env, mtd_strategy=mtd))
+            else:
+                # register and trigger all MTDs
+                if not self.network.get_mtd_suspended_dict() and not self.network.get_mtd_strategy_queue().queue:
+                    self._mtd_scheme.call_register_mtd()
+                while self.network.get_mtd_strategy_queue().queue:
+                    mtd = self._mtd_scheme.trigger_mtd()
+                    resource = self._mtd_resource(mtd_strategy=mtd)
+                    if len(resource.users) == 0:
+                        self.env.process(self._mtd_execute_action(env=self.env, mtd_strategy=mtd))
+                    else:
+                        # suspend MTD if resource is occupied
+                        self._mtd_scheme.suspend_mtd(mtd_strategy=mtd)
+
             # exponential distribution for triggering MTD operations
             yield self.env.timeout(exponential_variates(self._mtd_scheme.get_mtd_trigger_interval(),
                                                         self._mtd_scheme.get_mtd_trigger_std()))
@@ -74,7 +111,7 @@ class MTDOperation:
                                                mtd_strategy.get_execution_time_std()))
 
         # if network is already compromised while executing mtd:
-        if self.network.is_compromised(self.adversary.get_compromised_hosts()):
+        if self.network.is_compromised(compromised_hosts=self.adversary.get_compromised_hosts()):
             return
 
         # execute mtd
@@ -89,19 +126,6 @@ class MTDOperation:
         self.network.get_mtd_stats().append_mtd_operation_record(mtd_strategy, start_time, finish_time, duration)
         # interrupt adversary
         self._interrupt_adversary(env, mtd_strategy)
-
-    def _trigger_mtd(self):
-        """
-        pop up the MTD from the queue and trigger it.
-        """
-        self.network.get_mtd_stats().append_total_triggered()
-        if len(self.network.get_mtd_suspended_queue()) != 0:
-            return self.network.get_mtd_suspended_queue().popleft()
-        return self.network.get_mtd_strategy_queue().popleft()
-
-    def _suspend_mtd(self, mtd_strategy):
-        self.network.get_mtd_stats().append_total_suspended()
-        self.network.get_mtd_suspended_queue().append(mtd_strategy)
 
     def _mtd_resource(self, mtd_strategy):
         """Get the resource of the mtd"""

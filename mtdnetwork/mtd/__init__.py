@@ -1,12 +1,12 @@
 class MTD:
     def __init__(self, name: str, mtd_type: str, resource_type: str, execution_time_mean: float,
-                 execution_time_std: float, network):
+                 execution_time_std: float, priority: int, network):
         self._name = name
         self._mtd_type = mtd_type
         self._resource_type = resource_type
         self._execution_time_mean = execution_time_mean
         self._execution_time_std = execution_time_std
-        self._batch_register_number = 0
+        self._priority = priority
         self.network = network
 
     def mtd_operation(self, adversary=None):
@@ -30,8 +30,5 @@ class MTD:
     def get_execution_time_std(self):
         return self._execution_time_std
 
-    def get_batch_register_number(self):
-        return self._batch_register_number
-
-    def set_batch_register_number(self, number):
-        self._batch_register_number = number
+    def get_priority(self):
+        return self._priority

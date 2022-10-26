@@ -100,19 +100,11 @@ HACKER_ATTACK_ATTEMPT_MULTIPLER = 5
 STANDARD_ERROR_BENCHMARK_PERCENT = 5
 ATTACKER_THRESHOLD = 10
 
-# Constants for MTD interval
-MTD_REGISTER_DELAY = {
-    'simultaneously': 140,
-    'randomly': 1,
-    'deterministically': 1,
-    'probabilistically': 1
-}
 
 MTD_TRIGGER_INTERVAL = {
-    'simultaneously': (30, 0.5),
+    'simultaneously': (200, 0.5),
     'randomly': (60, 0.5),
-    'deterministically': (60, 0.5),
-    'probabilistically': (60, 0.5)
+    'deterministically': (60, 0.5)
 }
 
 

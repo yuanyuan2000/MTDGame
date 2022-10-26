@@ -14,8 +14,7 @@ class MTDStatistics:
             'start_time': start_time,
             'finish_time': finish_time,
             'duration': duration,
-            'executed_at': mtd_strategy.get_resource_type(),
-            'batch_register_number': mtd_strategy.get_batch_register_number()
+            'executed_at': mtd_strategy.get_resource_type()
         })
         self._total_executed += 1
 

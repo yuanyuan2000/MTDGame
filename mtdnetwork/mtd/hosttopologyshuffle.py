@@ -7,12 +7,13 @@ class HostTopologyShuffle(MTD):
     Swaps hosts in the network.
     """
 
-    def __init__(self, network):
+    def __init__(self, network, priority=2):
         super().__init__(name="HostTopologyShuffle",
                          mtd_type='shuffle',
                          resource_type='network',
                          execution_time_mean=40,
                          execution_time_std=0.5,
+                         priority=priority,
                          network=network)
 
     def random_different_host_id(self, curr_host_id, hosts_list):

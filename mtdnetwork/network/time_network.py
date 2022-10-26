@@ -1,8 +1,8 @@
 import random
-from collections import deque
 from mtdnetwork.network.copynetwork import Network
 from mtdnetwork.stats.mtd_stats import MTDStatistics
 from mtdnetwork.network.targetnetwork import TargetNetwork
+from queue import PriorityQueue
 
 
 class TimeNetwork(Network):
@@ -12,9 +12,8 @@ class TimeNetwork(Network):
         # default parameters
         # self.mtd_strategy_queue = PriorityQueue()
         self._mtd_stats = MTDStatistics()
-        self._mtd_register_number = 0
-        self._mtd_strategy_queue = deque()
-        self._mtd_suspended_queue = deque()
+        self._mtd_strategy_queue = PriorityQueue()
+        self._mtd_suspended_dict = dict()
         self._unfinished_mtd = None
         super().__init__(graph, pos, colour_map, total_nodes, total_endpoints, total_subnets,
                          total_layers, node_per_layer, users_list, users_per_host)
@@ -90,8 +89,8 @@ class TimeNetwork(Network):
     def get_mtd_strategy_queue(self):
         return self._mtd_strategy_queue
 
-    def get_mtd_suspended_queue(self):
-        return self._mtd_suspended_queue
+    def get_mtd_suspended_dict(self):
+        return self._mtd_suspended_dict
 
     def get_unfinished_mtd(self):
         return self._unfinished_mtd
@@ -99,8 +98,3 @@ class TimeNetwork(Network):
     def set_unfinished_mtd(self, mtd):
         self._unfinished_mtd = mtd
 
-    def get_mtd_register_number(self):
-        return self._mtd_register_number
-
-    def update_mtd_register_number(self):
-        self._mtd_register_number += 1
