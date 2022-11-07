@@ -4,13 +4,10 @@ from mtdnetwork.data import constants
 
 
 class OSDiversity(MTD):
-    def __init__(self, network, priority=4):
-        super().__init__(name="osdiversity",
+    def __init__(self, network):
+        super().__init__(name="OSDiversity",
                          mtd_type='diversity',
                          resource_type='application',
-                         execution_time_mean=40,
-                         execution_time_std=0.5,
-                         priority=priority,
                          network=network)
 
     def mtd_operation(self, adversary=None):

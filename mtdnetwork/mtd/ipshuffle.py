@@ -4,13 +4,10 @@ from mtdnetwork.network import host
 
 class IPShuffle(MTD):
 
-    def __init__(self, network, priority=3):
+    def __init__(self, network):
         super().__init__(name="IPShuffle",
                          mtd_type='shuffle',
                          resource_type='network',
-                         execution_time_mean=40,
-                         execution_time_std=0.5,
-                         priority=priority,
                          network=network)
 
     def mtd_operation(self, adversary=None):

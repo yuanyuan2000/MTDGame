@@ -22,6 +22,9 @@ class MTDScheme:
         self._init_mtd_scheme(scheme)
 
     def _init_mtd_scheme(self, scheme):
+        """
+        assign an MTD scheme based on the parameter
+        """
         self._mtd_trigger_interval, self._mtd_trigger_std = MTD_TRIGGER_INTERVAL[scheme]
         if scheme == 'simultaneously':
             self._mtd_register_scheme = self._register_mtd_simultaneously
@@ -30,57 +33,62 @@ class MTDScheme:
         elif scheme == 'alternatively':
             self._mtd_register_scheme = self._register_mtd_alternatively
 
-    def _register_mtd(self, mtd):
+    def _mtd_register(self, mtd):
         """
         register an MTD strategy to the queue
         """
         mtd_strategy = mtd(network=self.network)
-        self.network.get_mtd_strategy_queue().put((mtd_strategy.get_priority(), mtd_strategy))
+        self.network.get_mtd_queue().put((mtd_strategy.get_priority(), mtd_strategy))
 
     def _register_mtd_simultaneously(self):
         """
         register all MTDs for simultaneous scheme
         """
         for mtd in self._mtd_strategies:
-            self._register_mtd(mtd=mtd)
-        return self.network.get_mtd_strategy_queue()
+            self._mtd_register(mtd=mtd)
+        return self.network.get_mtd_queue()
 
     def _register_mtd_randomly(self):
         """
         register an MTD for random scheme
         """
-        self._register_mtd(mtd=random.choice(self._mtd_strategies))
+        self._mtd_register(mtd=random.choice(self._mtd_strategies))
 
     def _register_mtd_alternatively(self):
         """
-        register an MTD alternatively
+        register an MTD for alternative scheme
         todo: dynamic MTDs based on the network state
         """
+        self.network.get_unfinished_mtd()
+
         pass
 
     def trigger_suspended_mtd(self):
         """
-        trigger an MTD from suspended dict
+        trigger an MTD from suspended list
         """
-        suspend_dict = self.network.get_mtd_suspended_dict()
+        suspend_dict = self.network.get_suspended_mtd()
         mtd = suspend_dict[min(suspend_dict.keys())]
         del suspend_dict[min(suspend_dict.keys())]
         return mtd
 
     def trigger_mtd(self):
         """
-        trigger an MTD from mtd strategy queue
+        trigger an MTD from mtd queue
         """
-        return self.network.get_mtd_strategy_queue().get()[1]
+        return self.network.get_mtd_queue().get()[1]
 
     def suspend_mtd(self, mtd_strategy):
         """
-        Put an MTD into the suspended dict
+        put an MTD into the suspended list
         """
         self.network.get_mtd_stats().append_total_suspended()
-        self.network.get_mtd_suspended_dict()[mtd_strategy.get_priority()] = mtd_strategy
+        self.network.get_suspended_mtd()[mtd_strategy.get_priority()] = mtd_strategy
 
-    def call_register_mtd(self):
+    def register_mtd(self):
+        """
+        call an MTD register scheme function
+        """
         self._mtd_register_scheme()
 
     def get_scheme(self):

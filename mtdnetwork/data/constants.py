@@ -8,10 +8,10 @@ OS_TYPES = [
 ]
 
 OS_VERSION_DICT = {
-    "windows" : ["10", "8.1", "8", "7", "vista", "xp"],
-    "ubuntu" : ["20.04", "18.04", "16.04", "14.04", "12.04", "10.04"],
-    "centos" : ["8", "7", "6", "5", "4", "3"],
-    "freebsd" : ["13", "12", "11", "10", "9", "8"]
+    "windows": ["10", "8.1", "8", "7", "vista", "xp"],
+    "ubuntu": ["20.04", "18.04", "16.04", "14.04", "12.04", "10.04"],
+    "centos": ["8", "7", "6", "5", "4", "3"],
+    "freebsd": ["13", "12", "11", "10", "9", "8"]
 }
 
 HOST_TAGS = [
@@ -39,7 +39,10 @@ NODE_COLOURS = [
     "brown"
 ]
 
-SERVICE_VERSIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99]
+SERVICE_VERSIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27,
+                    28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52,
+                    53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77,
+                    78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99]
 
 LARGE_INT = (1 << 100)
 
@@ -90,21 +93,59 @@ SERVICE_DISCOVER_EACH_VULN_TIME = 10
 SERVICE_TOP_X_VULNS_TO_RETURN = 5
 
 #  Constants for Attackers
-HACKER_BLOCKED_BY_MTD_PENALITY = 1000
-HACKER_BLOCKED_BY_MTD_MAX_DISCOUNT = 0.9
-HACKER_BLOCKED_BY_MTD_BLOCKS_TO_MAX_DISCOUNT = 75
-HACKER_HOP_TIME = 5
+# HACKER_BLOCKED_BY_MTD_PENALITY = 1000
+# HACKER_BLOCKED_BY_MTD_MAX_DISCOUNT = 0.9
+# HACKER_BLOCKED_BY_MTD_BLOCKS_TO_MAX_DISCOUNT = 75
+# HACKER_HOP_TIME = 5
 HACKER_ATTACK_ATTEMPT_MULTIPLER = 5
 
 # Constants for Runtime
 STANDARD_ERROR_BENCHMARK_PERCENT = 5
 ATTACKER_THRESHOLD = 10
 
-
+# Constants for MTD scheme
 MTD_TRIGGER_INTERVAL = {
     'simultaneously': (200, 0.5),
-    'randomly': (60, 0.5),
+    'randomly': (20, 0.5),
     'deterministically': (60, 0.5)
 }
 
+MTD_PRIORITY = {
+    'CompleteTopologyShuffle': 1,
+    'HostTopologyShuffle': 2,
+    'IPShuffle': 3,
+    'OSDiversity': 4,
+    'PortShuffle': 5,
+    'ServiceDiversity': 6,
+    'UserShuffle': 7,
+}
 
+MTD_DURATION = {
+    'CompleteTopologyShuffle_MEAN': 40,
+    'CompleteTopologyShuffle_STD': 0.5,
+    'HostTopologyShuffle_MEAN': 40,
+    'HostTopologyShuffle_STD': 0.5,
+    'IPShuffle_MEAN': 40,
+    'IPShuffle_STD': 0.5,
+    'OSDiversity_MEAN': 40,
+    'OSDiversity_STD': 0.5,
+    'PortShuffle_MEAN': 40,
+    'PortShuffle_STD': 0.5,
+    'ServiceDiversity_MEAN': 40,
+    'ServiceDiversity_STD': 0.5,
+    'UserShuffle_MEAN': 40,
+    'UserShuffle_STD': 0.5
+}
+
+# Constants for attack processes
+# may need to combine with "Constants for Attackers" for future works
+ATTACK_DURATION = {
+    'SCAN_HOST': 10,
+    'ENUM_HOST': 15,
+    'SCAN_NEIGHBOR': 10,
+    'SCAN_PORT': 20,
+    'EXPLOIT_VULN_MEAN': 25,
+    'EXPLOIT_VULN_STD': 0.8,
+    'BRUTE_FORCE': 15,
+    'PENALTY': 2,
+}

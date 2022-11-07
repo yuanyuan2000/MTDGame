@@ -3,14 +3,11 @@ import random
 
 
 class ServiceDiversity(MTD):
-    def __init__(self, network, shuffles=50, priority=6):
+    def __init__(self, network, shuffles=50):
         self.shuffles = shuffles
-        super().__init__(name="serviceDiversity",
+        super().__init__(name="ServiceDiversity",
                          mtd_type='diversity',
                          resource_type='application',
-                         execution_time_mean=40,
-                         execution_time_std=0.5,
-                         priority=priority,
                          network=network)
 
     def mtd_operation(self, adversary=None):

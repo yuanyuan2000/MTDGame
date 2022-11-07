@@ -12,8 +12,8 @@ class TimeNetwork(Network):
         # default parameters
         # self.mtd_strategy_queue = PriorityQueue()
         self._mtd_stats = MTDStatistics()
-        self._mtd_strategy_queue = PriorityQueue()
-        self._mtd_suspended_dict = dict()
+        self._mtd_queue = PriorityQueue()
+        self._suspended_mtd = dict()
         self._unfinished_mtd = None
         super().__init__(graph, pos, colour_map, total_nodes, total_endpoints, total_subnets,
                          total_layers, node_per_layer, users_list, users_per_host)
@@ -86,11 +86,11 @@ class TimeNetwork(Network):
     def get_mtd_stats(self):
         return self._mtd_stats
 
-    def get_mtd_strategy_queue(self):
-        return self._mtd_strategy_queue
+    def get_mtd_queue(self):
+        return self._mtd_queue
 
-    def get_mtd_suspended_dict(self):
-        return self._mtd_suspended_dict
+    def get_suspended_mtd(self):
+        return self._suspended_mtd
 
     def get_unfinished_mtd(self):
         return self._unfinished_mtd

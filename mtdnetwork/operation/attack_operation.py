@@ -1,17 +1,7 @@
 import simpy
-from mtdnetwork.operation.time_generator import exponential_variates
 import logging
-
-HACKER_ATTACK_ATTEMPT_MULTIPLER = 5
-
-SCAN_HOST = 10
-ENUM_HOST = 15
-SCAN_NEIGHBOR = 10
-SCAN_PORT = 20
-EXPLOIT_VULN_MEAN = 25
-EXPLOIT_VULN_STD = 0.8
-BRUTE_FORCE = 15
-PENALTY = 2
+from mtdnetwork.operation.time_generator import exponential_variates
+from mtdnetwork.data.constants import ATTACK_DURATION
 
 
 class AttackOperation:
@@ -56,37 +46,55 @@ class AttackOperation:
         attack_action()
 
     def _scan_host(self):
+        """
+        raise an SCAN_HOST action
+        """
         self.adversary.set_curr_process('SCAN_HOST')
-        self._attack_process = self.env.process(self._execute_attack_action(SCAN_HOST,
+        self._attack_process = self.env.process(self._execute_attack_action(ATTACK_DURATION['SCAN_HOST'],
                                                                             self._execute_scan_host))
 
     def _enum_host(self):
+        """
+        raise an ENUM_HOST action
+        """
         if len(self.adversary.get_host_stack()) > 0:
             self.adversary.set_curr_process('ENUM_HOST')
-            self._attack_process = self.env.process(self._execute_attack_action(ENUM_HOST,
+            self._attack_process = self.env.process(self._execute_attack_action(ATTACK_DURATION['ENUM_HOST'],
                                                                                 self._execute_enum_host))
         else:
             self._scan_host()
 
     def _scan_port(self):
+        """
+        raise an SCAN_PORT action
+        """
         self.adversary.set_curr_process('SCAN_PORT')
-        self._attack_process = self.env.process(self._execute_attack_action(SCAN_PORT,
+        self._attack_process = self.env.process(self._execute_attack_action(ATTACK_DURATION['SCAN_PORT'],
                                                                             self._execute_scan_port))
 
     def _exploit_vuln(self):
-        exploit_time = exponential_variates(EXPLOIT_VULN_MEAN, EXPLOIT_VULN_STD)
+        """
+        raise an EXPLOIT_VULN action
+        """
+        exploit_time = exponential_variates(ATTACK_DURATION['EXPLOIT_VULN_MEAN'], ATTACK_DURATION['EXPLOIT_VULN_STD'])
         self.adversary.set_curr_process('EXPLOIT_VULN')
         self._attack_process = self.env.process(self._execute_attack_action(exploit_time,
                                                                             self._execute_exploit_vuln))
 
     def _brute_force(self):
+        """
+        raise an BRUTE_FORCE action
+        """
         self.adversary.set_curr_process('BRUTE_FORCE')
-        self._attack_process = self.env.process(self._execute_attack_action(BRUTE_FORCE,
+        self._attack_process = self.env.process(self._execute_attack_action(ATTACK_DURATION['BRUTE_FORCE'],
                                                                             self._execute_brute_force))
 
     def _scan_neighbors(self):
+        """
+        raise an SCAN_NEIGHBOR action
+        """
         self.adversary.set_curr_process('SCAN_NEIGHBOR')
-        self._attack_process = self.env.process(self._execute_attack_action(SCAN_NEIGHBOR,
+        self._attack_process = self.env.process(self._execute_attack_action(ATTACK_DURATION['SCAN_NEIGHBOR'],
                                                                             self._execute_scan_neighbors))
 
     def _handle_interrupt(self, start_time, name):
@@ -99,7 +107,7 @@ class AttackOperation:
                                                                          self.env.now + self._proceed_time,
                                                                          self.adversary, self._interrupted_mtd)
         # confusion penalty caused by MTD operation
-        yield self.env.timeout(PENALTY)
+        yield self.env.timeout(ATTACK_DURATION['PENALTY'])
 
         if self._interrupted_mtd.get_resource_type() == 'network':
             self._interrupted_mtd = None
@@ -135,19 +143,20 @@ class AttackOperation:
         time for host hopping required
         Checks if the Hacker has already compromised and backdoored the target host
         """
-        self.adversary.set_host_stack(self.adversary.get_network().sort_by_distance_from_exposed_and_pivot_host(
+        network = self.adversary.get_network()
+        self.adversary.set_host_stack(network.sort_by_distance_from_exposed_and_pivot_host(
             self.adversary.get_host_stack(),
             self.adversary.get_compromised_hosts(),
             pivot_host_id=self.adversary.get_pivot_host_id()
         ))
         self.adversary.set_curr_host_id(self.adversary.get_host_stack().pop(0))
-        self.adversary.set_curr_host(self.adversary.get_network().get_host(self.adversary.get_curr_host_id()))
+        self.adversary.set_curr_host(network.get_host(self.adversary.get_curr_host_id()))
         # Sets node as unattackable if has been attack too many times
         self.adversary.get_attack_counter()[self.adversary.get_curr_host_id()] += 1
         if self.adversary.get_attack_counter()[
             self.adversary.get_curr_host_id()] == self.adversary.get_attack_threshold():
             # target node feature
-            if self.adversary.get_curr_host_id() != self.adversary.get_network().get_target_node():
+            if self.adversary.get_curr_host_id() != network.get_target_node():
                 self.adversary.get_stop_attack().append(self.adversary.get_curr_host_id())
 
         # Checks if max attack attempts has been reached, empty stacks if reached
