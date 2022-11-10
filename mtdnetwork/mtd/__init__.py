@@ -16,8 +16,8 @@ class MTD:
         self._name = name
         self._mtd_type = mtd_type
         self._resource_type = resource_type
-        self._execution_time_mean = MTD_DURATION[name+'_MEAN']
-        self._execution_time_std = MTD_DURATION[name+'_STD']
+        self._execution_time_mean = MTD_DURATION[name][0]
+        self._execution_time_std = MTD_DURATION[name][1]
         self._priority = MTD_PRIORITY[name]
         self.network = network
 

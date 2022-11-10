@@ -104,12 +104,14 @@ STANDARD_ERROR_BENCHMARK_PERCENT = 5
 ATTACKER_THRESHOLD = 10
 
 # Constants for MTD scheme
+# scheme : (mean, std)
 MTD_TRIGGER_INTERVAL = {
     'simultaneously': (200, 0.5),
-    'randomly': (20, 0.5),
-    'deterministically': (60, 0.5)
+    'randomly': (30, 0.5),
+    'alternatively': (30, 0.5)
 }
 
+# mtd name : priority value
 MTD_PRIORITY = {
     'CompleteTopologyShuffle': 1,
     'HostTopologyShuffle': 2,
@@ -120,21 +122,15 @@ MTD_PRIORITY = {
     'UserShuffle': 7,
 }
 
+# mtd name : (mean, std)
 MTD_DURATION = {
-    'CompleteTopologyShuffle_MEAN': 40,
-    'CompleteTopologyShuffle_STD': 0.5,
-    'HostTopologyShuffle_MEAN': 40,
-    'HostTopologyShuffle_STD': 0.5,
-    'IPShuffle_MEAN': 40,
-    'IPShuffle_STD': 0.5,
-    'OSDiversity_MEAN': 40,
-    'OSDiversity_STD': 0.5,
-    'PortShuffle_MEAN': 40,
-    'PortShuffle_STD': 0.5,
-    'ServiceDiversity_MEAN': 40,
-    'ServiceDiversity_STD': 0.5,
-    'UserShuffle_MEAN': 40,
-    'UserShuffle_STD': 0.5
+    'CompleteTopologyShuffle': (50, 0.5),
+    'HostTopologyShuffle': (45, 0.5),
+    'IPShuffle': (40, 0.5),
+    'OSDiversity': (35, 0.5),
+    'PortShuffle': (30, 0.5),
+    'ServiceDiversity': (40, 0.5),
+    'UserShuffle': (20, 0.5)
 }
 
 # Constants for attack processes

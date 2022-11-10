@@ -1,3 +1,5 @@
+import random
+from collections import deque
 from mtdnetwork.mtd.completetopologyshuffle import CompleteTopologyShuffle
 from mtdnetwork.mtd.ipshuffle import IPShuffle
 from mtdnetwork.mtd.hosttopologyshuffle import HostTopologyShuffle
@@ -6,18 +8,23 @@ from mtdnetwork.mtd.osdiversity import OSDiversity
 from mtdnetwork.mtd.servicediversity import ServiceDiversity
 from mtdnetwork.mtd.usershuffle import UserShuffle
 from mtdnetwork.data.constants import MTD_TRIGGER_INTERVAL
-import random
 
 
 class MTDScheme:
 
-    def __init__(self, scheme: str, network):
+    def __init__(self, scheme: str, network, alter_strategies=None):
         self._scheme = scheme
         self._mtd_trigger_interval = None
         self._mtd_trigger_std = None
         self._mtd_register_scheme = None
-        self._mtd_strategies = [CompleteTopologyShuffle, IPShuffle, HostTopologyShuffle, UserShuffle,
-                                PortShuffle, OSDiversity, ServiceDiversity]
+        self._mtd_strategies = [CompleteTopologyShuffle,
+                                HostTopologyShuffle,
+                                IPShuffle,
+                                OSDiversity,
+                                PortShuffle,
+                                ServiceDiversity,
+                                UserShuffle]
+        self._mtd_alter_strategies = alter_strategies
         self.network = network
         self._init_mtd_scheme(scheme)
 
@@ -31,6 +38,8 @@ class MTDScheme:
         elif scheme == 'randomly':
             self._mtd_register_scheme = self._register_mtd_randomly
         elif scheme == 'alternatively':
+            if self._mtd_alter_strategies is None:
+                self._mtd_alter_strategies = deque(self._mtd_strategies)
             self._mtd_register_scheme = self._register_mtd_alternatively
 
     def _mtd_register(self, mtd):
@@ -57,11 +66,10 @@ class MTDScheme:
     def _register_mtd_alternatively(self):
         """
         register an MTD for alternative scheme
-        todo: dynamic MTDs based on the network state
         """
-        self.network.get_unfinished_mtd()
-
-        pass
+        mtd = self._mtd_alter_strategies.popleft()
+        self._mtd_register(mtd=mtd)
+        self._mtd_alter_strategies.append(mtd)
 
     def trigger_suspended_mtd(self):
         """

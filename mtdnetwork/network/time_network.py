@@ -14,7 +14,7 @@ class TimeNetwork(Network):
         self._mtd_stats = MTDStatistics()
         self._mtd_queue = PriorityQueue()
         self._suspended_mtd = dict()
-        self._unfinished_mtd = None
+        self._unfinished_mtd = dict()
         super().__init__(graph, pos, colour_map, total_nodes, total_endpoints, total_subnets,
                          total_layers, node_per_layer, users_list, users_per_host)
 
@@ -96,5 +96,5 @@ class TimeNetwork(Network):
         return self._unfinished_mtd
 
     def set_unfinished_mtd(self, mtd):
-        self._unfinished_mtd = mtd
+        self._unfinished_mtd[mtd.get_resource_type()] = mtd
 

@@ -1,4 +1,3 @@
-import random
 from mtdnetwork.operation.time_generator import exponential_variates
 import logging
 import simpy
@@ -7,11 +6,11 @@ from mtdnetwork.network.mtd_scheme import MTDScheme
 
 class MTDOperation:
 
-    def __init__(self, env, network, adversary, attack_operation, scheme, proceed_time=0):
+    def __init__(self, env, network, adversary, attack_operation, scheme, proceed_time=0, alter_strategies=None):
         self.env = env
         self.network = network
         self.adversary = adversary
-        self._mtd_scheme = MTDScheme(network=network, scheme=scheme)
+        self._mtd_scheme = MTDScheme(network=network, scheme=scheme, alter_strategies=alter_strategies)
         self.attack_operation = attack_operation
         self._proceed_time = proceed_time
         self.application_layer_resource = simpy.Resource(self.env, 1)
@@ -19,9 +18,9 @@ class MTDOperation:
         self.reserve_resource = simpy.Resource(self.env, 1)
 
     def proceed_mtd(self):
-        if self.network.get_unfinished_mtd() is not None:
-            self._mtd_scheme.suspend_mtd(self.network.get_unfinished_mtd())
-            self.network.set_unfinished_mtd(None)
+        if self.network.get_unfinished_mtd():
+            for k, v in self.network.get_unfinished_mtd().items():
+                self._mtd_scheme.suspend_mtd(v)
         if self._mtd_scheme.get_scheme() == 'simultaneously':
             self.env.process(self._mtd_batch_trigger_action())
         else:
@@ -86,6 +85,7 @@ class MTDOperation:
                     mtd = self._mtd_scheme.trigger_mtd()
                     resource = self._get_mtd_resource(mtd=mtd)
                     if len(resource.users) == 0:
+                        # execute MTD
                         self.env.process(self._mtd_execute_action(env=self.env, mtd=mtd))
                     else:
                         # suspend MTD if resource is occupied

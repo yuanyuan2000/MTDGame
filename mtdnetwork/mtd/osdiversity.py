@@ -11,6 +11,9 @@ class OSDiversity(MTD):
                          network=network)
 
     def mtd_operation(self, adversary=None):
+        """
+        todo: dynamic MTDs based on the network state
+        """
         service_generator = self.network.get_service_generator()
         hosts = self.network.get_hosts()
         for host_id, host_instance in hosts.items():
@@ -36,5 +39,5 @@ class OSDiversity(MTD):
                         host_instance.os_version
                     )
         # Update Attack Path Exposure for target networks
-        if (self.network.get_network_type() == 0):
+        if self.network.get_network_type() == 0:
             self.network.add_attack_path_exposure()

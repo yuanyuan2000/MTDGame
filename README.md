@@ -1,6 +1,6 @@
 # MTDSimTime
 
-Integrating time domain into MTDSim based on my research project.
+A research project on the simulation and evaluation of moving target defense in the time domain.
 
 ## Setup this project
 
