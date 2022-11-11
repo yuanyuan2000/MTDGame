@@ -90,7 +90,7 @@ class MTDScheme:
         """
         put an MTD into the suspended list
         """
-        self.network.get_mtd_stats().append_total_suspended()
+        self.network.get_mtd_stats().add_total_suspended()
         self.network.get_suspended_mtd()[mtd_strategy.get_priority()] = mtd_strategy
 
     def register_mtd(self):
