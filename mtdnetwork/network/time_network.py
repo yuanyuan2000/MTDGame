@@ -2,7 +2,6 @@ import random
 from mtdnetwork.network.copynetwork import Network
 from mtdnetwork.stats.mtd_stats import MTDStatistics
 from mtdnetwork.network.targetnetwork import TargetNetwork
-from queue import PriorityQueue
 
 
 class TimeNetwork(Network):
@@ -10,9 +9,8 @@ class TimeNetwork(Network):
     def __init__(self, graph, pos, colour_map, total_nodes, total_endpoints, total_subnets, total_layers,
                  node_per_layer, users_list, users_per_host):
         # default parameters
-        # self.mtd_strategy_queue = PriorityQueue()
         self._mtd_stats = MTDStatistics()
-        self._mtd_queue = PriorityQueue()
+        self._mtd_queue = []
         self._suspended_mtd = dict()
         self._unfinished_mtd = dict()
         super().__init__(graph, pos, colour_map, total_nodes, total_endpoints, total_subnets,
@@ -97,4 +95,3 @@ class TimeNetwork(Network):
 
     def set_unfinished_mtd(self, mtd):
         self._unfinished_mtd[mtd.get_resource_type()] = mtd
-

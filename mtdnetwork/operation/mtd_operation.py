@@ -38,7 +38,7 @@ class MTDOperation:
                 return
 
             # register an MTD
-            if not self.network.get_mtd_queue().queue:
+            if not self.network.get_mtd_queue():
                 self._mtd_scheme.register_mtd()
             # trigger an MTD
             if self.network.get_suspended_mtd():
@@ -50,11 +50,13 @@ class MTDOperation:
             if len(resource.users) == 0:
                 self.env.process(self._mtd_execute_action(env=self.env, mtd=mtd))
             else:
-                # suspend
-                self._mtd_scheme.suspend_mtd(mtd)
-                logging.info('MTD: %s suspended at %.1fs due to resource occupation' %
-                             (mtd.get_name(), self.env.now + self._proceed_time))
-                # discard TODO
+                # suspend if suspended dict doesn't have the same MTD.
+                # else discard
+                if mtd.get_priority() not in self.network.get_suspended_mtd():
+                    self._mtd_scheme.suspend_mtd(mtd)
+                    logging.info('MTD: %s suspended at %.1fs due to resource occupation' %
+                                 (mtd.get_name(), self.env.now + self._proceed_time))
+
             # exponential time interval for triggering MTD operations
             yield self.env.timeout(exponential_variates(self._mtd_scheme.get_mtd_trigger_interval(),
                                                         self._mtd_scheme.get_mtd_trigger_std()))
@@ -80,9 +82,9 @@ class MTDOperation:
                         yield self.env.process(self._mtd_execute_action(env=self.env, mtd=mtd))
             else:
                 # register and trigger all MTDs
-                if not self.network.get_suspended_mtd() and not self.network.get_mtd_queue().queue:
+                if not self.network.get_suspended_mtd() and not self.network.get_mtd_queue():
                     self._mtd_scheme.register_mtd()
-                while self.network.get_mtd_queue().queue:
+                while self.network.get_mtd_queue():
                     mtd = self._mtd_scheme.trigger_mtd()
                     logging.info('MTD: %s triggered %.1fs' % (mtd.get_name(), self.env.now + self._proceed_time))
                     resource = self._get_mtd_resource(mtd=mtd)

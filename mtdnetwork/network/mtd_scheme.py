@@ -8,6 +8,7 @@ from mtdnetwork.mtd.osdiversity import OSDiversity
 from mtdnetwork.mtd.servicediversity import ServiceDiversity
 from mtdnetwork.mtd.usershuffle import UserShuffle
 from mtdnetwork.data.constants import MTD_TRIGGER_INTERVAL
+from heapq import heappush, heappop
 
 
 class MTDScheme:
@@ -47,7 +48,7 @@ class MTDScheme:
         register an MTD strategy to the queue
         """
         mtd_strategy = mtd(network=self.network)
-        self.network.get_mtd_queue().put((mtd_strategy.get_priority(), mtd_strategy))
+        heappush(self.network.get_mtd_queue(), (mtd_strategy.get_priority(), mtd_strategy))
 
     def _register_mtd_simultaneously(self):
         """
@@ -84,7 +85,7 @@ class MTDScheme:
         """
         trigger an MTD from mtd queue
         """
-        return self.network.get_mtd_queue().get()[1]
+        return heappop(self.network.get_mtd_queue())[1]
 
     def suspend_mtd(self, mtd_strategy):
         """
