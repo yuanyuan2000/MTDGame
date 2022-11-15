@@ -48,8 +48,14 @@ class AttackStatistics:
                                                            str(sim_time) + '_' + scheme + '.csv', index=False)
 
     def mean_time_to_compromise(self):
-        attack_operation_record = self.get_record()
-        # todo: get all compromised hosts, then calculate time spent on each of them.
+        record = self.get_record()
+        compromised_list = record[record['compromise_host'] != 'None']['compromise_host']
+        compromise_time_list = []
+        for host_id in compromised_list:
+            action_list = record[record['current_host'] == host_id]
+            compromise_time = max(action_list['finish_time']) - min(action_list['start_time'])
+            compromise_time_list.append(compromise_time)
+        return np.mean(compromise_time_list)
 
     # def get_compromised_attack_operation_counts(self):
     #     record = pd.DataFrame(self._attack_operation_record)
