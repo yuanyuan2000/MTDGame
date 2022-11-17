@@ -108,3 +108,6 @@ class MTDScheme:
 
     def get_mtd_trigger_std(self):
         return self._mtd_trigger_std
+
+    def set_mtd_strategies(self, mtd):
+        self._mtd_strategies = mtd

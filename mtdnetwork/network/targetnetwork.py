@@ -6,7 +6,7 @@ import random
 import mtdnetwork.data.constants as constants
 import mtdnetwork.network.services as services
 from mtdnetwork.network.host import Host
-from mtdnetwork.stats.scorer import Scorer
+from mtdnetwork.statistics.scorer import Scorer
 
 
 class TargetNetwork:

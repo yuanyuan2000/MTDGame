@@ -1,5 +1,5 @@
 import logging
-from mtdnetwork.stats.attack_stats import AttackStatistics
+from mtdnetwork.statistics.attack_statistics import AttackStatistics
 from mtdnetwork.data.constants import HACKER_ATTACK_ATTEMPT_MULTIPLER
 
 
@@ -35,17 +35,17 @@ class Adversary:
         """
         update compromised host ids for hosttopology shuffle
         """
-        new__compromised_hosts = []
+        new_compromised_hosts = []
 
         for i in self._compromised_hosts:
             if i == host_id:
-                new__compromised_hosts.append(other_host_id)
+                new_compromised_hosts.append(other_host_id)
             elif i == other_host_id:
-                new__compromised_hosts.append(host_id)
+                new_compromised_hosts.append(host_id)
             else:
-                new__compromised_hosts.append(i)
+                new_compromised_hosts.append(i)
 
-        self._compromised_hosts = new__compromised_hosts
+        self._compromised_hosts = new_compromised_hosts
 
     def update_compromise_progress(self, now, proceed_time):
         """
@@ -54,7 +54,7 @@ class Adversary:
         self._pivot_host_id = self._curr_host_id
         if self._curr_host_id not in self._compromised_hosts:
             self._compromised_hosts.append(self._curr_host_id)
-            self._attack_stats.update_compromise_host(self._curr_host_id)
+            self._attack_stats.update_compromise_host(self.curr_host)
             logging.info(
                 "Adversary: Host %i has been compromised at %.1fs!" % (self._curr_host_id, now + proceed_time))
             self.network.update_reachable_compromise(self._curr_host_id, self._compromised_hosts)

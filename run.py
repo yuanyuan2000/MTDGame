@@ -26,16 +26,15 @@ def main(start_time=0, finish_time=SIM_TIME, scheme='randomly', checkpoints=None
         time_network = TimeNetwork.create_network()
         adversary = Adversary(network=time_network, attack_threshold=ATTACKER_THRESHOLD)
 
-    # initialise operations
-    attack_operation = AttackOperation(env=env, adversary=adversary, proceed_time=start_time)
-    mtd_operation = MTDOperation(env=env, network=time_network, adversary=adversary, scheme=scheme,
-                                 attack_operation=attack_operation, proceed_time=start_time)
-
     # start attack
+    attack_operation = AttackOperation(env=env, adversary=adversary, proceed_time=start_time)
     attack_operation.proceed_attack()
 
     # start mtd
-    mtd_operation.proceed_mtd()
+    if scheme != 'None':
+        mtd_operation = MTDOperation(env=env, network=time_network, adversary=adversary, scheme=scheme,
+                                     attack_operation=attack_operation, proceed_time=start_time)
+        mtd_operation.proceed_mtd()
 
     # save snapshot
     if checkpoints is not None:
@@ -43,6 +42,12 @@ def main(start_time=0, finish_time=SIM_TIME, scheme='randomly', checkpoints=None
 
     # start simulation
     env.run(until=(finish_time-start_time))
+    mtd_stats = time_network.get_mtd_stats()
+    attack_stats = adversary.get_attack_stats()
+
+
+    mtd_stats.save_record(sim_time=SIM_TIME, scheme=scheme)
+    attack_stats.save_record(sim_time=SIM_TIME, scheme=scheme)
     return time_network, adversary
 
 

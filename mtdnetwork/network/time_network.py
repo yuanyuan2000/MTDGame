@@ -1,6 +1,6 @@
 import random
 from mtdnetwork.network.copynetwork import Network
-from mtdnetwork.stats.mtd_stats import MTDStatistics
+from mtdnetwork.statistics.mtd_statistics import MTDStatistics
 from mtdnetwork.network.targetnetwork import TargetNetwork
 
 
