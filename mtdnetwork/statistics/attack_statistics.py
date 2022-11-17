@@ -1,8 +1,5 @@
-import matplotlib.pyplot as plt
 import pandas as pd
-from matplotlib.lines import Line2D
 import os
-import numpy as np
 
 
 class AttackStatistics:

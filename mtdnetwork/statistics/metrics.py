@@ -9,12 +9,23 @@ class Metrics:
         self._attack_record = attack_record
 
     def mtd_execute_frequency(self):
+        """
+        The frequency of executing MTDs
+        :return: Total number of executed MTD / Elapsed time
+        """
         if len(self._mtd_record) == 0:
             return 0
         record = self._mtd_record
-        return (record.iloc[-1]['finish_time'] - record.iloc[0]['start_time']) / len(record)
+        return len(record) / (record.iloc[-1]['finish_time'] - record.iloc[0]['start_time'])
 
     def mean_time_to_compromise(self):
+        """
+        The mean time to compromise a host
+
+        ATTACK_ACTION: SCAN_PORT, EXPLOIT_VULN, BRUTE_FORCE
+        Elapsed time on a compromised host = The sum of the time duration of one or more ATTACK_ACTIONs on the host
+        :return: the average time spent on compromise a host
+        """
         record = self._attack_record
         compromised_list = record[record['compromise_host_uuid'] != 'None']['compromise_host_uuid'].unique()
         compromise_time_list = []
@@ -26,11 +37,17 @@ class Metrics:
         return np.mean(compromise_time_list)
 
     def compromise_record_by_attack_action(self, action):
+        """
+        :return: a list of attack record that contains hosts compromised by the given action
+        """
         record = self._attack_record
         return record[(record['name'] == action) &
                       (record['compromise_host'] != 'None')]
 
     def visualise_attack_operation_group_by_host(self):
+        """
+        visualise the action flow of attack operation group by host ids.
+        """
         record = self._attack_record
         fig, ax = plt.subplots(1, figsize=(16, 5))
         colors = ['purple', 'blue', 'green', 'yellow', 'orange', 'red']
@@ -53,6 +70,9 @@ class Metrics:
         plt.show()
 
     def visualise_attack_operation(self):
+        """
+        visualise the action flow of attack operation
+        """
         record = self._attack_record
         fig, ax = plt.subplots(1, figsize=(16, 5))
         ax.barh(record['name'], record['duration'],
@@ -81,6 +101,9 @@ class Metrics:
         plt.show()
 
     def visualise_mtd_operation(self):
+        """
+        visualise the action flow of mtd operation
+        """
         if len(self._mtd_record) == 0:
             return
         record = self._mtd_record
