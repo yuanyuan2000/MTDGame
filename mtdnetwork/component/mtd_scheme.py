@@ -24,7 +24,8 @@ class MTDScheme:
                                 OSDiversity,
                                 PortShuffle,
                                 ServiceDiversity,
-                                UserShuffle]
+                                # UserShuffle
+                                ]
         self._mtd_alter_strategies = alter_strategies
         self.network = network
         self._init_mtd_scheme(scheme)

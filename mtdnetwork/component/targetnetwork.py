@@ -4,9 +4,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import random
 import mtdnetwork.data.constants as constants
-import mtdnetwork.network.services as services
-from mtdnetwork.network.host import Host
-from mtdnetwork.statistics.scorer import Scorer
+import mtdnetwork.component.services as services
+from mtdnetwork.component.host import Host
+from mtdnetwork.statistic.scorer import Scorer
 
 
 class TargetNetwork:

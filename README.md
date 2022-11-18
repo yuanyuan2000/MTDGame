@@ -57,7 +57,9 @@ A research project on the simulation and evaluation of moving target defense in 
 
 6. implement three [MTD Schemes](https://github.com/MoeBuTa/MTDSimTime/tree/main/mtdnetwork/network/mtd_scheme): simultaneously, randomly, alternatively.
 
-7. implement Mean Time to Compromise metric.
+7. implement Mean Time to Compromise.
+
+8. implement MTD Execute Frequency.
 
 
 ## Todos / Future works

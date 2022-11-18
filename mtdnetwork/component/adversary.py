@@ -1,5 +1,5 @@
 import logging
-from mtdnetwork.statistics.attack_statistics import AttackStatistics
+from mtdnetwork.statistic.attack_statistics import AttackStatistics
 from mtdnetwork.data.constants import HACKER_ATTACK_ATTEMPT_MULTIPLER
 
 

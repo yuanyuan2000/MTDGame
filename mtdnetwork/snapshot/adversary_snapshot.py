@@ -1,5 +1,5 @@
 import pickle
-from mtdnetwork.network.adversary import Adversary
+from mtdnetwork.component.adversary import Adversary
 from mtdnetwork.snapshot import Snapshot
 
 

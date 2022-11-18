@@ -1,6 +1,7 @@
 import simpy
 import logging
-from mtdnetwork.operation.time_generator import exponential_variates
+import random
+from mtdnetwork.component.time_generator import exponential_variates
 from mtdnetwork.data.constants import ATTACK_DURATION
 
 
@@ -8,6 +9,7 @@ class AttackOperation:
     def __init__(self, env, adversary, proceed_time=0):
         self.env = env
         self.adversary = adversary
+
         self._attack_process = None
         self._interrupted_mtd = None
         self._proceed_time = proceed_time
@@ -76,7 +78,7 @@ class AttackOperation:
         """
         raise an EXPLOIT_VULN action
         """
-        exploit_time = exponential_variates(ATTACK_DURATION['EXPLOIT_VULN_MEAN'], ATTACK_DURATION['EXPLOIT_VULN_STD'])
+        exploit_time = exponential_variates(ATTACK_DURATION['EXPLOIT_VULN'][0], ATTACK_DURATION['EXPLOIT_VULN'][1])
         self.adversary.set_curr_process('EXPLOIT_VULN')
         self._attack_process = self.env.process(self._execute_attack_action(exploit_time,
                                                                             self._execute_exploit_vuln))
@@ -103,16 +105,17 @@ class AttackOperation:
         :param start_time: the start time of the attack action
         :param name: the name of the attack action
         """
-        self.adversary.get_attack_stats().append_attack_operation_record(name, start_time,
-                                                                         self.env.now + self._proceed_time,
-                                                                         self.adversary, self._interrupted_mtd)
+        adversary = self.adversary
+        adversary.get_attack_stats().append_attack_operation_record(name, start_time,
+                                                                    self.env.now + self._proceed_time,
+                                                                    adversary, self._interrupted_mtd)
         # confusion penalty caused by MTD operation
         yield self.env.timeout(ATTACK_DURATION['PENALTY'])
 
         if self._interrupted_mtd.get_resource_type() == 'network':
             self._interrupted_mtd = None
-            self.adversary.set_curr_host_id(-1)
-            self.adversary.set_curr_host(None)
+            adversary.set_curr_host_id(-1)
+            adversary.set_curr_host(None)
             logging.info('Adversary: Restarting with SCAN_HOST at %.1fs!' % (self.env.now + self._proceed_time))
             self._scan_host()
         elif self._interrupted_mtd.get_resource_type() == 'application':
@@ -128,10 +131,39 @@ class AttackOperation:
         in the function adversary.network.host_scan().
         If the scan returns nothing from the scan, then the attacker will stop
         """
-        self.adversary.set_pivot_host_id(-1)
-        self.adversary.set_host_stack(self.adversary.get_network().host_scan(self.adversary.get_compromised_hosts(),
-                                                                             self.adversary.get_stop_attack()))
-        if len(self.adversary.get_host_stack()) > 0:
+        adversary = self.adversary
+        compromised_hosts = adversary.get_compromised_hosts()
+        stop_attack = adversary.get_stop_attack()
+        network = adversary.get_network()
+
+        adversary.set_pivot_host_id(-1)
+        visible_network = network.get_hacker_visible_graph()
+        # scan_time = constants.NETWORK_HOST_DISCOVER_TIME * visible_network.number_of_nodes()
+        uncompromised_hosts = []
+        # Add every uncompromised host that is reachable and is not an exposed or compromised host
+        for c_host in compromised_hosts:
+            uncompromised_hosts = uncompromised_hosts + [
+                neighbor
+                for neighbor in network.graph.neighbors(c_host)
+                if neighbor not in compromised_hosts and neighbor not in network.exposed_endpoints and
+                   len(network.get_path_from_exposed(neighbor, graph=visible_network)[0]) > 0
+            ]
+
+        # Add random element from 0 to 1 so the scan does not return the same order of hosts each time for the hacker
+        uncompromised_hosts = sorted(
+            uncompromised_hosts,
+            key=lambda host_id: network.get_path_from_exposed(host_id, graph=visible_network)[1] + random.random()
+        )
+
+        uncompromised_hosts = uncompromised_hosts + [
+            ex_node
+            for ex_node in network.exposed_endpoints
+            if ex_node not in compromised_hosts
+        ]
+        discovered_hosts = [n for n in uncompromised_hosts if n not in stop_attack]
+
+        adversary.set_host_stack(discovered_hosts)
+        if len(adversary.get_host_stack()) > 0:
             self._enum_host()
         else:
             # terminate the whole process
@@ -143,35 +175,36 @@ class AttackOperation:
         time for host hopping required
         Checks if the Hacker has already compromised and backdoored the target host
         """
-        network = self.adversary.get_network()
-        self.adversary.set_host_stack(network.sort_by_distance_from_exposed_and_pivot_host(
-            self.adversary.get_host_stack(),
-            self.adversary.get_compromised_hosts(),
-            pivot_host_id=self.adversary.get_pivot_host_id()
+        adversary = self.adversary
+        network = adversary.get_network()
+        adversary.set_host_stack(network.sort_by_distance_from_exposed_and_pivot_host(
+            adversary.get_host_stack(),
+            adversary.get_compromised_hosts(),
+            pivot_host_id=adversary.get_pivot_host_id()
         ))
-        self.adversary.set_curr_host_id(self.adversary.get_host_stack().pop(0))
-        self.adversary.set_curr_host(network.get_host(self.adversary.get_curr_host_id()))
+        adversary.set_curr_host_id(adversary.get_host_stack().pop(0))
+        adversary.set_curr_host(network.get_host(adversary.get_curr_host_id()))
         # Sets node as unattackable if has been attack too many times
-        self.adversary.get_attack_counter()[self.adversary.get_curr_host_id()] += 1
-        if self.adversary.get_attack_counter()[
-            self.adversary.get_curr_host_id()] == self.adversary.get_attack_threshold():
+        adversary.get_attack_counter()[adversary.get_curr_host_id()] += 1
+        if adversary.get_attack_counter()[
+            adversary.get_curr_host_id()] == adversary.get_attack_threshold():
             # target node feature
-            if self.adversary.get_curr_host_id() != network.get_target_node():
-                self.adversary.get_stop_attack().append(self.adversary.get_curr_host_id())
+            if adversary.get_curr_host_id() != network.get_target_node():
+                adversary.get_stop_attack().append(adversary.get_curr_host_id())
 
         # Checks if max attack attempts has been reached, empty stacks if reached
-        if self.adversary.get_curr_attempts() >= self.adversary.get_max_attack_attempts():
-            self.adversary.set_host_stack([])
+        if adversary.get_curr_attempts() >= adversary.get_max_attack_attempts():
+            adversary.set_host_stack([])
             return
-        self.adversary.set_curr_ports([])
-        self.adversary.set_curr_vulns([])
+        adversary.set_curr_ports([])
+        adversary.set_curr_vulns([])
 
         # Sets the next host that the Hacker will pivot from to compromise other hosts
         # The pivot host needs to be a compromised host that the hacker can access
         self._set_next_pivot_host()
 
-        if self.adversary.get_curr_host().compromised:
-            self.adversary.update_compromise_progress(self.env.now, self._proceed_time)
+        if adversary.get_curr_host().compromised:
+            adversary.update_compromise_progress(self.env.now, self._proceed_time)
             self._enum_host()
         else:
             # Attack event triggered
@@ -183,11 +216,12 @@ class AttackOperation:
         Checks if a compromised user has reused their credentials on the target host
         Phase 1
         """
-        self.adversary.set_curr_ports(self.adversary.get_curr_host().port_scan())
-        user_reuse = self.adversary.get_curr_host().can_auto_compromise_with_users(
-            self.adversary.get_compromised_users())
+        adversary = self.adversary
+        adversary.set_curr_ports(adversary.get_curr_host().port_scan())
+        user_reuse = adversary.get_curr_host().can_auto_compromise_with_users(
+            adversary.get_compromised_users())
         if user_reuse:
-            self.adversary.update_compromise_progress(self.env.now, self._proceed_time)
+            adversary.update_compromise_progress(self.env.now, self._proceed_time)
             self._scan_neighbors()
             return
         self._exploit_vuln()
@@ -199,18 +233,19 @@ class AttackOperation:
         Checks if the adversary was able to successfully compromise the host
         Phase 2
         """
-        self.adversary.set_curr_vulns(self.adversary.get_curr_host().get_vulns(self.adversary.get_curr_ports()))
-        is_exploited = self.adversary.get_curr_host().exploit_vulns(self.adversary.get_curr_vulns())
+        adversary = self.adversary
+        adversary.set_curr_vulns(adversary.get_curr_host().get_vulns(adversary.get_curr_ports()))
+        is_exploited = adversary.get_curr_host().exploit_vulns(adversary.get_curr_vulns())
         # cumulative vulnerability exploitation attempts
-        self.adversary.set_curr_attempts(self.adversary.get_curr_attempts() + len(self.adversary.get_curr_vulns()))
+        adversary.set_curr_attempts(adversary.get_curr_attempts() + len(adversary.get_curr_vulns()))
 
-        for vuln in self.adversary.get_curr_vulns():
+        for vuln in adversary.get_curr_vulns():
             if vuln.is_exploited():
                 # todo: record vulnerability roa, impact, and complexity
                 # self.scorer.add_vuln_compromise(self.curr_time, vuln)
                 pass
         if is_exploited:
-            self.adversary.update_compromise_progress(self.env.now, self._proceed_time)
+            adversary.update_compromise_progress(self.env.now, self._proceed_time)
             self._scan_neighbors()
         else:
             self._brute_force()
@@ -221,10 +256,11 @@ class AttackOperation:
         Checks if credentials for a user account has been successfully compromised.
         Phase 3
         """
-        _brute_force_result = self.adversary.get_curr_host().compromise_with_users(
-            self.adversary.get_compromised_users())
+        adversary = self.adversary
+        _brute_force_result = adversary.get_curr_host().compromise_with_users(
+            adversary.get_compromised_users())
         if _brute_force_result:
-            self.adversary.update_compromise_progress(self.env.now, self._proceed_time)
+            adversary.update_compromise_progress(self.env.now, self._proceed_time)
             self._scan_neighbors()
         else:
             self._enum_host()
@@ -234,13 +270,14 @@ class AttackOperation:
         Starts scanning for neighbors from a host that the hacker can pivot to
         Puts the new neighbors discovered to the start of the host stack.
         """
-        found_neighbors = self.adversary.get_curr_host().discover_neighbors()
+        adversary = self.adversary
+        found_neighbors = adversary.get_curr_host().discover_neighbors()
         new__host_stack = found_neighbors + [
             node_id
-            for node_id in self.adversary.get_host_stack()
+            for node_id in adversary.get_host_stack()
             if node_id not in found_neighbors
         ]
-        self.adversary.set_host_stack(new__host_stack)
+        adversary.set_host_stack(new__host_stack)
         self._enum_host()
 
     def _set_next_pivot_host(self):
@@ -248,14 +285,15 @@ class AttackOperation:
         Sets the next host that the Hacker will pivot from to compromise other hosts
         The pivot host needs to be a compromised host that the hacker can access
         """
-        neighbors = list(self.adversary.get_network().get_neighbors(self.adversary.get_curr_host_id()))
-        if self.adversary.get_pivot_host_id() in neighbors:
+        adversary = self.adversary
+        neighbors = list(adversary.get_network().get_neighbors(adversary.get_curr_host_id()))
+        if adversary.get_pivot_host_id() in neighbors:
             return
         for n in neighbors:
-            if n in self.adversary.get_compromised_hosts():
-                self.adversary.set_pivot_host_id(n)
+            if n in adversary.get_compromised_hosts():
+                adversary.set_pivot_host_id(n)
                 return
-        self.adversary.set_pivot_host_id(-1)
+        adversary.set_pivot_host_id(-1)
 
     def get_proceed_time(self):
         return self._proceed_time

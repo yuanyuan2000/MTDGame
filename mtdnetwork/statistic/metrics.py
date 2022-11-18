@@ -27,14 +27,23 @@ class Metrics:
         :return: the average time spent on compromise a host
         """
         record = self._attack_record
-        compromised_list = record[record['compromise_host_uuid'] != 'None']['compromise_host_uuid'].unique()
+        compromised_hosts = record[record['compromise_host_uuid'] != 'None']['compromise_host_uuid'].unique()
         compromise_time_list = []
-        for host_uuid in compromised_list:
+        for host_uuid in compromised_hosts:
             action_list = record[(record['current_host_uuid'] == host_uuid) &
                                  (record['name'].isin(['SCAN_PORT', 'EXPLOIT_VULN', 'BRUTE_FORCE']))]
             compromise_time = action_list['duration'].sum()
             compromise_time_list.append(compromise_time)
         return np.mean(compromise_time_list)
+
+    def attack_success_rate(self):
+        """
+        todo: refactor the metric using attack attempt instead of number of hosts
+        """
+        record = self._attack_record
+        attempt_hosts = record[record['current_host_uuid'] != -1]['current_host_uuid'].unique()
+        compromised_hosts = record[record['compromise_host_uuid'] != 'None']['compromise_host_uuid'].unique()
+        return len(compromised_hosts) / len(attempt_hosts)
 
     def compromise_record_by_attack_action(self, action):
         """
@@ -49,6 +58,7 @@ class Metrics:
         visualise the action flow of attack operation group by host ids.
         """
         record = self._attack_record
+
         fig, ax = plt.subplots(1, figsize=(16, 5))
         colors = ['purple', 'blue', 'green', 'yellow', 'orange', 'red']
         attack_action_legend = []
@@ -58,13 +68,18 @@ class Metrics:
             attack_action_legend.append(Line2D([0], [0], color=colors[i], lw=4))
             attack_action_legend_name.append(v)
 
-        ax.barh(record['current_host'].astype(str), record['duration'],
+        hosts = record['current_host_uuid'].unique()
+        host_token = [str(x) for x in range(len(hosts))]
+        for i, v in enumerate(hosts):
+            record.loc[record['current_host_uuid'] == v, 'curr_host_token'] = host_token[i]
+
+        ax.barh(record['curr_host_token'], record['duration'],
                 left=record['start_time'], height=0.4, color=record['color'])
 
         ax.legend(attack_action_legend, attack_action_legend_name, loc='lower left')
         plt.gca().invert_yaxis()
         plt.xlabel('Time', weight='bold', fontsize=18)
-        plt.ylabel('Target Host', weight='bold', fontsize=18)
+        plt.ylabel('Hosts', weight='bold', fontsize=18)
         fig.tight_layout()
         plt.savefig('data_analysis/attack_action_record_group_by_host.png')
         plt.show()
@@ -95,7 +110,7 @@ class Metrics:
 
         plt.gca().invert_yaxis()
         plt.xlabel('Time', weight='bold', fontsize=18)
-        plt.ylabel('Attack Progress', weight='bold', fontsize=18)
+        plt.ylabel('Attack Actions', weight='bold', fontsize=18)
         fig.tight_layout()
         plt.savefig('data_analysis/attack_record.png')
         plt.show()
@@ -120,7 +135,7 @@ class Metrics:
         ax.legend(mtd_action_legend, mtd_action_legend_name, loc='lower right')
         plt.gca().invert_yaxis()
         plt.xlabel('Time', weight='bold', fontsize=18)
-        plt.ylabel('MTD Techniques', weight='bold', fontsize=18)
+        plt.ylabel('MTD Strategies', weight='bold', fontsize=18)
         fig.tight_layout()
         plt.savefig('data_analysis/mtd_record.png')
         plt.show()

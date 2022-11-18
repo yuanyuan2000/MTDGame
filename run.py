@@ -1,19 +1,17 @@
 import simpy
 import logging
-from mtdnetwork.network.time_network import TimeNetwork
+from mtdnetwork.component.time_network import TimeNetwork
 from mtdnetwork.operation.mtd_operation import MTDOperation
 from mtdnetwork.data.constants import ATTACKER_THRESHOLD
-from mtdnetwork.network.adversary import Adversary
+from mtdnetwork.component.adversary import Adversary
 from mtdnetwork.operation.attack_operation import AttackOperation
 from mtdnetwork.snapshot.snapshot_checkpoint import SnapshotCheckpoint
-from mtdnetwork.statistics.metrics import Metrics
+from mtdnetwork.statistic.metrics import Metrics
 
 logging.basicConfig(format='%(message)s', level=logging.INFO)
-# Simulation time in seconds
-SIM_TIME = 30000
 
 
-def main(start_time=0, finish_time=SIM_TIME, scheme='randomly', checkpoints=None):
+def main(start_time=0, finish_time=1000, scheme='randomly', checkpoints=None):
     # initialise the simulation
     env = simpy.Environment()
     snapshot_checkpoint = SnapshotCheckpoint(env=env, checkpoints=checkpoints)
@@ -42,8 +40,8 @@ def main(start_time=0, finish_time=SIM_TIME, scheme='randomly', checkpoints=None
     # start simulation
     env.run(until=(finish_time - start_time))
 
-    time_network.get_mtd_stats().save_record(sim_time=SIM_TIME, scheme=scheme)
-    adversary.get_attack_stats().save_record(sim_time=SIM_TIME, scheme=scheme)
+    time_network.get_mtd_stats().save_record(sim_time=finish_time, scheme=scheme)
+    adversary.get_attack_stats().save_record(sim_time=finish_time, scheme=scheme)
     metrics = Metrics(mtd_record=time_network.get_mtd_stats().get_record(),
                       attack_record=adversary.get_attack_stats().get_record())
     return metrics

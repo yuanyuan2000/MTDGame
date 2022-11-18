@@ -1,5 +1,5 @@
 from mtdnetwork.mtd import MTD
-from mtdnetwork.network import host
+from mtdnetwork.component import host
 
 
 class PortShuffle(MTD):

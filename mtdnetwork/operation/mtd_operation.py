@@ -1,7 +1,7 @@
-from mtdnetwork.operation.time_generator import exponential_variates
+from mtdnetwork.component.time_generator import exponential_variates
 import logging
 import simpy
-from mtdnetwork.network.mtd_scheme import MTDScheme
+from mtdnetwork.component.mtd_scheme import MTDScheme
 
 
 class MTDOperation:
@@ -10,9 +10,11 @@ class MTDOperation:
         self.env = env
         self.network = network
         self.adversary = adversary
-        self._mtd_scheme = MTDScheme(network=network, scheme=scheme, alter_strategies=alter_strategies)
         self.attack_operation = attack_operation
+
+        self._mtd_scheme = MTDScheme(network=network, scheme=scheme, alter_strategies=alter_strategies)
         self._proceed_time = proceed_time
+
         self.application_layer_resource = simpy.Resource(self.env, 1)
         self.network_layer_resource = simpy.Resource(self.env, 1)
         self.reserve_resource = simpy.Resource(self.env, 1)

@@ -140,8 +140,7 @@ ATTACK_DURATION = {
     'ENUM_HOST': 15,
     'SCAN_NEIGHBOR': 10,
     'SCAN_PORT': 20,
-    'EXPLOIT_VULN_MEAN': 25,
-    'EXPLOIT_VULN_STD': 0.8,
+    'EXPLOIT_VULN': (25, 0.8),
     'BRUTE_FORCE': 15,
-    'PENALTY': 2,
+    'PENALTY': 10,
 }
