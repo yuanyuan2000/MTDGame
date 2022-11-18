@@ -22,7 +22,7 @@ A research project on the simulation and evaluation of moving target defense in 
 1. set up new discrete event simulation structure:
     - get rid of the original `ActionManager` based structure
     - use [SimPy](https://simpy.readthedocs.io/en/latest/index.html) to manage the time simulation, event processing, interaction (interruption)
-    - use [time generator](https://github.com/MoeBuTa/MTDSimTime/blob/main/mtdnetwork/operation/time_generator.py) to generate exponential/normal/uniform/weibull/poisson variate
+    - use [time generator](https://github.com/MoeBuTa/MTDSimTime/blob/main/mtdnetwork/component/time_generator.py) to generate exponential/normal/uniform/weibull/poisson variate
 
 2. set up new mtd action flow in [mtd_operation](https://github.com/MoeBuTa/MTDSimTime/blob/main/mtdnetwork/operation/mtd_operation.py):
     - introduce resource occupation mechanism:
@@ -37,7 +37,7 @@ A research project on the simulation and evaluation of moving target defense in 
         - application MTD operation: (scan_port, exploit_vuln, brute_force) -> scan_port
     -
 
-3. Rework the attack profile to facilitate `SimPy` framework ([hacker](https://github.com/MoeBuTa/MTDSimTime/blob/New-Attack-Method/mtdnetwork/hacker.py) -> [adversary](https://github.com/MoeBuTa/MTDSimTime/blob/main/mtdnetwork/network/adversary.py))
+3. Rework the attack profile to facilitate `SimPy` framework ([hacker](https://github.com/MoeBuTa/MTDSimTime/blob/New-Attack-Method/mtdnetwork/hacker.py) -> [adversary](https://github.com/MoeBuTa/MTDSimTime/blob/main/mtdnetwork/component/adversary.py))
     - scan_host: merged start network enum and set up host enum
     - enum_host: merged start host enum and process host enum
     - scan_port: merged port scan and check pass reuse 
@@ -55,11 +55,11 @@ A research project on the simulation and evaluation of moving target defense in 
 
 5. Refactor [data collection and analysis behaviours](https://github.com/MoeBuTa/MTDSimTime/tree/main/mtdnetwork/stats)
 
-6. implement three [MTD Schemes](https://github.com/MoeBuTa/MTDSimTime/tree/main/mtdnetwork/network/mtd_scheme): simultaneously, randomly, alternatively.
+6. implement three [MTD Schemes](https://github.com/MoeBuTa/MTDSimTime/tree/main/mtdnetwork/component/mtd_scheme): simultaneously, randomly, alternatively.
 
 7. implement Mean Time to Compromise.
 
-8. implement MTD Execute Frequency.
+8. implement MTD Execute Frequency, attack success rate.
 
 
 ## Todos / Future works
