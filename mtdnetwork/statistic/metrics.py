@@ -4,11 +4,24 @@ from matplotlib.lines import Line2D
 
 
 class Metrics:
-    def __init__(self, mtd_record, attack_record):
-        self._mtd_record = mtd_record
-        self._attack_record = attack_record
+    def __init__(self, network, adversary):
 
-    def mtd_execute_frequency(self):
+        self._network = network
+        self._adversary = adversary
+        self._mtd_record = network.get_mtd_stats().get_record()
+        self._attack_record = adversary.get_attack_stats().get_record()
+
+    def draw_network(self):
+        return self._network.draw()
+
+    def draw_hacker_visible(self):
+        return self._network.draw_hacker_visible()
+
+    def draw_compromised(self):
+        compromised_hosts = self._adversary.get_compromised_hosts()
+        return self._network.draw_compromised(compromised_hosts)
+
+    def mtd_execution_frequency(self):
         """
         The frequency of executing MTDs
         :return: Total number of executed MTD / Elapsed time
@@ -24,7 +37,7 @@ class Metrics:
 
         ATTACK_ACTION: SCAN_PORT, EXPLOIT_VULN, BRUTE_FORCE
         Elapsed time on a compromised host = The sum of the time duration of one or more ATTACK_ACTIONs on the host
-        :return: the average time spent on compromise a host
+        :return: the average time spent to compromise a host
         """
         record = self._attack_record
         compromised_hosts = record[record['compromise_host_uuid'] != 'None']['compromise_host_uuid'].unique()
@@ -38,7 +51,7 @@ class Metrics:
 
     def attack_success_rate(self):
         """
-        todo: refactor the metric using attack attempt instead of number of hosts
+        :return: number of compromised hosts / number of attempted hosts
         """
         record = self._attack_record
         attempt_hosts = record[record['current_host_uuid'] != -1]['current_host_uuid'].unique()

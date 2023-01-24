@@ -20,7 +20,7 @@ def main(start_time=0, finish_time=1000, scheme='randomly', checkpoints=None):
         time_network, adversary = snapshot_checkpoint.load_snapshots(start_time)
     # initialise the network and the adversary
     else:
-        time_network = TimeNetwork.create_network()
+        time_network = TimeNetwork()
         adversary = Adversary(network=time_network, attack_threshold=ATTACKER_THRESHOLD)
 
     # start attack
@@ -29,7 +29,7 @@ def main(start_time=0, finish_time=1000, scheme='randomly', checkpoints=None):
 
     # start mtd
     if scheme != 'None':
-        mtd_operation = MTDOperation(env=env, network=time_network, adversary=adversary, scheme=scheme,
+        mtd_operation = MTDOperation(env=env, network=time_network, scheme=scheme,
                                      attack_operation=attack_operation, proceed_time=start_time)
         mtd_operation.proceed_mtd()
 
@@ -42,8 +42,7 @@ def main(start_time=0, finish_time=1000, scheme='randomly', checkpoints=None):
 
     time_network.get_mtd_stats().save_record(sim_time=finish_time, scheme=scheme)
     adversary.get_attack_stats().save_record(sim_time=finish_time, scheme=scheme)
-    metrics = Metrics(mtd_record=time_network.get_mtd_stats().get_record(),
-                      attack_record=adversary.get_attack_stats().get_record())
+    metrics = Metrics(network=time_network, adversary=adversary)
     return metrics
 
 

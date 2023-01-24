@@ -6,10 +6,18 @@ from mtdnetwork.component.mtd_scheme import MTDScheme
 
 class MTDOperation:
 
-    def __init__(self, env, network, adversary, attack_operation, scheme, proceed_time=0, alter_strategies=None):
+    def __init__(self, env, network, attack_operation, scheme, proceed_time=0, alter_strategies=None):
+        """
+
+        :param env: the parameter to facilitate simPY env framework
+        :param network: the simulation network
+        :param attack_operation: the attack operation
+        :param scheme:alternatively, simultaneously, randomly
+        :param proceed_time:the time to proceed MTD simulation
+        :param alter_strategies:specific MTD priority strategy for alternative scheme only
+        """
         self.env = env
         self.network = network
-        self.adversary = adversary
         self.attack_operation = attack_operation
 
         self._mtd_scheme = MTDScheme(network=network, scheme=scheme, alter_strategies=alter_strategies)
@@ -36,7 +44,7 @@ class MTDOperation:
         """
         while True:
             # terminate the simulation if the network is compromised
-            if self.network.is_compromised(compromised_hosts=self.adversary.get_compromised_hosts()):
+            if self.network.is_compromised(compromised_hosts=self.attack_operation.get_adversary().get_compromised_hosts()):
                 return
 
             # register an MTD
@@ -69,7 +77,7 @@ class MTDOperation:
         """
         while True:
             # terminate the simulation if the network is compromised
-            if self.network.is_compromised(compromised_hosts=self.adversary.get_compromised_hosts()):
+            if self.network.is_compromised(compromised_hosts=self.attack_operation.get_adversary().get_compromised_hosts()):
                 return
 
             suspended_mtd_dict = self.network.get_suspended_mtd()
@@ -117,11 +125,11 @@ class MTDOperation:
                                                mtd.get_execution_time_std()))
 
         # if network is already compromised while executing mtd:
-        if self.network.is_compromised(compromised_hosts=self.adversary.get_compromised_hosts()):
+        if self.network.is_compromised(compromised_hosts=self.attack_operation.get_adversary().get_compromised_hosts()):
             return
 
         # execute mtd
-        mtd.mtd_operation(self.adversary)
+        mtd.mtd_operation(self.attack_operation.get_adversary())
 
         finish_time = env.now + self._proceed_time
         duration = finish_time - start_time
@@ -151,18 +159,18 @@ class MTDOperation:
                 self.attack_operation.set_interrupted_mtd(mtd)
                 self.attack_operation.get_attack_process().interrupt()
                 logging.info(
-                    'MTD: Interrupted %s at %.1fs!' % (self.adversary.get_curr_process(),
+                    'MTD: Interrupted %s at %.1fs!' % (self.attack_operation.get_adversary().get_curr_process(),
                                                        env.now + self._proceed_time))
                 self.network.get_mtd_stats().add_total_attack_interrupted()
             elif mtd.get_resource_type() == 'application' and \
-                    self.adversary.get_curr_process() not in [
+                    self.attack_operation.get_adversary().get_curr_process() not in [
                                                             'SCAN_HOST',
                                                             'ENUM_HOST',
                                                             'SCAN_NEIGHBOR']:
                 self.attack_operation.set_interrupted_mtd(mtd)
                 self.attack_operation.get_attack_process().interrupt()
                 logging.info(
-                    'MTD: Interrupted %s at %.1fs!' % (self.adversary.get_curr_process(),
+                    'MTD: Interrupted %s at %.1fs!' % (self.attack_operation.get_adversary().get_curr_process(),
                                                        env.now + self._proceed_time))
                 self.network.get_mtd_stats().add_total_attack_interrupted()
 

@@ -16,7 +16,7 @@ class CompleteTopologyShuffle(MTD):
         hosts = self.network.get_hosts()
 
         # Regenerate the network graph
-        self.network.regen_graph()
+        self.network.gen_graph()
         for host_id, host_instance in hosts.items():
             self.network.graph.nodes[host_id]["host"] = host_instance
         self.network.update_reachable_mtd()

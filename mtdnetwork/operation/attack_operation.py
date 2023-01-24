@@ -7,9 +7,15 @@ from mtdnetwork.data.constants import ATTACK_DURATION
 
 class AttackOperation:
     def __init__(self, env, adversary, proceed_time=0):
+        """
+
+        :param env: the parameter to facilitate simPY env framework
+        :param adversary: the simulation attacker
+        :param proceed_time: the time to proceed attack simulation
+        """
+
         self.env = env
         self.adversary = adversary
-
         self._attack_process = None
         self._interrupted_mtd = None
         self._proceed_time = proceed_time
@@ -309,3 +315,6 @@ class AttackOperation:
 
     def set_interrupted_mtd(self, mtd):
         self._interrupted_mtd = mtd
+
+    def get_adversary(self):
+        return self.adversary
