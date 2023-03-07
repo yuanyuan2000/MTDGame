@@ -13,20 +13,21 @@ from heapq import heappush, heappop
 
 class MTDScheme:
 
-    def __init__(self, scheme: str, network, alter_strategies=None):
+    def __init__(self, scheme: str, network, mtd_trigger_interval=None, mtd_trigger_std=0.5, custom_strategies=None):
         self._scheme = scheme
-        self._mtd_trigger_interval = None
-        self._mtd_trigger_std = None
+        self._mtd_trigger_interval = mtd_trigger_interval
+        self._mtd_trigger_std = mtd_trigger_std
         self._mtd_register_scheme = None
-        self._mtd_strategies = [CompleteTopologyShuffle,
-                                HostTopologyShuffle,
+        self._mtd_strategies = [
+                                CompleteTopologyShuffle,
+                                # HostTopologyShuffle,
                                 IPShuffle,
                                 OSDiversity,
                                 PortShuffle,
                                 ServiceDiversity,
                                 # UserShuffle
                                 ]
-        self._mtd_alter_strategies = alter_strategies
+        self._mtd_custom_strategies = custom_strategies
         self.network = network
         self._init_mtd_scheme(scheme)
 
@@ -34,15 +35,18 @@ class MTDScheme:
         """
         assign an MTD scheme based on the parameter
         """
-        self._mtd_trigger_interval, self._mtd_trigger_std = MTD_TRIGGER_INTERVAL[scheme]
-        if scheme == 'simultaneously':
+        if self._mtd_trigger_interval is None:
+            self._mtd_trigger_interval, self._mtd_trigger_std = MTD_TRIGGER_INTERVAL[scheme]
+        if scheme == 'simultaneous':
             self._mtd_register_scheme = self._register_mtd_simultaneously
-        elif scheme == 'randomly':
+        elif scheme == 'random':
             self._mtd_register_scheme = self._register_mtd_randomly
-        elif scheme == 'alternatively':
-            if self._mtd_alter_strategies is None:
-                self._mtd_alter_strategies = deque(self._mtd_strategies)
+        elif scheme == 'alternative':
+            if self._mtd_custom_strategies is None:
+                self._mtd_custom_strategies = deque(self._mtd_strategies)
             self._mtd_register_scheme = self._register_mtd_alternatively
+        elif scheme == 'single':
+            self._mtd_register_scheme = self._register_mtd_single
 
     def _mtd_register(self, mtd):
         """
@@ -69,9 +73,12 @@ class MTDScheme:
         """
         register an MTD for alternative scheme
         """
-        mtd = self._mtd_alter_strategies.popleft()
+        mtd = self._mtd_custom_strategies.popleft()
         self._mtd_register(mtd=mtd)
-        self._mtd_alter_strategies.append(mtd)
+        self._mtd_custom_strategies.append(mtd)
+
+    def _register_mtd_single(self):
+        self._mtd_register(mtd=self._mtd_custom_strategies)
 
     def trigger_suspended_mtd(self):
         """

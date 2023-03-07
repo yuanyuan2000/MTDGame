@@ -1,9 +1,10 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
+import networkx as nx
 
 
-class Metrics:
+class Evaluation:
     def __init__(self, network, adversary):
 
         self._network = network
@@ -11,15 +12,10 @@ class Metrics:
         self._mtd_record = network.get_mtd_stats().get_record()
         self._attack_record = adversary.get_attack_stats().get_record()
 
-    def draw_network(self):
-        return self._network.draw()
-
-    def draw_hacker_visible(self):
-        return self._network.draw_hacker_visible()
-
-    def draw_compromised(self):
-        compromised_hosts = self._adversary.get_compromised_hosts()
-        return self._network.draw_compromised(compromised_hosts)
+    def compromised_num(self):
+        record = self._attack_record
+        compromised_hosts = record[record['compromise_host_uuid'] != 'None']['compromise_host_uuid'].unique()
+        return len(compromised_hosts)
 
     def mtd_execution_frequency(self):
         """
@@ -36,27 +32,39 @@ class Metrics:
         The mean time to compromise a host
 
         ATTACK_ACTION: SCAN_PORT, EXPLOIT_VULN, BRUTE_FORCE
-        Elapsed time on a compromised host = The sum of the time duration of one or more ATTACK_ACTIONs on the host
+        Attack action time = The sum of the time duration of all ATTACK_ACTION
         :return: the average time spent to compromise a host
         """
         record = self._attack_record
-        compromised_hosts = record[record['compromise_host_uuid'] != 'None']['compromise_host_uuid'].unique()
-        compromise_time_list = []
-        for host_uuid in compromised_hosts:
-            action_list = record[(record['current_host_uuid'] == host_uuid) &
-                                 (record['name'].isin(['SCAN_PORT', 'EXPLOIT_VULN', 'BRUTE_FORCE']))]
-            compromise_time = action_list['duration'].sum()
-            compromise_time_list.append(compromise_time)
-        return np.mean(compromise_time_list)
+        compromised_num = self.compromised_num()
+        # Elapsed time on a compromised host = The sum of the time duration of one or more ATTACK_ACTIONs on the host
+        # compromise_time_list = []
+        # for host_uuid in compromised_hosts:
+        #     action_list = record[(record['current_host_uuid'] == host_uuid) &
+        #                          (record['name'].isin(['SCAN_PORT', 'EXPLOIT_VULN', 'BRUTE_FORCE']))]
+        #     compromise_time = action_list['duration'].sum()
+        #     compromise_time_list.append(compromise_time)
+        # return np.mean(compromise_time_list)
+        attack_action_time = record[record['name'].isin(['SCAN_PORT', 'EXPLOIT_VULN', 'BRUTE_FORCE'])]['duration'].sum()
+        return np.mean(attack_action_time/compromised_num)
 
     def attack_success_rate(self):
-        """
-        :return: number of compromised hosts / number of attempted hosts
-        """
+        # """
+        # :return: number of compromised hosts / number of attempted hosts
+        # """
+        # record = self._attack_record
+        # attempt_hosts = record[record['current_host_uuid'] != -1]['current_host_uuid'].unique()
+        # compromised_hosts = record[record['compromise_host_uuid'] != 'None']['compromise_host_uuid'].unique()
+        # return len(compromised_hosts) / len(attempt_hosts)
         record = self._attack_record
         attempt_hosts = record[record['current_host_uuid'] != -1]['current_host_uuid'].unique()
         compromised_hosts = record[record['compromise_host_uuid'] != 'None']['compromise_host_uuid'].unique()
-        return len(compromised_hosts) / len(attempt_hosts)
+        attack_actions = record[record['name'].isin(['SCAN_PORT', 'EXPLOIT_VULN', 'BRUTE_FORCE'])]
+        attack_event_num = 0
+        for host in attempt_hosts:
+            attack_event_num += len(attack_actions[(attack_actions['current_host_uuid'] == host) &
+                                                   (attack_actions['name'] == 'SCAN_PORT')])
+        return len(compromised_hosts) / attack_event_num
 
     def compromise_record_by_attack_action(self, action):
         """
@@ -65,6 +73,42 @@ class Metrics:
         record = self._attack_record
         return record[(record['name'] == action) &
                       (record['compromise_host'] != 'None')]
+
+    def draw_network(self):
+        """
+        Draws the topology of the network while also highlighting compromised and exposed endpoint nodes.
+        """
+        plt.figure(1, figsize=(15, 12))
+        nx.draw(self._network.graph, pos=self._network.pos, node_color=self._network.colour_map, with_labels=True)
+        plt.savefig('data_analysis/network.png')
+        plt.show()
+
+    def draw_hacker_visible(self):
+        """
+        Draws the network that is visible for the hacker
+        """
+        subgraph = self._network.get_hacker_visible_graph()
+        plt.figure(1, figsize=(15, 12))
+        nx.draw(subgraph, pos=self._network.pos, with_labels=True)
+        plt.show()
+
+    def draw_compromised(self):
+        """
+        Draws the network of compromised hosts
+        """
+        compromised_hosts = self._adversary.get_compromised_hosts()
+        subgraph = self._network.graph.subgraph(compromised_hosts)
+        colour_map = []
+        c_hosts = sorted(compromised_hosts)
+        for node_id in c_hosts:
+            if node_id in self._network.exposed_endpoints:
+                colour_map.append("green")
+            else:
+                colour_map.append("red")
+
+        plt.figure(1, figsize=(15, 12))
+        nx.draw(subgraph, pos=self._network.pos, node_color=colour_map, with_labels=True)
+        plt.show()
 
     def visualise_attack_operation_group_by_host(self):
         """
@@ -112,6 +156,7 @@ class Metrics:
                    zorder=3)
 
         compromise_record = record[record['compromise_host'] != 'None']
+        print("total compromised hosts: ", len(compromise_record))
         ax.scatter(compromise_record['finish_time'], compromise_record['name'], color='red', zorder=2)
 
         custom_lines_attack = [Line2D([0], [0], marker='o', color='w', markerfacecolor='green', markersize=10),
@@ -152,3 +197,6 @@ class Metrics:
         fig.tight_layout()
         plt.savefig('data_analysis/mtd_record.png')
         plt.show()
+
+    def get_network(self):
+        return self._network

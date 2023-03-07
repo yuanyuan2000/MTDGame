@@ -13,10 +13,8 @@ class NetworkSnapshot(Snapshot):
         with open(file_name, 'wb') as f:
             pickle.dump(network, f, pickle.HIGHEST_PROTOCOL)
 
-    def load_network(self, timestamp):
+    def load_network(self, timestamp: float):
         """loading data related to generate the network graph"""
-        if timestamp == 0:
-            return
         file_name = self.get_file_by_time('network', timestamp)
         with open(file_name, 'rb') as f:
             network = pickle.load(f)

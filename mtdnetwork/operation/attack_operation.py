@@ -173,6 +173,7 @@ class AttackOperation:
             self._enum_host()
         else:
             # terminate the whole process
+            logging.info("Adversary: Cannot discover new hosts!")
             return
 
     def _execute_enum_host(self):
@@ -195,13 +196,13 @@ class AttackOperation:
         if adversary.get_attack_counter()[
             adversary.get_curr_host_id()] == adversary.get_attack_threshold():
             # target node feature
-            if adversary.get_curr_host_id() != network.get_target_node():
+            if adversary.get_curr_host_id() != network.get_target_node() and network.network_type == 0:
                 adversary.get_stop_attack().append(adversary.get_curr_host_id())
 
         # Checks if max attack attempts has been reached, empty stacks if reached
-        if adversary.get_curr_attempts() >= adversary.get_max_attack_attempts():
-            adversary.set_host_stack([])
-            return
+        # if adversary.get_curr_attempts() >= adversary.get_max_attack_attempts():
+        #     adversary.set_host_stack([])
+        #     return
         adversary.set_curr_ports([])
         adversary.set_curr_vulns([])
 

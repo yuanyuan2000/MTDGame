@@ -19,8 +19,6 @@ class AdversarySnapshot(Snapshot):
         """
         loading adversary based on saved snapshot
         """
-        if timestamp == 0:
-            return
         file_name = self.get_file_by_time('adversary', timestamp)
         with open(file_name, 'rb') as f:
             adversary = pickle.load(f)

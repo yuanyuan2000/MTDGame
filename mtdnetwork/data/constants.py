@@ -106,9 +106,9 @@ ATTACKER_THRESHOLD = 10
 # Constants for MTD scheme
 # scheme : (mean, std)
 MTD_TRIGGER_INTERVAL = {
-    'simultaneously': (200, 0.5),
-    'randomly': (30, 0.5),
-    'alternatively': (30, 0.5)
+    'simultaneous': (700, 0.5),
+    'random': (200, 0.5),
+    'alternative': (200, 0.5)
 }
 
 # mtd name : priority value
@@ -124,12 +124,12 @@ MTD_PRIORITY = {
 
 # mtd name : (mean, std)
 MTD_DURATION = {
-    'CompleteTopologyShuffle': (50, 0.5),
-    'HostTopologyShuffle': (45, 0.5),
-    'IPShuffle': (40, 0.5),
-    'OSDiversity': (35, 0.5),
-    'PortShuffle': (30, 0.5),
-    'ServiceDiversity': (40, 0.5),
+    'CompleteTopologyShuffle': (110, 0.5),
+    'HostTopologyShuffle': (100, 0.5),
+    'IPShuffle': (100, 0.5),
+    'OSDiversity': (70, 0.5),
+    'ServiceDiversity': (60, 0.5),
+    'PortShuffle': (50, 0.5),
     'UserShuffle': (20, 0.5)
 }
 
@@ -137,10 +137,10 @@ MTD_DURATION = {
 # may need to combine with "Constants for Attackers" for future works
 ATTACK_DURATION = {
     'SCAN_HOST': 10,
-    'ENUM_HOST': 15,
+    'ENUM_HOST': 20,
     'SCAN_NEIGHBOR': 10,
     'SCAN_PORT': 20,
-    'EXPLOIT_VULN': (25, 0.8),
-    'BRUTE_FORCE': 15,
-    'PENALTY': 10,
+    'EXPLOIT_VULN': (30, 0.8),
+    'BRUTE_FORCE': 10,
+    'PENALTY': 40,
 }

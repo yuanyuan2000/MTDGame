@@ -6,7 +6,8 @@ from mtdnetwork.component.mtd_scheme import MTDScheme
 
 class MTDOperation:
 
-    def __init__(self, env, network, attack_operation, scheme, proceed_time=0, alter_strategies=None):
+    def __init__(self, env, network, attack_operation, scheme, proceed_time=0,
+                 mtd_trigger_interval=None, custom_strategies=None):
         """
 
         :param env: the parameter to facilitate simPY env framework
@@ -14,13 +15,14 @@ class MTDOperation:
         :param attack_operation: the attack operation
         :param scheme:alternatively, simultaneously, randomly
         :param proceed_time:the time to proceed MTD simulation
-        :param alter_strategies:specific MTD priority strategy for alternative scheme only
+        :param custom_strategies:specific MTD priority strategy for alternative scheme or single scheme
         """
         self.env = env
         self.network = network
         self.attack_operation = attack_operation
 
-        self._mtd_scheme = MTDScheme(network=network, scheme=scheme, alter_strategies=alter_strategies)
+        self._mtd_scheme = MTDScheme(network=network, scheme=scheme, mtd_trigger_interval=mtd_trigger_interval,
+                                     custom_strategies=custom_strategies)
         self._proceed_time = proceed_time
 
         self.application_layer_resource = simpy.Resource(self.env, 1)
@@ -80,12 +82,12 @@ class MTDOperation:
             if self.network.is_compromised(compromised_hosts=self.attack_operation.get_adversary().get_compromised_hosts()):
                 return
 
-            suspended_mtd_dict = self.network.get_suspended_mtd()
-            if suspended_mtd_dict:
+            suspension_queue = self.network.get_suspended_mtd()
+            if suspension_queue:
                 # triggering the suspended MTDs by priority
-                suspended_mtd_priorities = sorted(suspended_mtd_dict.keys())
+                suspended_mtd_priorities = sorted(suspension_queue.keys())
                 for priority in suspended_mtd_priorities:
-                    resource = self._get_mtd_resource(mtd=suspended_mtd_dict[priority])
+                    resource = self._get_mtd_resource(mtd=suspension_queue[priority])
                     if len(resource.users) == 0:
                         mtd = self._mtd_scheme.trigger_suspended_mtd()
                         logging.info('MTD: %s triggered %.1fs' % (mtd.get_name(), self.env.now + self._proceed_time))

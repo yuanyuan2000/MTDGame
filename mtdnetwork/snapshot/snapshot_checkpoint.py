@@ -5,7 +5,7 @@ from collections import deque
 
 class SnapshotCheckpoint:
 
-    def __init__(self, env=None,  checkpoints=None):
+    def __init__(self, env=None, checkpoints=None):
         self.env = env
         self._proceed_time = 0
         self._checkpoint_stack = checkpoints
@@ -31,6 +31,11 @@ class SnapshotCheckpoint:
         time_network = NetworkSnapshot().load_network(time)
         adversary = AdversarySnapshot().load_adversary(time)
         return time_network, adversary
+
+    def save_initialised(self, time_network, adversary):
+        NetworkSnapshot().save_network(time_network, self._proceed_time)
+        time_network.draw()
+        AdversarySnapshot().save_adversary(adversary, self._proceed_time)
 
     def set_proceed_time(self, proceed_time):
         self._proceed_time = proceed_time

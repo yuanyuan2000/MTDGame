@@ -55,3 +55,6 @@ class MTDStatistics:
             os.makedirs(current_directory + '\\data_analysis')
         pd.DataFrame(self._mtd_operation_record).to_csv('data_analysis/mtd_operation_record_' +
                                                         str(sim_time) + '_' + scheme + '.csv', index=False)
+
+    def get_total_attack_interrupted(self):
+        return self._total_attack_interrupted
