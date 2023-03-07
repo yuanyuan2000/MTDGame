@@ -11,7 +11,7 @@ from mtdnetwork.statistic.scorer import Scorer
 
 class Network:
 
-    def __init__(self, total_nodes, total_endpoints, total_subnets, total_layers, target_layer=None,
+    def __init__(self, total_nodes, total_endpoints, total_subnets, total_layers, total_database, target_layer=None,
                  users_to_nodes_ratio=constants.USER_TO_NODES_RATIO,
                  prob_user_reuse_pass=constants.USER_PROB_TO_REUSE_PASS, seed=None):
         """
@@ -48,16 +48,19 @@ class Network:
         self.total_subnets = total_subnets
         self.layers = total_layers
         self.exposed_endpoints = [n for n in range(total_endpoints)]
-        self.target_layer = target_layer
+
+        self.total_database = total_database
+        self._database = [n for n in range(total_nodes - total_database, total_nodes)]
+
         self.tags = []
+        self.tag_priority = []
         self.service_generator = services.ServicesGenerator()
         self.nodes = [n for n in range(total_nodes)]
         self.mtd_strategies = []
-        self.tag_priority = []
+
         self.reachable = []
         self.compromised_hosts = []
         self.node_per_layer = []
-        self.target_node = -1
         # Network type 0 is a targetted attack, Network type 1 is a general attack (no target node)
         self.network_type = 1
         self.vuln_dict = {}
@@ -69,6 +72,9 @@ class Network:
         self.scorer = Scorer()
         self.users_to_nodes_ratio = users_to_nodes_ratio
         self.prob_user_reuse_pass = prob_user_reuse_pass
+
+        self.target_node = None
+        self.target_layer = target_layer
 
     def init_network(self):
         self.assign_tags()
@@ -103,19 +109,20 @@ class Network:
                 probability that a node connects to a different layer in the network.
         """
         # Decide the number of subnets for each layer of the network
-        subnets_per_layer = []
-        while len(subnets_per_layer) < self.layers:
-            # Adds 1 to start of array if array is empty
-            if len(subnets_per_layer) == 0: subnets_per_layer.append(1)
+        # Adds 1 to start of array
+        subnets_per_layer = [1]
+        while 0 < len(subnets_per_layer) < self.layers - 1:
             l_subnets = random.randint(1, max_subnets_per_layer)
             # Only appends value if it doesn't exceed maximum number of subnets possible
             if self.total_subnets - (sum(subnets_per_layer) + l_subnets) > self.layers - len(subnets_per_layer):
                 subnets_per_layer.append(l_subnets)
+        # Adds 1 to end of array
+        subnets_per_layer.append(1)
 
         # Randomly adds one to random subnets until there is the correct amount of subnets (Could be Optimised in
         # future)
         while sum(subnets_per_layer) < self.total_subnets:
-            s_index = random.randint(1, self.layers - 1)
+            s_index = random.randint(1, self.layers - 2)
             if subnets_per_layer[s_index] <= max_subnets_per_layer:
                 subnets_per_layer[s_index] = subnets_per_layer[s_index] + 1
 
@@ -124,12 +131,14 @@ class Network:
         # Assign nodes to each layer
         nodes_per_layer = [self.total_endpoints]
         # Appends the minimum number of nodes that should be in the layer
-        for subs in subnets_per_layer[1:]:
+        for subs in subnets_per_layer[1:-1]:
             nodes_per_layer.append(min_nodes_per_subnet * subs)
+
+        nodes_per_layer.append(self.total_database)
 
         # Randomly adds one to random subnets until there is the correct number of nodes (Could be Opitmised in future)
         while sum(nodes_per_layer) < self.total_nodes:
-            n_index = random.randint(1, self.layers - 1)
+            n_index = random.randint(1, self.layers - 2)
             nodes_per_layer[n_index] = nodes_per_layer[n_index] + 1
 
         # Assign number of nodes to each subnet
@@ -143,7 +152,7 @@ class Network:
                 temp_subnet_nodes[n_index] = temp_subnet_nodes[n_index] + 1
             subnet_nodes.append(temp_subnet_nodes)
 
-        # self.graphenerate the graph
+        # generate the graph
         self.graph = nx.Graph()
         # Node offset
         node_id = 0
@@ -195,7 +204,7 @@ class Network:
                 self.pos = {**self.pos, **subgraph_pos}
 
                 # Selects Target Host
-                if i == self.target_layer and j == 1 and self.network_type == 0 and self.target_node != -1:
+                if self.network_type == 0 and i == self.target_layer and j == 1:
                     self.target_node = node_id - random.randrange(0, s_nodes)
                     print("Target Node is: ", self.target_node)
 
@@ -233,7 +242,11 @@ class Network:
                     n_a2 = get_other_node(node_a, degree_node_a, n_a1)
                     self.graph.add_edge(n_a1, n_a2)
 
-        endpoint_nodes_list = [n for n in range(self.total_endpoints)]
+        # Updates Colour of target node to red
+        if self.target_node:
+            self.colour_map[self.target_node] = "red"
+
+        endpoint_nodes_list = self.exposed_endpoints
         blank_endpoints = []
 
         # Remove edges between endpoint nodes (not needed since adversary can reach them all anyway)
@@ -256,24 +269,60 @@ class Network:
             other_node = random.choices(layer1_nodes, weights=layer1_weights, k=1)[0]
             self.graph.add_edge(endpoint, other_node)
 
-        # Updates Colour of target node to red
-        if self.network_type == 0:
-            self.colour_map[self.target_node] = "red"
-
         # Fix positions for endpoints
         for n in range(self.total_endpoints):
             position = (n + 1) / self.total_endpoints * (max_y_pos - min_y_pos) + min_y_pos
             new_pos = {n: np.array([0, position])}
             self.pos.update(new_pos)
 
+        # handling database nodes
+        database_nodes_list = self._database
+        blank_database = []
+        for n in database_nodes_list:
+            neighbors = list(self.graph.neighbors(n))
+            for neighbor in neighbors:
+                if neighbor in database_nodes_list:
+                    self.graph.remove_edge(n, neighbor)
+            internal_connection = list(self.graph.neighbors(n))
+            if not internal_connection:
+                blank_database.append(n)
+
+        # Pulls from blank_database until all database nodes are connected
+        second_last_layer_nodes = [n for n in node_layers if node_layers[n] == self.layers - 2]
+        second_last_layer_weights = [self.graph.degree(n) for n in second_last_layer_nodes]
+        while len(blank_database):
+            endpoint = blank_database.pop(0)
+            other_nodes = random.choices(second_last_layer_nodes, weights=second_last_layer_weights, k=5)
+            for node in other_nodes:
+                self.graph.add_edge(endpoint, node)
+
+        # Fix positions for endpoints
+        for n in range(self.total_nodes - self.total_database, self.total_nodes):
+            position = (self.total_nodes - n) * 1 / self.total_database * 10
+            new_pos = {n: np.array([(self.layers + 2) * 2.25, position])}
+            self.pos.update(new_pos)
+
         # Update Nodes Per Layer for Complete topology shuffling
         self.node_per_layer = nodes_per_layer.copy()
         self.node_per_layer[0] = self.total_endpoints
+        self.node_per_layer[-1] = self.total_database
 
         # print("Endpoint list:", self.total_endpoints)
-        # print("Node list:", self.nodes)
+        # print("Node list:", self.graph.nodes)
         # print("Exposed Endpoint list: ", self.exposed_endpoints)
         # print("nodes per layer: ", self.node_per_layer)
+
+    def get_total_endpoints(self):
+        return self.total_endpoints
+
+    def get_exposed_endpoints(self):
+        return self.exposed_endpoints
+
+    def get_database(self):
+        return self._database
+
+    def get_total_database(self):
+        return self.total_database
 
     def get_scorer(self):
         return self.scorer
@@ -292,6 +341,9 @@ class Network:
 
     def get_layers(self):
         return dict(nx.get_node_attributes(self.graph, "layer"))
+
+    def get_graph(self):
+        return self.graph
 
     def get_graph_copy(self):
         return self.graph.copy()
@@ -643,6 +695,7 @@ class Network:
         Using the generated graph, generates a host for each node on the graph.
         """
         ip_addresses = []
+
         for host_id in self.nodes:
             node_os = Host.get_random_os()
             node_os_version = Host.get_random_os_version(node_os)
@@ -753,36 +806,6 @@ class Network:
         return len(compromised_hosts) == self.total_nodes
 
     def draw(self):
-        """
-        Draws the topology of the network while also highlighting compromised and exposed endpoint nodes.
-        """
         plt.figure(1, figsize=(15, 12))
         nx.draw(self.graph, pos=self.pos, node_color=self.colour_map, with_labels=True)
-        plt.show()
-
-    def draw_hacker_visible(self):
-        """
-        Draws the network that is visible for the hacker
-        """
-        subgraph = self.get_hacker_visible_graph()
-
-        plt.figure(1, figsize=(15, 12))
-        nx.draw(subgraph, pos=self.pos, with_labels=True)
-        plt.show()
-
-    def draw_compromised(self, compromised_hosts):
-        """
-        Draws the network of compromised hosts
-        """
-        subgraph = self.graph.subgraph(compromised_hosts)
-        colour_map = []
-        c_hosts = sorted(compromised_hosts)
-        for node_id in c_hosts:
-            if node_id in self.exposed_endpoints:
-                colour_map.append("green")
-            else:
-                colour_map.append("red")
-
-        plt.figure(1, figsize=(15, 12))
-        nx.draw(subgraph, pos=self.pos, node_color=colour_map, with_labels=True)
-        plt.show()
+        plt.savefig('data_analysis/network.png')

@@ -70,6 +70,10 @@ class Vulnerability:
         Returns:
             the random time it would take to exploit this vulnerability
             the more attempts a hacker tries at exploiting a particular vulnerability the faster the exploit time becomes
+
+        Wenxiao: I didn't apply this feature Alex developed due to the time limit. I'm using EXPLOIT_VULN constant to
+        determine the general time taken by a hacker to exploit a vulnerability instead of varying by each vulnerability.
+        This feature may need be applied in the future.
         """
         if self.exploited:
             return constants.VULN_MIN_EXPLOIT_TIME
@@ -370,3 +374,6 @@ class ServicesGenerator:
     @staticmethod
     def get_service_name_list():
         return [x.decode() for x in pkg_resources.resource_string('mtdnetwork', "data/words.txt").splitlines()]
+
+    def get_all_services(self):
+        return self.os_services
