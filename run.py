@@ -17,7 +17,7 @@ from mtdnetwork.mtd.osdiversity import OSDiversity
 from mtdnetwork.mtd.servicediversity import ServiceDiversity
 from mtdnetwork.mtd.usershuffle import UserShuffle
 
-# logging.basicConfig(format='%(message)s', level=logging.INFO)
+logging.basicConfig(format='%(message)s', level=logging.INFO)
 
 mtd_strategies = [
     None,

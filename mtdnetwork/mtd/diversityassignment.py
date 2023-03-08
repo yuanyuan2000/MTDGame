@@ -76,28 +76,27 @@ class DiversityAssignment:
 
         1 vulnerability -> cvss = (complexity + impact) / 2
 
-        service cvss -> sum (vulnerability cvss)
+        os vuln value -> max(vulnerability)
 
-        os cvss -> mean (service cvss)
-
-        compromise probability -> 1 / os cvss
+        compromise probability -> os vuln value exploitability (1-p) /2 + p
         """
 
         # initialise variants
         V = {}
         E = {}
-        for os_type in OS_TYPES:
-            for os_version in OS_VERSION_DICT[os_type]:
-                V[os_type] = []
+
         # extract variants from generated services
         os_services = self._services
 
         for os_type in OS_TYPES:
+            V[os_type] = set()
             for os_version in OS_VERSION_DICT[os_type]:
                 for service_name in os_services[os_type][os_version]:
                     for service in os_services[os_type][os_version][service_name]:
-                        V[os_type].append(np.sum([vuln.cvss for vuln in service.vulnerabilities]))
-            E[os_type] = 1 / np.mean(V[os_type])
+                        for vuln in service.vulnerabilities:
+                            if os_type in vuln.vuln_os_list:
+                                V[os_type].add(vuln.cvss)
+            E[os_type] = max(V[os_type]) * 0.05
         return E
 
     def objective(self):

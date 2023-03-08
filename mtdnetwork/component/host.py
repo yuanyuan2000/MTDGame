@@ -39,6 +39,7 @@ class Host:
             prob_strogatz_rewire:
                 the probability that an edge is rewired for the Watts-Strogatz random graph
         """
+        self.graph = None
         self.os_type = operating_system
         self.os_version = os_version
         self.ip = host_ip
@@ -370,6 +371,12 @@ class Host:
                 new_vulns.append(vuln)
         return new_vulns
 
+    def total_exploit_time(self, vulns):
+        exploit_time = 0
+        for vuln in vulns:
+            exploit_time += vuln.exploit_time()
+        return exploit_time
+
     def exploit_vulns(self, vulns):
         """
         Tries exploiting the list of vulnerabilities that the hacker is trying to exploit on the Host
@@ -386,10 +393,15 @@ class Host:
             vuln.network(host=self)
             exploit_time += vuln.exploit_time()
 
-        services = self.get_services(just_exploited=True)
+        return self.check_compromised()
 
+    def check_compromised(self):
+        """
+        check if the current host is compromised
+        """
+        services = self.get_services(just_exploited=True)
         for service_id in services:
-            if not service_id in self.compromised_services:
+            if service_id not in self.compromised_services:
                 self.compromised_services.append(service_id)
                 self.colour_map[service_id] = "red"
             if self.target_node in list(self.graph.neighbors(service_id)):

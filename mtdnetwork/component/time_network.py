@@ -20,11 +20,13 @@ class TimeNetwork(Network):
         self._diversity_assign = DiversityAssignment(graph=self.get_graph(),
                                                      sources=self.get_exposed_endpoints(),
                                                      dests=self.get_database(),
-                                                     services=self.service_generator.get_all_services(),
+                                                     services=self.service_generator.get_all_generated_services(),
                                                      pos=self.pos,
                                                      colour_map=self.colour_map)
 
     def test(self):
+
+        # return self._diversity_assign.calculate_variant_compromise_prob()
         return self._diversity_assign.objective()
 
     def setup_network(self):
