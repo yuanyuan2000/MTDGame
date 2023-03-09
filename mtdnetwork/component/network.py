@@ -7,6 +7,7 @@ import mtdnetwork.data.constants as constants
 import mtdnetwork.component.services as services
 from mtdnetwork.component.host import Host
 from mtdnetwork.statistic.scorer import Scorer
+import os
 
 
 class Network:
@@ -808,4 +809,5 @@ class Network:
     def draw(self):
         plt.figure(1, figsize=(15, 12))
         nx.draw(self.graph, pos=self.pos, node_color=self.colour_map, with_labels=True)
-        plt.savefig('data_analysis/network.png')
+        directory = os.getcwd()
+        plt.savefig(directory+'/experimental_data/network.png')

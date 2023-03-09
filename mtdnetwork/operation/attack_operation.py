@@ -90,7 +90,6 @@ class AttackOperation:
         self.adversary.set_curr_process('EXPLOIT_VULN')
         self._attack_process = self.env.process(self._execute_exploit_vuln(adversary.get_curr_vulns()))
 
-
     def _brute_force(self):
         """
         raise an BRUTE_FORCE action
@@ -118,7 +117,7 @@ class AttackOperation:
                                                                     self.env.now + self._proceed_time,
                                                                     adversary, self._interrupted_mtd)
         # confusion penalty caused by MTD operation
-        yield self.env.timeout(ATTACK_DURATION['PENALTY'])
+        yield self.env.timeout(exponential_variates(ATTACK_DURATION['PENALTY'], 0.5))
 
         if self._interrupted_mtd.get_resource_type() == 'network':
             self._interrupted_mtd = None
@@ -244,27 +243,31 @@ class AttackOperation:
         """
         adversary = self.adversary
         for vuln in vulns:
-            exploit_time = vuln.exploit_time()
+            exploit_time = exponential_variates(vuln.exploit_time(), 0.5)
             start_time = self.env.now + self._proceed_time
             try:
-                logging.info("Adversary: Start %s %s at %.1fs." % (self.adversary.get_curr_process(), vuln.id, start_time))
+                logging.info(
+                    "Adversary: Start %s %s at %.1fs." % (self.adversary.get_curr_process(), vuln.id, start_time))
                 yield self.env.timeout(exploit_time)
             except simpy.Interrupt:
                 self.env.process(self._handle_interrupt(start_time, self.adversary.get_curr_process()))
                 return
             finish_time = self.env.now + self._proceed_time
-            logging.info("Adversary: Processed %s %s at %.1fs." % (self.adversary.get_curr_process(), vuln.id, finish_time))
-            self.adversary.get_attack_stats().append_attack_operation_record(self.adversary.get_curr_process(), start_time,
+            logging.info(
+                "Adversary: Processed %s %s at %.1fs." % (self.adversary.get_curr_process(), vuln.id, finish_time))
+            self.adversary.get_attack_stats().append_attack_operation_record(self.adversary.get_curr_process(),
+                                                                             start_time,
                                                                              finish_time, self.adversary)
             vuln.network(host=adversary.get_curr_host())
             # cumulative vulnerability exploitation attempts
             adversary.set_curr_attempts(adversary.get_curr_attempts() + 1)
         if adversary.get_curr_host().check_compromised():
-            # for vuln in adversary.get_curr_vulns():
-            #     if vuln.is_exploited():
-            #         # todo: record vulnerability roa, impact, and complexity
-            #         # self.scorer.add_vuln_compromise(self.curr_time, vuln)
-            #         pass
+            for vuln in adversary.get_curr_vulns():
+                if vuln.is_exploited():
+                    if vuln.exploitability == vuln.cvss / 5.5:
+                        vuln.exploitability = (1 - vuln.exploitability) / 2 + vuln.exploitability
+                        # todo: record vulnerability roa, impact, and complexity
+                        # self.scorer.add_vuln_compromise(self.curr_time, vuln)
             adversary.update_compromise_progress(self.env.now, self._proceed_time)
             self._scan_neighbors()
         else:

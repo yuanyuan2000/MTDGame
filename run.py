@@ -17,7 +17,7 @@ from mtdnetwork.mtd.osdiversity import OSDiversity
 from mtdnetwork.mtd.servicediversity import ServiceDiversity
 from mtdnetwork.mtd.usershuffle import UserShuffle
 
-logging.basicConfig(format='%(message)s', level=logging.INFO)
+# logging.basicConfig(format='%(message)s', level=logging.INFO)
 
 mtd_strategies = [
     None,
@@ -33,8 +33,9 @@ mtd_strategies = [
 
 def single_mtd_simulation():
     evaluations = []
+    mttc_10_timestamp = []
     for mtd in mtd_strategies:
-        for mtd_trigger_interval in [100, 200, 400, 700, 1200, 2000]:
+        for mtd_trigger_interval in [100, 150, 200, 300]:
             # initialise the simulation
             env = simpy.Environment()
             snapshot_checkpoint = SnapshotCheckpoint()
@@ -73,18 +74,24 @@ def single_mtd_simulation():
                 'ASR': evaluation.attack_success_rate(),
                 'Compromised Num': evaluation.compromised_num()
             })
+            mttc_10 = evaluation.mean_time_to_compromise_10_timestamp()
+            for mttc in mttc_10:
+                mttc['MTD Interval'] = mtd_trigger_interval
+                mttc['Name'] = mtd_name
+            mttc_10_timestamp += mttc_10
         print("Finished simulation for " + mtd_name + "!")
     # current_directory = os.getcwd()
     # if not os.path.exists(current_directory + '\\data_analysis'):
     #     os.makedirs(current_directory + '\\data_analysis')
     # pd.DataFrame(evaluations).to_csv('data_analysis/single_mtd_sim.csv', index=False)
-    return evaluations
+    return evaluations, mttc_10_timestamp
 
 
 def multiple_mtd_simulation():
     evaluations = []
+    mttc_10_timestamp = []
     for scheme in ['random', 'alternative', 'simultaneous']:
-        for mtd_trigger_interval in [100, 200, 400, 700, 1200, 2000]:
+        for mtd_trigger_interval in [100, 150, 200, 300]:
             evaluation = main(start_time=0, finish_time=10000, scheme=scheme, mtd_trigger_interval=mtd_trigger_interval)
             evaluations.append({
                 'Name': scheme,
@@ -94,15 +101,16 @@ def multiple_mtd_simulation():
                 'ASR': evaluation.attack_success_rate(),
                 'Compromised Num': evaluation.compromised_num()
             })
+            mttc_10 = evaluation.mean_time_to_compromise_10_timestamp()
+            for mttc in mttc_10:
+                mttc['MTD Interval'] = mtd_trigger_interval
+                mttc['Name'] = scheme
+            mttc_10_timestamp += mttc_10
         print("Finished simulation for " + scheme + "!")
-    # current_directory = os.getcwd()
-    # if not os.path.exists(current_directory + '\\data_analysis'):
-    #     os.makedirs(current_directory + '\\data_analysis')
-    # pd.DataFrame(evaluations).to_csv('data_analysis/multiple_mtd_sim.csv', index=False)
-    return evaluations
+    return evaluations, mttc_10_timestamp
 
 
-def main(start_time=-1, finish_time=1000, scheme='randomly', mtd_trigger_interval=None, checkpoints=None):
+def main(start_time=-1, finish_time=1000, scheme='random', mtd_trigger_interval=None, checkpoints=None):
     # initialise the simulation
     env = simpy.Environment()
     snapshot_checkpoint = SnapshotCheckpoint(env=env, checkpoints=checkpoints)

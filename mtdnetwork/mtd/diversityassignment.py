@@ -76,7 +76,8 @@ class DiversityAssignment:
 
         1 vulnerability -> cvss = (complexity + impact) / 2
 
-        os vuln value -> max(vulnerability)
+        os vuln value -> max(vulnerability) / 5.5
+        5.5 = (1 + 10)/2 // max complexity + max impact
 
         compromise probability -> os vuln value exploitability (1-p) /2 + p
         """
@@ -95,8 +96,8 @@ class DiversityAssignment:
                     for service in os_services[os_type][os_version][service_name]:
                         for vuln in service.vulnerabilities:
                             if os_type in vuln.vuln_os_list:
-                                V[os_type].add(vuln.cvss)
-            E[os_type] = max(V[os_type]) * 0.05
+                                V[os_type].add(vuln.exploitability)
+            E[os_type] = max(V[os_type])
         return E
 
     def objective(self):

@@ -2,7 +2,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 import networkx as nx
-
+import pandas as pd
+import os
+directory = os.getcwd()
 
 class Evaluation:
     def __init__(self, network, adversary):
@@ -15,6 +17,12 @@ class Evaluation:
     def compromised_num(self):
         record = self._attack_record
         compromised_hosts = record[record['compromise_host_uuid'] != 'None']['compromise_host_uuid'].unique()
+        return len(compromised_hosts)
+
+    def compromised_num_by_timestamp(self, timestamp):
+        record = self._attack_record
+        compromised_hosts = record[(record['compromise_host_uuid'] != 'None') &
+                                   (record['finish_time'] <= timestamp)]['compromise_host_uuid'].unique()
         return len(compromised_hosts)
 
     def mtd_execution_frequency(self):
@@ -46,7 +54,21 @@ class Evaluation:
         #     compromise_time_list.append(compromise_time)
         # return np.mean(compromise_time_list)
         attack_action_time = record[record['name'].isin(['SCAN_PORT', 'EXPLOIT_VULN', 'BRUTE_FORCE'])]['duration'].sum()
-        return np.mean(attack_action_time/compromised_num)
+        return np.mean(attack_action_time / compromised_num)
+
+    def mean_time_to_compromise_10_timestamp(self):
+        record = self._attack_record
+        step = max(record['finish_time']) / 10
+        MTTC = []
+        for i in range(1, 11, 1):
+            compromised_num = self.compromised_num_by_timestamp(step * i)
+            if compromised_num == 0:
+                continue
+            attack_action_time = record[(record['name'].isin(['SCAN_PORT', 'EXPLOIT_VULN', 'BRUTE_FORCE'])) &
+                                        (record['finish_time'] <= step * i)]['duration'].sum()
+            MTTC.append({'Mean Time to Compromise': np.mean(attack_action_time / compromised_num), 'Time': step * i})
+
+        return MTTC
 
     def attack_success_rate(self):
         # """
@@ -80,7 +102,7 @@ class Evaluation:
         """
         plt.figure(1, figsize=(15, 12))
         nx.draw(self._network.graph, pos=self._network.pos, node_color=self._network.colour_map, with_labels=True)
-        plt.savefig('data_analysis/network.png')
+        plt.savefig(directory+'/experimental_data/network.png')
         plt.show()
 
     def draw_hacker_visible(self):
@@ -138,7 +160,7 @@ class Evaluation:
         plt.xlabel('Time', weight='bold', fontsize=18)
         plt.ylabel('Hosts', weight='bold', fontsize=18)
         fig.tight_layout()
-        plt.savefig('data_analysis/attack_action_record_group_by_host.png')
+        plt.savefig(directory+'/experimental_data/attack_action_record_group_by_host.png')
         plt.show()
 
     def visualise_attack_operation(self):
@@ -170,7 +192,7 @@ class Evaluation:
         plt.xlabel('Time', weight='bold', fontsize=18)
         plt.ylabel('Attack Actions', weight='bold', fontsize=18)
         fig.tight_layout()
-        plt.savefig('data_analysis/attack_record.png')
+        plt.savefig(directory+'/experimental_data/attack_record.png')
         plt.show()
 
     def visualise_mtd_operation(self):
@@ -195,7 +217,7 @@ class Evaluation:
         plt.xlabel('Time', weight='bold', fontsize=18)
         plt.ylabel('MTD Strategies', weight='bold', fontsize=18)
         fig.tight_layout()
-        plt.savefig('data_analysis/mtd_record.png')
+        plt.savefig(directory+'/experimental_data/mtd_record.png')
         plt.show()
 
     def get_network(self):

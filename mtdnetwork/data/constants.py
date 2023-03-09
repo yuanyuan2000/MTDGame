@@ -82,8 +82,8 @@ VULN_PATCH_RANGE = 9
 VULN_PERCENT_CROSS_PLATFORM = 0.5
 VULN_PROB_DEPENDS_ON_OS = 0.1
 VULN_PROB_DEPENDS_ON_OTHER_VULNS = 0.1
-VULN_MIN_EXPLOIT_TIME = 1
-VULN_MAX_EXPLOIT_TIME = 10
+VULN_MIN_EXPLOIT_TIME = 10
+VULN_MAX_EXPLOIT_TIME = 200
 VULN_MIN_COMPLEXITY = 0.4
 
 # Constants for Services
@@ -125,22 +125,22 @@ MTD_PRIORITY = {
 # mtd name : (mean, std)
 MTD_DURATION = {
     'CompleteTopologyShuffle': (110, 0.5),
-    'HostTopologyShuffle': (100, 0.5),
+    # 'HostTopologyShuffle': (100, 0.5),
     'IPShuffle': (100, 0.5),
     'OSDiversity': (70, 0.5),
     'ServiceDiversity': (60, 0.5),
     'PortShuffle': (50, 0.5),
-    'UserShuffle': (20, 0.5)
+    # 'UserShuffle': (20, 0.5)
 }
 
 # Constants for attack processes
 # may need to combine with "Constants for Attackers" for future works
 ATTACK_DURATION = {
     'SCAN_HOST': 10,
-    'ENUM_HOST': 20,
+    'ENUM_HOST': 15,
     'SCAN_NEIGHBOR': 10,
     'SCAN_PORT': 20,
-    'EXPLOIT_VULN': (30, 0.8),
+    'EXPLOIT_VULN': 10,
     'BRUTE_FORCE': 10,
-    'PENALTY': 40,
+    'PENALTY': 30,
 }

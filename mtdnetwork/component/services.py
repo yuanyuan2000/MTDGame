@@ -25,6 +25,7 @@ class Vulnerability:
         # 0 for nothing
         self.impact = random.random() * 10
         self.cvss = (self.complexity + self.impact) / 2
+        self.exploitability = self.cvss/5.5
         self.exploit_attempt = 0
         self.exploited = False
         self.has_os_dependency = False
@@ -72,11 +73,12 @@ class Vulnerability:
             the more attempts a hacker tries at exploiting a particular vulnerability the faster the exploit time becomes
 
         """
+
         if self.exploited:
-            return constants.VULN_MIN_EXPLOIT_TIME
-        return constants.VULN_MIN_EXPLOIT_TIME + \
-               (constants.VULN_MAX_EXPLOIT_TIME - constants.VULN_MIN_EXPLOIT_TIME) * (1 - self.complexity) / (
-                       self.exploit_attempt + 1)
+            return constants.ATTACK_DURATION['EXPLOIT_VULN'] * (1 - self.complexity) / 2
+        return constants.ATTACK_DURATION['EXPLOIT_VULN'] * (1 - self.complexity)
+        # return constants.VULN_MIN_EXPLOIT_TIME + (constants.VULN_MAX_EXPLOIT_TIME -
+        # constants.VULN_MIN_EXPLOIT_TIME) * ( 1 - self.complexity) / ( self.exploit_attempt + 1)
 
     def network(self, host=None):
         """
@@ -180,17 +182,6 @@ class Service:
             if vuln.exploited:
                 self.exploit_value += vuln.impact
         return self.exploit_value > constants.SERVICE_COMPROMISED_THRESHOLD
-
-    def total_exploit_time(self, roa_threshold=0):
-        time = 0
-        if roa_threshold == None:
-            for vuln in self.vulnerabilities:
-                time += vuln.exploit_time()
-        else:
-            for vuln in self.vulnerabilities:
-                if vuln.roa() > roa_threshold:
-                    time += vuln.exploit_time()
-        return time
 
     def discover_vuln_time(self, roa_threshold=0):
         return len(self.get_vulns(roa_threshold=roa_threshold)) * constants.SERVICE_DISCOVER_EACH_VULN_TIME
