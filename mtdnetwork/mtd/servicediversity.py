@@ -3,7 +3,7 @@ import random
 
 
 class ServiceDiversity(MTD):
-    def __init__(self, network, shuffles=50):
+    def __init__(self, network=None, shuffles=50):
         self.shuffles = shuffles
         super().__init__(name="ServiceDiversity",
                          mtd_type='diversity',

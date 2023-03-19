@@ -52,7 +52,10 @@ class MTDScheme:
         """
         register an MTD strategy to the queue
         """
-        mtd_strategy = mtd(network=self.network)
+        if isinstance(mtd, type):
+            mtd_strategy = mtd(network=self.network)
+        else:
+            mtd_strategy = mtd
         heappush(self.network.get_mtd_queue(), (mtd_strategy.get_priority(), mtd_strategy))
 
     def _register_mtd_simultaneously(self):

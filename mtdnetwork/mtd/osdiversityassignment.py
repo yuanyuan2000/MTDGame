@@ -1,15 +1,69 @@
+import random
+
 import networkx as nx
 from mtdnetwork.data.constants import OS_TYPES, OS_VERSION_DICT
 import matplotlib.pyplot as plt
-import numpy as np
 from mtdnetwork.statistic.utils import powerset, remove_element
 from pulp import *
+from mtdnetwork.mtd import MTD
+import re
+
+
+class OSDiversityAssignment(MTD):
+
+    def __init__(self, network=None, os_types=OS_TYPES):
+        super().__init__(name="OSDiversity",
+                         mtd_type='diversity',
+                         resource_type='application',
+                         network=network)
+        self.os_types = os_types
+        self._os_name = str("OSDiversity_" + '_'.join(os_types)),
+
+    def mtd_operation(self, adversary=None):
+        diversity_assign = DiversityAssignment(graph=self.network.get_graph_copy(),
+                                               sources=self.network.get_exposed_endpoints(),
+                                               dests=self.network.get_database(),
+                                               os_types=self.os_types,
+                                               pos=self.network.pos,
+                                               colour_map=self.network.colour_map)
+        result = diversity_assign.objective()
+        service_generator = self.network.get_service_generator()
+        hosts = self.network.get_hosts()
+        for host_id, host_instance in hosts.items():
+            if host_id in self.network.exposed_endpoints:
+                continue
+
+            prev_os = host_instance.os_type
+            prev_os_version = host_instance.os_version
+            prev_os_version_index = OS_VERSION_DICT[prev_os].index(prev_os_version)
+            new_os = prev_os
+            for os_type, host in result:
+                if host == host_id:
+                    new_os = os_type
+                    break
+            new_os_version = OS_VERSION_DICT[new_os][prev_os_version_index]
+
+            host_instance.os_type = new_os
+            host_instance.os_version = new_os_version
+
+            for node_id in range(host_instance.total_nodes):
+                if node_id == host_instance.target_node:
+                    continue
+                curr_service = host_instance.graph.nodes[node_id]["service"]
+                if not service_generator.service_is_compatible_with_os(new_os, new_os_version, curr_service):
+                    host_instance.graph.nodes[node_id]["service"] = service_generator.get_random_service_latest_version(
+                        host_instance.os_type,
+                        host_instance.os_version
+                    )
+
+    def get_name(self):
+        return self._os_name
 
 
 class DiversityAssignment:
-    def __init__(self, graph, sources, dests, services, pos, colour_map):
+    def __init__(self, graph, sources, dests, os_types, pos, colour_map):
         """
-        MIP formulation for sovling Diversity Assignment Problem
+        MIP formulation for solving Diversity Assignment Problem
 
         :param N: routing nodes (hosts)
         :param M: client nodes (exposed hosts + database)
@@ -20,8 +74,8 @@ class DiversityAssignment:
         self._graph = graph
         self._sources = sources
         self._dests = dests
+        self.os_types = os_types
         self._pos = pos
-        self._services = services
         self._colour_map = colour_map
         self.total_nodes = len(self._pos)
         self.flag = False
@@ -39,16 +93,16 @@ class DiversityAssignment:
             for neighbor in neighbors:
                 dap_graph.add_edge(0, neighbor)
             dap_graph.remove_node(i)
-            del self._pos[i]
-            del self._colour_map[1]
+            # del self._pos[i]
+            # del self._colour_map[1]
 
         for j in range(total_nodes - len(self._dests) - 1, total_nodes - 1, 1):
             neighbors = list(dap_graph.neighbors(j))
             for neighbor in neighbors:
                 dap_graph.add_edge(total_nodes - 1, neighbor)
             dap_graph.remove_node(j)
-            del self._pos[j]
-            del self._colour_map[-2]
+            # del self._pos[j]
+            # del self._colour_map[-2]
         self.flag = True
         return dap_graph
 
@@ -56,9 +110,9 @@ class DiversityAssignment:
         dap_graph = self.gen_single_connection_graph()
         plt.figure(1, figsize=(15, 12))
         nx.draw(dap_graph, pos=self._pos, node_color=self._colour_map, with_labels=True)
-        plt.savefig('data_analysis/dap_network.png')
+        plt.savefig('experimental_data/plots/dap_network.png')
 
-    def calculate_variant_compromise_prob(self):
+    def calculate_variant_compromise_prob(self, nodes):
         """
         os_services: {os_type: [{os_version: [{service_name: [Service1, Service2, ...]}]}]}
 
@@ -72,7 +126,7 @@ class DiversityAssignment:
         Variant -> OS Type
 
 
-        1 host -> 1 service -> list of vulnerabilities
+        1 host -> list of services -> list of vulnerabilities
 
         1 vulnerability -> cvss = (complexity + impact) / 2
 
@@ -87,34 +141,39 @@ class DiversityAssignment:
         E = {}
 
         # extract variants from generated services
-        os_services = self._services
-
-        for os_type in OS_TYPES:
+        for os_type in self.os_types:
             V[os_type] = set()
-            for os_version in OS_VERSION_DICT[os_type]:
-                for service_name in os_services[os_type][os_version]:
-                    for service in os_services[os_type][os_version][service_name]:
-                        for vuln in service.vulnerabilities:
-                            if os_type in vuln.vuln_os_list:
-                                V[os_type].add(vuln.exploitability)
-            E[os_type] = max(V[os_type])
+        for host_id in nodes:
+            host = self._graph.nodes[host_id]['host']
+            if host.os_type not in V:
+                continue
+            all_vulns = host.get_all_vulns()
+            for vuln in all_vulns:
+                V[host.os_type].add(vuln.exploitability)
+            E[host.os_type] = max(V[host.os_type])
         return E
 
     def objective(self):
         # generate single connection graph
         dap_graph = self.gen_single_connection_graph()
 
-        # calculate compromise event E
-        E = self.calculate_variant_compromise_prob()
-
-        # get all sets of compromise events C
-        C = list(powerset(E.keys()))
-
         # client nodes
         M = [list(dap_graph.nodes)[0], list(dap_graph.nodes)[-1]]
 
         # routing nodes
         N = list(dap_graph.nodes)[1:-1]
+
+        for i in N:
+            if dap_graph.nodes[i]['host'].is_compromised():
+                dap_graph.remove_node(i)
+
+        N = list(dap_graph.nodes)[1:-1]
+
+        # calculate compromise event E
+        E = self.calculate_variant_compromise_prob(nodes=N)
+
+        # get all sets of compromise events C
+        C = list(powerset(E.keys()))
 
         # edges
         w = list(dap_graph.edges)
@@ -163,15 +222,31 @@ class DiversityAssignment:
         # Solve the problem
         prob.solve()
         # Print the status of the solution
-        print("Status:", LpStatus[prob.status])
+        # print("Status:", LpStatus[prob.status])
 
         # Print the optimal value of the objective function
-        print("Objective value:", value(prob.objective))
+        # print("Objective value:", value(prob.objective))
 
         # Print the values of the decision variables
+        # Define regex patterns
+        os_pattern = r"(centos|ubuntu|freebsd|windows)"
+        num_pattern = r"\d+(?:\.\d+)?"
+        result = []
         for v in prob.variables():
             if 's_' in v.name and v.varValue == 1.0:
-                print(v.name, "=", v.varValue)
+                # Use re.findall() to find all matches of the patterns in the input string
+                os_matches = re.findall(os_pattern, v.name)
+                num_matches = re.findall(num_pattern, v.name)
+                # Convert numerical strings to integers
+                num_matches = [int(num) for num in num_matches]
+
+                # Combine the matches into a list of tuples
+                result += list(zip(os_matches, num_matches))
+
+        # Sort the list of tuples by the numerical value
+        result = sorted(result, key=lambda x: x[1])
+
+        return result
 
     @staticmethod
     def expected_client_connectivity(F, E, C):

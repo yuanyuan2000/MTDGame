@@ -332,7 +332,7 @@ class ServicesGenerator:
                     )
 
             # Adding Vuln at version 99 to ensure there is a vuln in every version
-            vulns[99] = Vulnerability(
+            vulns[s_versions_len] = Vulnerability(
                 can_have_os_dependency=can_have_os_depend_vuln,
                 os_list=os_list
             )

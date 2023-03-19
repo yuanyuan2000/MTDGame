@@ -51,9 +51,9 @@ class MTDStatistics:
 
     def save_record(self, sim_time, scheme):
         current_directory = os.getcwd()
-        if not os.path.exists(current_directory + '\\data_analysis'):
-            os.makedirs(current_directory + '\\data_analysis')
-        pd.DataFrame(self._mtd_operation_record).to_csv('data_analysis/mtd_operation_record_' +
+        if not os.path.exists(current_directory + '\\experimental_data\\mtd_records'):
+            os.makedirs(current_directory + '\\experimental_data\\mtd_records')
+        pd.DataFrame(self._mtd_operation_record).to_csv('experimental_data/mtd_records/mtd_operation_record_' +
                                                         str(sim_time) + '_' + scheme + '.csv', index=False)
 
     def get_total_attack_interrupted(self):

@@ -9,7 +9,7 @@ class Adversary:
         self._compromised_users = []
         self._compromised_hosts = []
         self._host_stack = []
-        self._attack_counter = [0 for n in range(self.network.get_total_nodes())]
+        self._attack_counter = [0 for n in range(len(self.network.get_graph().nodes()))]
         self._stop_attack = []
         self._attack_threshold = attack_threshold
         self._pivot_host_id = -1
@@ -40,35 +40,6 @@ class Adversary:
                 new_compromised_hosts.append(i)
 
         self._compromised_hosts = new_compromised_hosts
-
-    def update_compromise_progress(self, now, proceed_time):
-        """
-        Updates the Hackers progress state when it compromises a host.
-        """
-        self._pivot_host_id = self._curr_host_id
-        if self._curr_host_id not in self._compromised_hosts:
-            self._compromised_hosts.append(self._curr_host_id)
-            self._attack_stats.update_compromise_host(self.curr_host)
-            logging.info(
-                "Adversary: Host %i has been compromised at %.1fs!" % (self._curr_host_id, now + proceed_time))
-            self.network.update_reachable_compromise(self._curr_host_id, self._compromised_hosts)
-
-            for user in self.curr_host.get_compromised_users():
-                if user not in self._compromised_users:
-                    self._attack_stats.update_compromise_user(user)
-            self._compromised_users = list(set(self._compromised_users + self.curr_host.get_compromised_users()))
-            if self.network.is_compromised(self._compromised_hosts):
-                # terminate the whole process
-                return
-
-            # If target network, set adversary as done once adversary has compromised target node
-            # if self.network.get_target_node() == self._curr_host_id:
-            # if self.network.get_network_type() == 0:
-            #      # terminate the whole process
-            #     self.target_compromised = True
-            #     self.end_event.succeed()
-            #     return
-            #
 
     def get_compromised_hosts(self):
         return self._compromised_hosts

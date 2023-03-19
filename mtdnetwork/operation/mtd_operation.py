@@ -6,7 +6,7 @@ from mtdnetwork.component.mtd_scheme import MTDScheme
 
 class MTDOperation:
 
-    def __init__(self, env, network, attack_operation, scheme, proceed_time=0,
+    def __init__(self, env, end_event, network, attack_operation, scheme, proceed_time=0,
                  mtd_trigger_interval=None, custom_strategies=None):
         """
 
@@ -18,6 +18,7 @@ class MTDOperation:
         :param custom_strategies:specific MTD priority strategy for alternative scheme or single scheme
         """
         self.env = env
+        self.end_event = end_event
         self.network = network
         self.attack_operation = attack_operation
 
@@ -33,7 +34,7 @@ class MTDOperation:
         if self.network.get_unfinished_mtd():
             for k, v in self.network.get_unfinished_mtd().items():
                 self._mtd_scheme.suspend_mtd(v)
-        if self._mtd_scheme.get_scheme() == 'simultaneously':
+        if self._mtd_scheme.get_scheme() == 'simultaneous':
             self.env.process(self._mtd_batch_trigger_action())
         else:
             self.env.process(self._mtd_trigger_action())
@@ -46,7 +47,9 @@ class MTDOperation:
         """
         while True:
             # terminate the simulation if the network is compromised
-            if self.network.is_compromised(compromised_hosts=self.attack_operation.get_adversary().get_compromised_hosts()):
+            if self.network.is_compromised(
+                    compromised_hosts=self.attack_operation.get_adversary().get_compromised_hosts()):
+                self.end_event.succeed()
                 return
 
             # register an MTD
@@ -79,7 +82,8 @@ class MTDOperation:
         """
         while True:
             # terminate the simulation if the network is compromised
-            if self.network.is_compromised(compromised_hosts=self.attack_operation.get_adversary().get_compromised_hosts()):
+            if self.network.is_compromised(
+                    compromised_hosts=self.attack_operation.get_adversary().get_compromised_hosts()):
                 return
 
             suspension_queue = self.network.get_suspended_mtd()
@@ -166,9 +170,9 @@ class MTDOperation:
                 self.network.get_mtd_stats().add_total_attack_interrupted()
             elif mtd.get_resource_type() == 'application' and \
                     self.attack_operation.get_adversary().get_curr_process() not in [
-                                                            'SCAN_HOST',
-                                                            'ENUM_HOST',
-                                                            'SCAN_NEIGHBOR']:
+                'SCAN_HOST',
+                'ENUM_HOST',
+                'SCAN_NEIGHBOR']:
                 self.attack_operation.set_interrupted_mtd(mtd)
                 self.attack_operation.get_attack_process().interrupt()
                 logging.info(
@@ -190,4 +194,3 @@ class MTDOperation:
 
     def get_mtd_scheme(self):
         return self._mtd_scheme
-

@@ -3,7 +3,7 @@ import random
 
 
 class UserShuffle(MTD):
-    def __init__(self, network):
+    def __init__(self, network=None):
         super().__init__(name="UserShuffle",
                          mtd_type='shuffle',
                          resource_type='reserve',

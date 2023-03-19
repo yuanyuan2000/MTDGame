@@ -4,7 +4,7 @@ from mtdnetwork.component import host
 
 class IPShuffle(MTD):
 
-    def __init__(self, network):
+    def __init__(self, network=None):
         super().__init__(name="IPShuffle",
                          mtd_type='shuffle',
                          resource_type='network',

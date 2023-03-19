@@ -6,7 +6,7 @@ from mtdnetwork.data.constants import ATTACK_DURATION
 
 
 class AttackOperation:
-    def __init__(self, env, adversary, proceed_time=0):
+    def __init__(self, env, end_event, adversary, proceed_time=0):
         """
 
         :param env: the parameter to facilitate simPY env framework
@@ -15,6 +15,7 @@ class AttackOperation:
         """
 
         self.env = env
+        self.end_event = end_event
         self.adversary = adversary
         self._attack_process = None
         self._interrupted_mtd = None
@@ -212,7 +213,7 @@ class AttackOperation:
         self._set_next_pivot_host()
 
         if adversary.get_curr_host().compromised:
-            adversary.update_compromise_progress(self.env.now, self._proceed_time)
+            self.update_compromise_progress(self.env.now, self._proceed_time)
             self._enum_host()
         else:
             # Attack event triggered
@@ -229,7 +230,7 @@ class AttackOperation:
         user_reuse = adversary.get_curr_host().can_auto_compromise_with_users(
             adversary.get_compromised_users())
         if user_reuse:
-            adversary.update_compromise_progress(self.env.now, self._proceed_time)
+            self.update_compromise_progress(self.env.now, self._proceed_time)
             self._scan_neighbors()
             return
         self._exploit_vuln()
@@ -266,9 +267,11 @@ class AttackOperation:
                 if vuln.is_exploited():
                     if vuln.exploitability == vuln.cvss / 5.5:
                         vuln.exploitability = (1 - vuln.exploitability) / 2 + vuln.exploitability
+                        if vuln.exploitability > 1:
+                            vuln.exploitability = 1
                         # todo: record vulnerability roa, impact, and complexity
                         # self.scorer.add_vuln_compromise(self.curr_time, vuln)
-            adversary.update_compromise_progress(self.env.now, self._proceed_time)
+            self.update_compromise_progress(self.env.now, self._proceed_time)
             self._scan_neighbors()
         else:
             self._brute_force()
@@ -283,7 +286,7 @@ class AttackOperation:
         _brute_force_result = adversary.get_curr_host().compromise_with_users(
             adversary.get_compromised_users())
         if _brute_force_result:
-            adversary.update_compromise_progress(self.env.now, self._proceed_time)
+            self.update_compromise_progress(self.env.now, self._proceed_time)
             self._scan_neighbors()
         else:
             self._enum_host()
@@ -317,6 +320,40 @@ class AttackOperation:
                 adversary.set_pivot_host_id(n)
                 return
         adversary.set_pivot_host_id(-1)
+
+    def update_compromise_progress(self, now, proceed_time):
+        """
+        Updates the Hackers progress state when it compromises a host.
+        """
+        adversary = self.adversary
+        adversary._pivot_host_id = adversary.get_curr_host_id()
+        if adversary.get_curr_host_id() not in adversary.get_compromised_hosts():
+            adversary.get_compromised_hosts().append(adversary.get_curr_host_id())
+            adversary.get_attack_stats().update_compromise_host(adversary.curr_host)
+            logging.info(
+                "Adversary: Host %i has been compromised at %.1fs!" % (
+                    adversary.get_curr_host_id(), now + proceed_time))
+            adversary.get_network().update_reachable_compromise(
+                adversary.get_curr_host_id(), adversary.get_compromised_hosts())
+
+            for user in adversary.get_curr_host().get_compromised_users():
+                if user not in adversary.get_compromised_users():
+                    adversary.get_attack_stats().update_compromise_user(user)
+            adversary._compromised_users = list(set(
+                adversary.get_compromised_users() + adversary.get_curr_host().get_compromised_users()))
+            if adversary.get_network().is_compromised(adversary.get_compromised_hosts()):
+                # terminate the whole process
+                self.end_event.succeed()
+                return
+
+            # If target network, set adversary as done once adversary has compromised target node
+            # if self.network.get_target_node() == self._curr_host_id:
+            # if self.network.get_network_type() == 0:
+            #      # terminate the whole process
+            #     self.target_compromised = True
+            #     self.end_event.succeed()
+            #     return
+            #
 
     def get_proceed_time(self):
         return self._proceed_time

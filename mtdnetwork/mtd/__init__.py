@@ -2,7 +2,7 @@ from mtdnetwork.data.constants import MTD_DURATION, MTD_PRIORITY
 
 
 class MTD:
-    def __init__(self, name: str, mtd_type: str, resource_type: str, network):
+    def __init__(self, name: str, mtd_type: str, resource_type: str, network=None):
         """
         :param name: name of the MTD strategy
         :param mtd_type: shuffle / diversity

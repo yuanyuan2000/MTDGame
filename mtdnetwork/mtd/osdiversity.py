@@ -4,7 +4,7 @@ from mtdnetwork.data import constants
 
 
 class OSDiversity(MTD):
-    def __init__(self, network):
+    def __init__(self, network=None):
         super().__init__(name="OSDiversity",
                          mtd_type='diversity',
                          resource_type='application',
