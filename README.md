@@ -7,6 +7,7 @@ A research project on the simulation and evaluation of moving target defense in 
 1. Installing [conda](https://conda.io/projects/conda/en/latest/user-guide/install/index.html)
 2. Creating conda environment
    - `conda env create -f environment.yml`
+   - `conda config --add channels conda-forge`
 3. Activating the environment
    - `conda activate mtdsimtime`
 4. Updating the environment
