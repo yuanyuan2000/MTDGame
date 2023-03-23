@@ -51,7 +51,7 @@ class Evaluation:
         record = self._mtd_record
         return len(record) / (record.iloc[-1]['finish_time'] - record.iloc[0]['start_time'])
 
-    def time_to_compromise_by_checkpoint(self, checkpoint=None):
+    def evaluation_result_by_compromise_checkpoint(self, checkpoint=None):
         """
         The time to reach compromise checkpoints
 
@@ -62,34 +62,6 @@ class Evaluation:
             checkpoint = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
         record = self._attack_record
         host_num = self.get_network().get_total_nodes()
-        MTTC = []
-        comp_nums = {}
-        for comp_ratio in checkpoint:
-            comp_nums[comp_ratio] = host_num * comp_ratio
-
-        for comp_ratio, comp_num in comp_nums.items():
-            if max(record['cumulative_compromised_hosts']) < comp_num:
-                break
-            sub_record = record[record['cumulative_compromised_hosts'] <= comp_num]
-            time_to_compromise = sub_record[sub_record[
-                'name'].isin(['SCAN_PORT', 'EXPLOIT_VULN', 'BRUTE_FORCE'])]['duration'].sum()
-
-            MTTC.append({'time_to_compromise': time_to_compromise,
-                         "host_compromise_ratio": comp_ratio})
-        return MTTC
-
-    def time_to_compromise_and_attack_success_rate_by_checkpoint(self, checkpoint=None):
-        """
-        The time to reach compromise checkpoints
-
-        ATTACK_ACTION: SCAN_PORT, EXPLOIT_VULN, BRUTE_FORCE
-        Attack action time = The sum of the time duration of all ATTACK_ACTION
-        """
-        if checkpoint is None:
-            checkpoint = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
-        record = self._attack_record
-        host_num = self.get_network().get_total_nodes()
-        # MTTC = []
         result = []
         comp_nums = {}
         for comp_ratio in checkpoint:
@@ -101,9 +73,6 @@ class Evaluation:
             sub_record = record[record['cumulative_compromised_hosts'] <= comp_num]
             time_to_compromise = sub_record[sub_record[
                 'name'].isin(['SCAN_PORT', 'EXPLOIT_VULN', 'BRUTE_FORCE'])]['duration'].sum()
-            # MTTC.append({'time_to_compromise': time_to_compromise,
-            #              'host_compromise_ratio': comp_ratio})
-
             attempt_hosts = sub_record[sub_record['current_host_uuid'] != -1]['current_host_uuid'].unique()
             attack_actions = sub_record[sub_record['name'].isin(['SCAN_PORT', 'EXPLOIT_VULN', 'BRUTE_FORCE'])]
             attack_event_num = 0
@@ -112,21 +81,13 @@ class Evaluation:
                                                        (attack_actions['name'] == 'SCAN_PORT')])
             attack_success_rate = comp_num / attack_event_num
 
+            mtd_execution_frequency = self.mtd_execution_frequency()
+
             result.append({'time_to_compromise': time_to_compromise,
                            'attack_success_rate': attack_success_rate,
-                           'host_compromise_ratio': comp_ratio})
+                           'host_compromise_ratio': comp_ratio,
+                           'mtd_execution_frequency': mtd_execution_frequency})
         return result
-
-    def attack_success_rate(self):
-        record = self._attack_record
-        attempt_hosts = record[record['current_host_uuid'] != -1]['current_host_uuid'].unique()
-        compromised_hosts = record[record['compromise_host_uuid'] != 'None']['compromise_host_uuid'].unique()
-        attack_actions = record[record['name'].isin(['SCAN_PORT', 'EXPLOIT_VULN', 'BRUTE_FORCE'])]
-        attack_event_num = 0
-        for host in attempt_hosts:
-            attack_event_num += len(attack_actions[(attack_actions['current_host_uuid'] == host) &
-                                                   (attack_actions['name'] == 'SCAN_PORT')])
-        return len(compromised_hosts) / attack_event_num
 
     def compromise_record_by_attack_action(self, action=None):
         """

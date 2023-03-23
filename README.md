@@ -11,10 +11,6 @@ A research project on the simulation and evaluation of moving target defense in 
    - `conda activate mtdsimtime`
 4. Updating the environment
    - `conda env update --name mtdsimtime --file environment.yml --prune`
-5. Running an example:
-   - [data_analysis.ipynb](https://github.com/MoeBuTa/MTDSimTime/blob/main/data_analysis.ipynb)
-   - [simulation.ipynb](https://github.com/MoeBuTa/MTDSimTime/blob/main/simulation.ipynb)
-6. Still developing.....
 
 
 ## Progresses
@@ -53,13 +49,13 @@ A research project on the simulation and evaluation of moving target defense in 
       - extract attack_operation object from adversary object to handle state saving for adversary object
       - introduce SnapshotCheckpoint to save and load files based on simulation time.
 
-5. Refactor [data collection and analysis behaviours](https://github.com/MoeBuTa/MTDSimTime/tree/main/mtdnetwork/stats)
+5. Refactor [data collection and analysis](https://github.com/MoeBuTa/MTDSimTime/tree/main/mtdnetwork/statistic)
 
 6. implement three [MTD Schemes](https://github.com/MoeBuTa/MTDSimTime/tree/main/mtdnetwork/component/mtd_scheme): simultaneously, randomly, alternatively.
 
-7. implement Mean Time to Compromise.
+7. implement evaluation metrics: Mean Time to Compromise, Attack Success Rate, MTD Execute Frequency.
 
-8. implement MTD Execute Frequency, attack success rate.
+
 
 
 ## Todos / Future works
