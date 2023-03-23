@@ -17,7 +17,7 @@ from run import single_mtd_simulation, construct_average_result, execute_multith
 
 create_experiment_snapshots([25, 50, 75, 100])
 
-results = execute_multithreading(single_mtd_simulation, iterations=10, num_threads=10)
+results = execute_multithreading(single_mtd_simulation, iterations=100, num_threads=20)
 
 # results = []
 # result = single_mtd_simulation()
