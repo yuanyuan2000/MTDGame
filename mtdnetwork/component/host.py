@@ -371,29 +371,29 @@ class Host:
                 new_vulns.append(vuln)
         return new_vulns
 
-    def total_exploit_time(self, vulns):
-        exploit_time = 0
-        for vuln in vulns:
-            exploit_time += vuln.exploit_time()
-        return exploit_time
+    # def total_exploit_time(self, vulns):
+    #     exploit_time = 0
+    #     for vuln in vulns:
+    #         exploit_time += vuln.exploit_time()
+    #     return exploit_time
 
-    def exploit_vulns(self, vulns):
-        """
-        Tries exploiting the list of vulnerabilities that the hacker is trying to exploit on the Host
-
-        Parameters:
-            vulns:
-                the list of vulnerabilities that are trying to be exploited
-
-        Returns:
-            an action if that returns a dictionary of if a new service was exploited and if the host is compromised
-        """
-        exploit_time = 0
-        for vuln in vulns:
-            vuln.network(host=self)
-            exploit_time += vuln.exploit_time()
-
-        return self.check_compromised()
+    # def exploit_vulns(self, vulns):
+    #     """
+    #     Tries exploiting the list of vulnerabilities that the hacker is trying to exploit on the Host
+    #
+    #     Parameters:
+    #         vulns:
+    #             the list of vulnerabilities that are trying to be exploited
+    #
+    #     Returns:
+    #         an action if that returns a dictionary of if a new service was exploited and if the host is compromised
+    #     """
+    #     exploit_time = 0
+    #     for vuln in vulns:
+    #         vuln.network(host=self)
+    #         exploit_time += vuln.exploit_time()
+    #
+    #     return self.check_compromised()
 
     def check_compromised(self):
         """

@@ -39,12 +39,10 @@ NODE_COLOURS = [
     "brown"
 ]
 
-# SERVICE_VERSIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27,
-#                     28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52,
-#                     53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77,
-#                     78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99]
-
-SERVICE_VERSIONS = [1, 2, 3, 4, 5, 6]
+SERVICE_VERSIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27,
+                    28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52,
+                    53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77,
+                    78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99]
 
 LARGE_INT = (1 << 100)
 
@@ -66,29 +64,36 @@ USER_TOTAL_FOR_EACH_HOST = 5
 NETWORK_HOST_DISCOVER_TIME = 1
 
 # Constants for Hosts
-HOST_SERVICES_MIN = 3
-HOST_SERVICES_MAX = 11
+HOST_SERVICES_MIN = 5
+HOST_SERVICES_MAX = 10
 HOST_INTERNAL_SERVICE_MIN = 0
 HOST_PORT_RANGE = range(1, 65546)
+HOST_MAX_PROB_FOR_USER_COMPROMISE = 0.01
+
+
 HOST_USER_COMPROMISE_TIME = 5
 HOST_AUTO_COMPROMISE_TIME = 1
-HOST_MAX_PROB_FOR_USER_COMPROMISE = 0.01
 HOST_PORT_SCAN_MIN_TIME = 10
 HOST_PORT_SCAN_MAX_TIME = 50
 
 # Constants for Vulns
+# VULN_MAX_PROB_FOR_OCCURING_FOR_SERVICE_VERSION = 0.10
 VULN_MAX_PROB_FOR_OCCURING_FOR_SERVICE_VERSION = 0.10
 VULN_INITIAL_CHANCES = 100
 VULN_PATCH_MEAN = 10
 VULN_PATCH_RANGE = 9
-VULN_PERCENT_CROSS_PLATFORM = 0.5
-VULN_PROB_DEPENDS_ON_OS = 0.1
+# VULN_PERCENT_CROSS_PLATFORM = 0.5
+VULN_PERCENT_CROSS_PLATFORM = 0.1
+# VULN_PROB_DEPENDS_ON_OS = 0.1
+VULN_PROB_DEPENDS_ON_OS = 1
 VULN_PROB_DEPENDS_ON_OTHER_VULNS = 0.1
-VULN_MIN_EXPLOIT_TIME = 10
-VULN_MAX_EXPLOIT_TIME = 200
 VULN_MIN_COMPLEXITY = 0.4
 
+VULN_MIN_EXPLOIT_TIME = 10
+VULN_MAX_EXPLOIT_TIME = 200
+
 # Constants for Services
+# SERVICE_NO_OF_SERVICES_PER_OS = 20
 SERVICE_NO_OF_SERVICES_PER_OS = 20
 SERVICE_COMPROMISED_THRESHOLD = 7
 SERVICE_DISCOVER_EACH_VULN_TIME = 10
@@ -126,12 +131,12 @@ MTD_PRIORITY = {
 
 # mtd name : (mean, std)
 MTD_DURATION = {
-    'CompleteTopologyShuffle': (120, 0.5),
+    'CompleteTopologyShuffle': (100, 0.5),
     # 'HostTopologyShuffle': (100, 0.5),
-    'IPShuffle': (100, 0.5),
-    'OSDiversity': (70, 0.5),
-    'ServiceDiversity': (60, 0.5),
-    'PortShuffle': (50, 0.5),
+    'IPShuffle': (90, 0.5),
+    'OSDiversity': (80, 0.5),
+    'ServiceDiversity': (70, 0.5),
+    # 'PortShuffle': (70, 0.5),
     # 'UserShuffle': (20, 0.5)
 }
 

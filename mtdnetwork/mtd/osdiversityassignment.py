@@ -17,7 +17,7 @@ class OSDiversityAssignment(MTD):
                          resource_type='application',
                          network=network)
         self.os_types = os_types
-        self._os_name = str("OSDiversity_" + '_'.join(os_types)),
+        self._os_name = "DAP_OSDiversity_" + str(len(self.os_types))
 
     def mtd_operation(self, adversary=None):
         diversity_assign = DiversityAssignment(graph=self.network.get_graph_copy(),

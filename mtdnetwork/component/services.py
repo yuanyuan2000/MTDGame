@@ -18,9 +18,9 @@ class Vulnerability:
             os_list:
                 a list of operating systems that the vulnerability can be on (depends on the service)
         """
-        # 0 for easy, 1 for impossible
+        # 1 for easy, 0 for impossible
         # Change to fit distributions
-        self.complexity = constants.VULN_MIN_COMPLEXITY + (1 - constants.VULN_MIN_COMPLEXITY) * random.random()
+        self.complexity = constants.VULN_MIN_COMPLEXITY + (1 - constants.VULN_MIN_COMPLEXITY) * random.uniform(0.35, 0.65)
         # 1 for complete compromise
         # 0 for nothing
         self.impact = random.random() * 10
@@ -40,7 +40,8 @@ class Vulnerability:
         if can_have_os_dependency and len(os_list) > 1:
             if random.random() < constants.VULN_PROB_DEPENDS_ON_OS:
                 self.has_os_dependency = True
-                self.vuln_os_list = random.choices(os_list, k=random.randint(1, len(os_list) - 1))
+                # self.vuln_os_list = random.choices(os_list, k=random.randint(1, len(os_list) - 1))
+                self.vuln_os_list = random.choices(os_list, k=random.randint(1, 2))
 
     def is_exploited(self):
         return self.exploited
@@ -66,19 +67,47 @@ class Vulnerability:
                 return True
         return False
 
-    def exploit_time(self):
+    def exploit_time(self, host=None):
         """"
         Returns:
             the random time it would take to exploit this vulnerability
             the more attempts a hacker tries at exploiting a particular vulnerability the faster the exploit time becomes
 
         """
-
+        exp_time = constants.ATTACK_DURATION['EXPLOIT_VULN'] * (1 - self.complexity)
+        if host is not None:
+            if host.os_type not in self.vuln_os_list:
+                exp_time *= 2
         if self.exploited:
-            return constants.ATTACK_DURATION['EXPLOIT_VULN'] * (1 - self.complexity) / 2
-        return constants.ATTACK_DURATION['EXPLOIT_VULN'] * (1 - self.complexity)
+            return exp_time / 2
+        return exp_time
         # return constants.VULN_MIN_EXPLOIT_TIME + (constants.VULN_MAX_EXPLOIT_TIME -
         # constants.VULN_MIN_EXPLOIT_TIME) * ( 1 - self.complexity) / ( self.exploit_attempt + 1)
+
+    # def network(self, host=None):
+    #     """
+    #     Tries to exploit the vulnerability
+    #
+    #     Parameters:
+    #         host:
+    #             the host instance that has the vulnerability to use to check if the vulnerability is OS dependent
+    #
+    #     Returns:
+    #         the impact score if successfully exploited, otherwise 0.0
+    #     """
+    #     if self.exploited:
+    #         return self.impact
+    #
+    #     if self.has_os_dependency and host is not None:
+    #         if host.os_type not in self.vuln_os_list:
+    #             return 0.0
+    #     self.exploit_attempt += 1
+    #     if random.random() < self.complexity:
+    #         self.exploited = True
+    #         if self.has_os_dependency:
+    #             self.logger.debug("OS DEPENDENT VULNERABILITY EXPLOITED!")
+    #         return self.impact
+    #     return 0.0
 
     def network(self, host=None):
         """
@@ -86,7 +115,7 @@ class Vulnerability:
 
         Parameters:
             host:
-                the host instance that has the vulnerability to use to check if the the vulnerability is OS dependent
+                the host instance that has the vulnerability to use to check if the vulnerability is OS dependent
 
         Returns:
             the impact score if successfully exploited, otherwise 0.0
@@ -94,16 +123,11 @@ class Vulnerability:
         if self.exploited:
             return self.impact
 
-        if self.has_os_dependency and host is not None:
-            if host.os_type not in self.vuln_os_list:
-                return 0.0
         self.exploit_attempt += 1
         if random.random() < self.complexity:
             self.exploited = True
-            if self.has_os_dependency:
-                self.logger.debug("OS DEPENDENT VULNERABILITY EXPLOITED!")
-            return self.impact
-        return 0.0
+        self.exploit_attempt += 1
+        return self.impact
 
     def roa(self):
         """
@@ -311,11 +335,12 @@ class ServicesGenerator:
         s_versions_len = len(s_versions)
 
         self.services = {}
+        os_list = constants.OS_TYPES
         for s_index, service in enumerate(self.service_names):
-            os_list = [constants.OS_TYPES[s_index // self.services_per_os]]
-
-            if random.random() < self.percent_cross_platform:
-                os_list = constants.OS_TYPES
+            # os_list = [constants.OS_TYPES[s_index // self.services_per_os]]
+            #
+            # if random.random() < self.percent_cross_platform:
+            #     os_list = constants.OS_TYPES
 
             can_have_os_depend_vuln = len(os_list) > 1
 
