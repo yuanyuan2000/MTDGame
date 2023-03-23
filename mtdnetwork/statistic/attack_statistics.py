@@ -46,8 +46,8 @@ class AttackStatistics:
 
     def save_record(self, sim_time, scheme):
         current_directory = os.getcwd()
-        if not os.path.exists(current_directory + '\\experimental_data\\attack_records'):
-            os.makedirs(current_directory + '\\experimental_data\\attack_records')
+        if not os.path.exists(current_directory + '/experimental_data/attack_records'):
+            os.makedirs(current_directory + '/experimental_data/attack_records')
         pd.DataFrame(self._attack_operation_record).to_csv('experimental_data/attack_records/attack_operation_record_' +
                                                            str(sim_time) + '_' + scheme + '.csv', index=False)
 

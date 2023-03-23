@@ -51,8 +51,8 @@ class MTDStatistics:
 
     def save_record(self, sim_time, scheme):
         current_directory = os.getcwd()
-        if not os.path.exists(current_directory + '\\experimental_data\\mtd_records'):
-            os.makedirs(current_directory + '\\experimental_data\\mtd_records')
+        if not os.path.exists(current_directory + '/experimental_data/mtd_records'):
+            os.makedirs(current_directory + '/experimental_data/mtd_records')
         pd.DataFrame(self._mtd_operation_record).to_csv('experimental_data/mtd_records/mtd_operation_record_' +
                                                         str(sim_time) + '_' + scheme + '.csv', index=False)
 

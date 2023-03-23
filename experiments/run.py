@@ -83,7 +83,8 @@ def execute_multithreading(simulation_function, iterations=10, num_threads=5):
     results = []
     while not result_queue.empty():
         results += result_queue.get()
-    return results
+    results_avg = construct_average_result(results)
+    return results_avg
 
 
 def create_experiment_snapshots(network_size_list):
@@ -137,8 +138,8 @@ def single_mtd_simulation():
         else:
             mtd_name = mtd().get_name()
             scheme = 'single'
-        for mtd_interval in [100, 200]:
-            for network_size in [25, 50, 75, 100]:
+        for mtd_interval in [200]:
+            for network_size in [25, 50]:
                 evaluation = execute_simulation(scheme=scheme, mtd_interval=mtd_interval,
                                                 custom_strategies=mtd, total_nodes=network_size)
                 evaluation_results = evaluation.evaluation_result_by_compromise_checkpoint()
