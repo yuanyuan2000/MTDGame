@@ -11,11 +11,16 @@ class SnapshotCheckpoint:
         self._checkpoint_stack = checkpoints
 
     def proceed_save(self, time_network, adversary):
+        """launch an event in simulation to save snapshots by time"""
         if self._checkpoint_stack is not None:
             self._checkpoint_stack = deque(self._checkpoint_stack)
-        self.env.process(self.save_snapshots(time_network, adversary))
+        self.env.process(self.save_snapshots_by_time(time_network, adversary))
 
-    def save_snapshots(self, time_network, adversary):
+    def save_snapshots_by_time(self, time_network, adversary):
+        """
+        :param time_network: network object to save
+        :param adversary: adversary object to save
+        """
         last_checkpoint = self._proceed_time
         while len(self._checkpoint_stack) > 0:
             checkpoint = self._checkpoint_stack.popleft()

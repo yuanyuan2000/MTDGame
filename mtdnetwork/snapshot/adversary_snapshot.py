@@ -7,7 +7,7 @@ class AdversarySnapshot(Snapshot):
     def __init__(self):
         super().__init__()
 
-    def save_adversary(self, adversary: Adversary, suffix: str):
+    def save_adversary(self, adversary: Adversary, suffix=''):
         """
         saving adversary snapshot
         """

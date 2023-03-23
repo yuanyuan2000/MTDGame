@@ -244,7 +244,7 @@ class AttackOperation:
         """
         adversary = self.adversary
         for vuln in vulns:
-            exploit_time = exponential_variates(vuln.exploit_time(), 0.5)
+            exploit_time = exponential_variates(vuln.exploit_time(host=adversary.get_curr_host()), 0.5)
             start_time = self.env.now + self._proceed_time
             try:
                 logging.info(

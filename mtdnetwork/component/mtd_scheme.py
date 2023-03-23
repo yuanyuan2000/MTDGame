@@ -7,6 +7,7 @@ from mtdnetwork.mtd.portshuffle import PortShuffle
 from mtdnetwork.mtd.osdiversity import OSDiversity
 from mtdnetwork.mtd.servicediversity import ServiceDiversity
 from mtdnetwork.mtd.usershuffle import UserShuffle
+from mtdnetwork.mtd.osdiversityassignment import OSDiversityAssignment
 from mtdnetwork.data.constants import MTD_TRIGGER_INTERVAL
 from heapq import heappush, heappop
 
@@ -23,7 +24,8 @@ class MTDScheme:
                                 # HostTopologyShuffle,
                                 IPShuffle,
                                 OSDiversity,
-                                PortShuffle,
+                                # PortShuffle,
+                                OSDiversityAssignment,
                                 ServiceDiversity,
                                 # UserShuffle
                                 ]
