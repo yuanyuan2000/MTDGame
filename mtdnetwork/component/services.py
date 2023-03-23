@@ -41,7 +41,7 @@ class Vulnerability:
             if random.random() < constants.VULN_PROB_DEPENDS_ON_OS:
                 self.has_os_dependency = True
                 # self.vuln_os_list = random.choices(os_list, k=random.randint(1, len(os_list) - 1))
-                self.vuln_os_list = random.choices(os_list, k=random.randint(1, 2))
+                self.vuln_os_list = random.sample(os_list, k=random.randint(1, 3))
 
     def is_exploited(self):
         return self.exploited
@@ -122,9 +122,11 @@ class Vulnerability:
         """
         if self.exploited:
             return self.impact
-
-        self.exploit_attempt += 1
-        if random.random() < self.complexity:
+        success_prob = random.random()
+        if self.has_os_dependency and host is not None:
+            if host.os_type not in self.vuln_os_list:
+                success_prob *= 1.1
+        if success_prob < self.complexity:
             self.exploited = True
         self.exploit_attempt += 1
         return self.impact
