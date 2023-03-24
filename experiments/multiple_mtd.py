@@ -15,5 +15,5 @@ warnings.filterwarnings("ignore")
 plt.set_loglevel('WARNING')
 from run import multiple_mtd_simulation, execute_multithreading
 
-results = execute_multithreading(multiple_mtd_simulation, iterations=10, num_threads=10)
+results = execute_multithreading(multiple_mtd_simulation, iterations=60, num_threads=20)
 pd.DataFrame(results).to_csv('experimental_data/results/multiple_mtd_sim.csv', index=False)

@@ -16,6 +16,5 @@ plt.set_loglevel('WARNING')
 from run import single_mtd_simulation, execute_multithreading, create_experiment_snapshots
 
 create_experiment_snapshots([25, 50, 75, 100])
-
-results = execute_multithreading(single_mtd_simulation, iterations=10, num_threads=10)
+results = execute_multithreading(single_mtd_simulation, iterations=60, num_threads=20)
 pd.DataFrame(results).to_csv('experimental_data/results/single_mtd_sim.csv', index=False)
