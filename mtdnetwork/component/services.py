@@ -75,9 +75,8 @@ class Vulnerability:
 
         """
         exp_time = constants.ATTACK_DURATION['EXPLOIT_VULN'] * (1 - self.complexity)
-        if host is not None:
-            if host.os_type not in self.vuln_os_list:
-                exp_time *= 3
+        if self.has_os_dependency and host is not None and host.os_type not in self.vuln_os_list:
+            exp_time *= 2
         if self.exploited:
             return exp_time / 2
         return exp_time
