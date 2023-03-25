@@ -20,7 +20,7 @@ class Vulnerability:
         """
         # 1 for easy, 0 for impossible
         # Change to fit distributions
-        self.complexity = constants.VULN_MIN_COMPLEXITY + (1 - constants.VULN_MIN_COMPLEXITY) * random.uniform(0.35, 0.65)
+        self.complexity = constants.VULN_MIN_COMPLEXITY + (1 - constants.VULN_MIN_COMPLEXITY) * random.random()
         # 1 for complete compromise
         # 0 for nothing
         self.impact = random.random() * 10
@@ -40,8 +40,8 @@ class Vulnerability:
         if can_have_os_dependency and len(os_list) > 1:
             if random.random() < constants.VULN_PROB_DEPENDS_ON_OS:
                 self.has_os_dependency = True
-                # self.vuln_os_list = random.choices(os_list, k=random.randint(1, len(os_list) - 1))
-                self.vuln_os_list = random.choices(os_list, k=random.randint(1, 2))
+                self.vuln_os_list = random.choices(os_list, k=random.randint(1, len(os_list) - 1))
+                # self.vuln_os_list = random.choices(os_list, k=random.randint(1, 2))
 
     def is_exploited(self):
         return self.exploited
@@ -84,31 +84,6 @@ class Vulnerability:
         # return constants.VULN_MIN_EXPLOIT_TIME + (constants.VULN_MAX_EXPLOIT_TIME -
         # constants.VULN_MIN_EXPLOIT_TIME) * ( 1 - self.complexity) / ( self.exploit_attempt + 1)
 
-    # def network(self, host=None):
-    #     """
-    #     Tries to exploit the vulnerability
-    #
-    #     Parameters:
-    #         host:
-    #             the host instance that has the vulnerability to use to check if the vulnerability is OS dependent
-    #
-    #     Returns:
-    #         the impact score if successfully exploited, otherwise 0.0
-    #     """
-    #     if self.exploited:
-    #         return self.impact
-    #
-    #     if self.has_os_dependency and host is not None:
-    #         if host.os_type not in self.vuln_os_list:
-    #             return 0.0
-    #     self.exploit_attempt += 1
-    #     if random.random() < self.complexity:
-    #         self.exploited = True
-    #         if self.has_os_dependency:
-    #             self.logger.debug("OS DEPENDENT VULNERABILITY EXPLOITED!")
-    #         return self.impact
-    #     return 0.0
-
     def network(self, host=None):
         """
         Tries to exploit the vulnerability
@@ -123,11 +98,36 @@ class Vulnerability:
         if self.exploited:
             return self.impact
 
+        if self.has_os_dependency and host is not None:
+            if host.os_type not in self.vuln_os_list:
+                return 0.0
         self.exploit_attempt += 1
         if random.random() < self.complexity:
             self.exploited = True
-        self.exploit_attempt += 1
-        return self.impact
+            if self.has_os_dependency:
+                self.logger.debug("OS DEPENDENT VULNERABILITY EXPLOITED!")
+            return self.impact
+        return 0.0
+
+    # def network(self, host=None):
+    #     """
+    #     Tries to exploit the vulnerability
+    #
+    #     Parameters:
+    #         host:
+    #             the host instance that has the vulnerability to use to check if the vulnerability is OS dependent
+    #
+    #     Returns:
+    #         the impact score if successfully exploited, otherwise 0.0
+    #     """
+    #     if self.exploited:
+    #         return self.impact
+    #
+    #     self.exploit_attempt += 1
+    #     if random.random() < self.complexity:
+    #         self.exploited = True
+    #     self.exploit_attempt += 1
+    #     return self.impact
 
     def roa(self):
         """
@@ -335,14 +335,15 @@ class ServicesGenerator:
         s_versions_len = len(s_versions)
 
         self.services = {}
-        os_list = constants.OS_TYPES
+        # os_list = constants.OS_TYPES
         for s_index, service in enumerate(self.service_names):
-            # os_list = [constants.OS_TYPES[s_index // self.services_per_os]]
-            #
-            # if random.random() < self.percent_cross_platform:
-            #     os_list = constants.OS_TYPES
+            os_list = [constants.OS_TYPES[s_index // self.services_per_os]]
 
-            can_have_os_depend_vuln = len(os_list) > 1
+            if random.random() < self.percent_cross_platform:
+                os_list = constants.OS_TYPES
+
+            # can_have_os_depend_vuln = len(os_list) > 1
+            can_have_os_depend_vuln = True
 
             self.services[service] = []
             vulns = {}
@@ -357,7 +358,7 @@ class ServicesGenerator:
                     )
 
             # Adding Vuln at version 99 to ensure there is a vuln in every version
-            vulns[s_versions_len] = Vulnerability(
+            vulns[99] = Vulnerability(
                 can_have_os_dependency=can_have_os_depend_vuln,
                 os_list=os_list
             )

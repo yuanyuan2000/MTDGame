@@ -20,6 +20,7 @@ from mtdnetwork.mtd.osdiversityassignment import OSDiversityAssignment, Diversit
 import random
 import threading
 import queue
+
 # logging.basicConfig(format='%(message)s', level=logging.INFO)
 
 mtd_strategies = [
@@ -35,16 +36,24 @@ mtd_strategies = [
 ]
 
 
-# Define a function to be executed in each thread
-def thread_function(start, end, result_queue, simulation_function):
+def save_evaluation_result(file_name, evaluations):
+    current_directory = os.getcwd()
+    if not os.path.exists(current_directory + '/experimental_data/' + file_name):
+        pd.DataFrame(evaluations).to_csv('experimental_data/results/' + file_name + '.csv', index=False)
+    else:
+        pd.DataFrame(evaluations).to_csv('experimental_data/results/' + file_name + '.csv', mode='a', index=False,
+                                         header=False)
+
+
+def thread_function(start, end, result_queue, simulation_function, file_name=None):
     results = []
     for i in range(start, end):
-        result = simulation_function()
+        result = simulation_function(file_name)
         results.append(result)
     result_queue.put(results)
 
 
-def execute_multithreading(simulation_function, iterations=10, num_threads=5):
+def execute_multithreading(simulation_function, iterations=10, num_threads=5, file_name=None):
     # Define the range of the for loop
     start = 0
     end = iterations
@@ -68,7 +77,7 @@ def execute_multithreading(simulation_function, iterations=10, num_threads=5):
         if i == num_threads - 1:
             end_index = end  # Make sure the last thread takes care of the remaining items
         thread = threading.Thread(target=thread_function, args=(start_index, end_index,
-                                                                result_queue, simulation_function))
+                                                                result_queue, simulation_function, file_name))
         threads.append(thread)
 
     # Start the threads
@@ -84,6 +93,7 @@ def execute_multithreading(simulation_function, iterations=10, num_threads=5):
     while not result_queue.empty():
         results += result_queue.get()
     results_avg = construct_average_result(results)
+    pd.DataFrame(results).to_csv('experimental_data/results/' + file_name + '_avg.csv', index=False)
     return results_avg
 
 
@@ -126,12 +136,13 @@ def construct_experiment_result(name, mtd_interval, item, network_size):
     }
 
 
-def single_mtd_simulation():
+def single_mtd_simulation(file_name):
     """
     Simulations for single mtd and no mtd
     """
     evaluations = []
     for mtd in mtd_strategies:
+        mtd_evaluation = []
         if mtd is None:
             scheme = 'None'
             mtd_name = "NoMTD"
@@ -146,11 +157,13 @@ def single_mtd_simulation():
                 for item in evaluation_results:
                     result = construct_experiment_result(mtd_name, mtd_interval, item, network_size)
                     evaluations.append(result)
+                    mtd_evaluation.append(result)
+        save_evaluation_result(file_name, mtd_evaluation)
         print(mtd_name)
     return evaluations
 
 
-def dap_mtd_simulation():
+def dap_mtd_simulation(file_name):
     """
     Simulation for DAP MTD with different number of variants.
     """
@@ -158,6 +171,7 @@ def dap_mtd_simulation():
     os_types_list = [random.sample(OS_TYPES, 2), random.sample(OS_TYPES, 3), OS_TYPES]
     evaluations = []
     for os_types in os_types_list:
+        mtd_evaluation = []
         for mtd_interval in [100, 200]:
             for network_size in [25, 50, 75, 100]:
                 time_network, adversary = snapshot_checkpoint.load_snapshots_by_network_size(network_size)
@@ -168,16 +182,19 @@ def dap_mtd_simulation():
                 for item in evaluation_results:
                     result = construct_experiment_result(mtd.get_name(), mtd_interval, item, network_size)
                     evaluations.append(result)
+                    mtd_evaluation.append(result)
+        save_evaluation_result(file_name, mtd_evaluation)
         print(os_types)
     return evaluations
 
 
-def multiple_mtd_simulation():
+def multiple_mtd_simulation(file_name):
     """
     simulations for multiple mtd using three different execution schemes.
     """
     evaluations = []
     for scheme in ['random', 'alternative', 'simultaneous']:
+        mtd_evaluation = []
         for mtd_interval in [100, 200]:
             for network_size in [25, 50, 75, 100]:
                 scheme_interval = mtd_interval
@@ -188,12 +205,14 @@ def multiple_mtd_simulation():
                 for item in evaluation_results:
                     result = construct_experiment_result(scheme, mtd_interval, item, network_size)
                     evaluations.append(result)
+                    mtd_evaluation.append(result)
+        save_evaluation_result(file_name, mtd_evaluation)
         print(scheme)
     return evaluations
 
 
 def execute_simulation(start_time=0, finish_time=None, scheme='random', mtd_interval=None, custom_strategies=None,
-                       checkpoints=None, total_nodes=50, total_endpoints=3, total_subnets=8, total_layers=4,
+                       checkpoints=None, total_nodes=50, total_endpoints=5, total_subnets=8, total_layers=4,
                        target_layer=4, total_database=2, new_network=False):
     """
 
@@ -269,4 +288,3 @@ def execute_simulation(start_time=0, finish_time=None, scheme='random', mtd_inte
     # adversary.get_attack_stats().save_record(sim_time=mtd_interval, scheme=sim_item)
 
     return evaluation
-

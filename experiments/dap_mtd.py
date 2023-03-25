@@ -15,5 +15,4 @@ warnings.filterwarnings("ignore")
 plt.set_loglevel('WARNING')
 from run import dap_mtd_simulation, execute_multithreading
 
-results = execute_multithreading(dap_mtd_simulation, iterations=60, num_threads=20)
-pd.DataFrame(results).to_csv('experimental_data/results/dap_mtd_sim.csv', index=False)
+results = execute_multithreading(dap_mtd_simulation, iterations=10, num_threads=10, file_name='dap_mtd_sim')

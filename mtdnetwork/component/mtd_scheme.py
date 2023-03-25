@@ -25,7 +25,7 @@ class MTDScheme:
                                 IPShuffle,
                                 OSDiversity,
                                 # PortShuffle,
-                                OSDiversityAssignment,
+                                # OSDiversityAssignment,
                                 ServiceDiversity,
                                 # UserShuffle
                                 ]

@@ -42,7 +42,7 @@ class TimeNetwork(Network):
 
     def is_compromised(self, compromised_hosts):
         # 90% compromise ratio
-        return len(compromised_hosts) / self.total_nodes >= 0.9
+        return len(compromised_hosts) / self.total_nodes > 0.7
 
     def get_mtd_stats(self):
         return self._mtd_stats
