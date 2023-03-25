@@ -248,14 +248,16 @@ class AttackOperation:
             start_time = self.env.now + self._proceed_time
             try:
                 logging.info(
-                    "Adversary: Start %s %s at %.1fs." % (self.adversary.get_curr_process(), vuln.id, start_time))
+                    "Adversary: Start %s %s on host %s at %.1fs." % (self.adversary.get_curr_process(), vuln.id,
+                                                                     self.adversary.get_curr_host_id(), start_time))
                 yield self.env.timeout(exploit_time)
             except simpy.Interrupt:
                 self.env.process(self._handle_interrupt(start_time, self.adversary.get_curr_process()))
                 return
             finish_time = self.env.now + self._proceed_time
             logging.info(
-                "Adversary: Processed %s %s at %.1fs." % (self.adversary.get_curr_process(), vuln.id, finish_time))
+                "Adversary: Processed %s %s on host %s at %.1fs." % (self.adversary.get_curr_process(), vuln.id,
+                                                                     self.adversary.get_curr_host_id(), finish_time))
             self.adversary.get_attack_stats().append_attack_operation_record(self.adversary.get_curr_process(),
                                                                              start_time,
                                                                              finish_time, self.adversary)

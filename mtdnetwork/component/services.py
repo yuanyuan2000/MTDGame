@@ -77,7 +77,7 @@ class Vulnerability:
         exp_time = constants.ATTACK_DURATION['EXPLOIT_VULN'] * (1 - self.complexity)
         if host is not None:
             if host.os_type not in self.vuln_os_list:
-                exp_time *= 2
+                exp_time *= 3
         if self.exploited:
             return exp_time / 2
         return exp_time
@@ -98,14 +98,14 @@ class Vulnerability:
         if self.exploited:
             return self.impact
 
-        if self.has_os_dependency and host is not None:
-            if host.os_type not in self.vuln_os_list:
-                return 0.0
+        # if self.has_os_dependency and host is not None:
+        #     if host.os_type not in self.vuln_os_list:
+        #         return 0.0
         self.exploit_attempt += 1
         if random.random() < self.complexity:
             self.exploited = True
             if self.has_os_dependency:
-                self.logger.debug("OS DEPENDENT VULNERABILITY EXPLOITED!")
+                self.logger.info("OS DEPENDENT VULNERABILITY EXPLOITED!")
             return self.impact
         return 0.0
 
