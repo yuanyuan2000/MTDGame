@@ -7,7 +7,7 @@ import random
 class TimeNetwork(Network):
 
     def __init__(self, total_nodes=50, total_endpoints=5, total_subnets=8, total_layers=4,
-                 target_layer=4, total_database=5):
+                 target_layer=4, total_database=5, terminate_compromise_ratio=0.8):
         # default parameters
         self._mtd_stats = MTDStatistics()
         self._mtd_queue = []
@@ -41,8 +41,8 @@ class TimeNetwork(Network):
             )
 
     def is_compromised(self, compromised_hosts):
-        # 90% compromise ratio
-        return len(compromised_hosts) / self.total_nodes > 0.7
+        # 80% compromise ratio
+        return len(compromised_hosts) / self.total_nodes > 0.8
 
     def get_mtd_stats(self):
         return self._mtd_stats

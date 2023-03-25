@@ -16,7 +16,7 @@ from mtdnetwork.mtd.portshuffle import PortShuffle
 from mtdnetwork.mtd.osdiversity import OSDiversity
 from mtdnetwork.mtd.servicediversity import ServiceDiversity
 from mtdnetwork.mtd.usershuffle import UserShuffle
-from mtdnetwork.mtd.osdiversityassignment import OSDiversityAssignment, DiversityAssignment
+from mtdnetwork.mtd.osdiversityassignment import OSDiversityAssignment
 import random
 import threading
 import queue
@@ -38,7 +38,7 @@ mtd_strategies = [
 
 def save_evaluation_result(file_name, evaluations):
     current_directory = os.getcwd()
-    if not os.path.exists(current_directory + '/experimental_data/' + file_name):
+    if not os.path.exists(current_directory + '/experimental_data/results/' + file_name + '.csv'):
         pd.DataFrame(evaluations).to_csv('experimental_data/results/' + file_name + '.csv', index=False)
     else:
         pd.DataFrame(evaluations).to_csv('experimental_data/results/' + file_name + '.csv', mode='a', index=False,
@@ -93,7 +93,7 @@ def execute_multithreading(simulation_function, iterations=10, num_threads=5, fi
     while not result_queue.empty():
         results += result_queue.get()
     results_avg = construct_average_result(results)
-    pd.DataFrame(results).to_csv('experimental_data/results/' + file_name + '_avg.csv', index=False)
+    pd.DataFrame(results_avg).to_csv('experimental_data/results/' + file_name + '_avg.csv', index=False)
     return results_avg
 
 
@@ -213,7 +213,7 @@ def multiple_mtd_simulation(file_name):
 
 def execute_simulation(start_time=0, finish_time=None, scheme='random', mtd_interval=None, custom_strategies=None,
                        checkpoints=None, total_nodes=50, total_endpoints=5, total_subnets=8, total_layers=4,
-                       target_layer=4, total_database=2, new_network=False):
+                       target_layer=4, total_database=2, terminate_compromise_ratio=0.8, new_network=False):
     """
 
     :param start_time: the time to start the simulation, need to load timestamp-based snapshots if set start_time > 0
@@ -229,6 +229,7 @@ def execute_simulation(start_time=0, finish_time=None, scheme='random', mtd_inte
     :param total_layers: the number of layers in the network
     :param target_layer: the target layer in the network (for targetted attack scenario only)
     :param total_database: the number of database nodes used for computing DAP algorithm
+    :param terminate_compromise_ratio: terminate the simulation if reached compromise ratio
     :param new_network: True: create new snapshots based on network size, False: load snapshots based on network size
     """
     # initialise the simulation
@@ -252,7 +253,8 @@ def execute_simulation(start_time=0, finish_time=None, scheme='random', mtd_inte
     else:
         time_network = TimeNetwork(total_nodes=total_nodes, total_endpoints=total_endpoints,
                                    total_subnets=total_subnets, total_layers=total_layers,
-                                   target_layer=target_layer, total_database=total_database)
+                                   target_layer=target_layer, total_database=total_database,
+                                   terminate_compromise_ratio=terminate_compromise_ratio)
         adversary = Adversary(network=time_network, attack_threshold=ATTACKER_THRESHOLD)
         # snapshot_checkpoint.save_initialised(time_network, adversary)
         snapshot_checkpoint.save_snapshots_by_network_size(time_network, adversary)
