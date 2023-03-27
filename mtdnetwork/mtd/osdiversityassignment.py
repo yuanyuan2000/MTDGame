@@ -18,6 +18,8 @@ class OSDiversityAssignment(MTD):
                          network=network)
         self.os_types = os_types
         self._os_name = "DAP_OSDiversity_" + str(len(self.os_types))
+        self.last_result = None
+        self._checkpoint = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7]
 
     def mtd_operation(self, adversary=None):
         diversity_assign = DiversityAssignment(graph=self.network.get_graph_copy(),
@@ -26,7 +28,15 @@ class OSDiversityAssignment(MTD):
                                                os_types=self.os_types,
                                                pos=self.network.pos,
                                                colour_map=self.network.colour_map)
-        result = diversity_assign.objective()
+        if not self.last_result or \
+                (len(self._checkpoint) != 0 and
+                 len(self.network.compromised_hosts) / self.network.total_nodes > self._checkpoint[0]):
+            self._checkpoint.pop(0)
+            result = diversity_assign.objective()
+            self.last_result = result
+        else:
+            result = self.last_result
+
         service_generator = self.network.get_service_generator()
         hosts = self.network.get_hosts()
         for host_id, host_instance in hosts.items():
@@ -36,7 +46,7 @@ class OSDiversityAssignment(MTD):
             prev_os = host_instance.os_type
             prev_os_version = host_instance.os_version
             prev_os_version_index = OS_VERSION_DICT[prev_os].index(prev_os_version)
-            new_os = prev_os
+            new_os = random.choice(self.os_types)
             for os_type, host in result:
                 if host == host_id:
                     new_os = os_type
@@ -154,6 +164,7 @@ class DiversityAssignment:
         return E
 
     def objective(self):
+
         # generate single connection graph
         dap_graph = self.gen_single_connection_graph()
 
@@ -245,7 +256,6 @@ class DiversityAssignment:
 
         # Sort the list of tuples by the numerical value
         result = sorted(result, key=lambda x: x[1])
-
         return result
 
     @staticmethod

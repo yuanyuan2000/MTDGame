@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 
 warnings.filterwarnings("ignore")
 plt.set_loglevel('WARNING')
-from run import dap_mtd_simulation, execute_multithreading
+from run import dap_mtd_simulation, execute_multithreading, create_experiment_snapshots
 
-results = execute_multithreading(dap_mtd_simulation, iterations=10, num_threads=10, file_name='dap_mtd_sim')
+
+results = execute_multithreading(dap_mtd_simulation, iterations=100, num_threads=20, file_name='dap_mtd_sim')

@@ -18,4 +18,4 @@ from run import single_mtd_simulation, execute_multithreading, create_experiment
 create_experiment_snapshots([25, 50, 75, 100])
 
 
-results = execute_multithreading(single_mtd_simulation, iterations=5, num_threads=5, file_name='single_mtd_sim')
+results = execute_multithreading(single_mtd_simulation, iterations=100, num_threads=20, file_name='single_mtd_sim')

@@ -40,8 +40,8 @@ class Vulnerability:
         if can_have_os_dependency and len(os_list) > 1:
             if random.random() < constants.VULN_PROB_DEPENDS_ON_OS:
                 self.has_os_dependency = True
-                self.vuln_os_list = random.choices(os_list, k=random.randint(1, len(os_list) - 1))
-                # self.vuln_os_list = random.choices(os_list, k=random.randint(1, 2))
+                self.vuln_os_list = random.sample(os_list, k=random.randint(1, len(os_list) - 1))
+                # self.vuln_os_list = random.sample(os_list, k=random.randint(1, 2))
 
     def is_exploited(self):
         return self.exploited
@@ -76,7 +76,7 @@ class Vulnerability:
         """
         exp_time = constants.ATTACK_DURATION['EXPLOIT_VULN'] * (1 - self.complexity)
         if self.has_os_dependency and host is not None and host.os_type not in self.vuln_os_list:
-            exp_time *= 2
+            exp_time *= 2.5
         if self.exploited:
             return exp_time / 2
         return exp_time

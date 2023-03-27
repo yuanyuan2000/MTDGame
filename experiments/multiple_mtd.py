@@ -15,4 +15,4 @@ warnings.filterwarnings("ignore")
 plt.set_loglevel('WARNING')
 from run import multiple_mtd_simulation, execute_multithreading
 
-results = execute_multithreading(multiple_mtd_simulation, iterations=10, num_threads=10, file_name='multiple_mtd_sim')
+results = execute_multithreading(multiple_mtd_simulation, iterations=100, num_threads=20, file_name='multiple_mtd_sim')
