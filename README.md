@@ -10,7 +10,7 @@ A research project to develop a web-based multiplayer game that facilitates the 
 ## Setup this project
 
 1. Clone this repository to your computer, install docker desktop, open VS code and choose right branch
-2. open Terminal in VS Code, build docker image for developing environment `sudo docker-compose up --build` if you are first time to start this project or last time install package during the development; otherwise, you can run `sudo docker-compose up`
+2. open Terminal in VS Code, build docker image for developing environment `sudo docker-compose up --build` if you are first time to start this project or last time install package during the development(it takes about 2-3 minutes); otherwise, you can run `sudo docker-compose up`
 3. View MTDGame in the browser : `http://localhost:3000`
 4. Stop development environment Crtl/Cmd+C, then `sudo docker-compose down`. Please remember to do that everytime.
 
