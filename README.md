@@ -13,14 +13,22 @@ A research project to develop a web-based multiplayer game that facilitates the 
 1. Clone this repository to your computer, open VS code and choose right branch
 2. open Terminal in VS Code, build docker image for developing environment `sudo docker-compose up --build` if you are first time to start this project or last time install package during the development; otherwise, you can run `sudo docker-compose up`
 3. View MTDGame in the browser : `http://localhost:3000`
-4. Stop development environment Crtl/Cmd+C, then `sudo docker-compose down`
+4. Stop development environment Crtl/Cmd+C, then `sudo docker-compose down`. Please remember to do that everytime.
 
-## Install new packages and update the environment.yml
-1.  The `environment.yml` is in `MTDGame/backend`, which indicates the environment we want to run on this project
-2.  Create a new conda environment and activate it in your local machine by running command `conda env create -f environment.yml` and `conda config --add channels conda-forge`, then `conda activate mtdgame`
+## Install new packages
+
+### If use the **requirement.txt**
+1. Open a new terminal in VS Code (Terminal > Split Terminal)
+2. Access backend container `sudo docker exec -it backend bash` in a new terminal to install packages `pip install <packages name>` then update requirements.txt `pip freeze > requirements.txt` then type `exit` to exit backend container
+3. Access frontend container `sudo docker exec -it frontend bash` to install packages `yard add <packages name>` then package.json will update automatically then type `exit` to exit frontend container
+
+### If use the **environment.yml**
+1.  The `environment.yml` is in `MTDGame/backend`, which includes the environment we want, please switch to the `cd backend`
+2.  Create a new conda environment and activate it in your local machine by `conda env create -f environment.yml` and `conda activate mtdgame`
 3.  Install new packages `conda install new_package` or `pip install new_pip_package`
 4.  Export the dependencies of the current environment to the `environment.yml` by `conda env export --no-builds > environment.yml`
-5.  Rebuild the docker image for developing environment `sudo docker-compose up --build`
+5.  Deactive the conda environment `conda deactivate`
+6.  Switch the folder to MTDGame `cd ..` then rebuild the docker image for developing environment `sudo docker-compose up --build`
 
 
 ## Previous work
