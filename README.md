@@ -1,20 +1,30 @@
-# MTDSimTime
+# MTDGame
 
-A research project on the simulation and evaluation of moving target defense in the time domain.
+A research project to develop a web-based multiplayer game that facilitates the learning of MTD concepts and strategies for students. 
+
+## Requirements
+
+- [Docker](https://www.docker.com/)
+- [Visual Studio Code](https://code.visualstudio.com/)
+- [conda](https://conda.io/projects/conda/en/latest/user-guide/install/index.html)
 
 ## Setup this project
 
-1. Installing [conda](https://conda.io/projects/conda/en/latest/user-guide/install/index.html)
-2. Creating conda environment
-   - `conda env create -f environment.yml`
-   - `conda config --add channels conda-forge`
-3. Activating the environment
-   - `conda activate mtdsimtime`
-4. Updating the environment
-   - `conda env update --name mtdsimtime --file environment.yml --prune`
+1. Clone this repository to your computer, open VS code and choose right branch
+2. open Terminal in VS Code, build docker image for developing environment `sudo docker-compose up --build` if you are first time to start this project or last time install package during the development; otherwise, you can run `sudo docker-compose up`
+3. View MTDGame in the browser : `http://localhost:3000`
+4. Stop development environment Crtl/Cmd+C, then `sudo docker-compose down`
+
+## Install new packages and update the environment.yml
+1.  The `environment.yml` is in `MTDGame/backend`, which indicates the environment we want to run on this project
+2.  Create a new conda environment and activate it in your local machine by running command `conda env create -f environment.yml` and `conda config --add channels conda-forge`, then `conda activate mtdgame`
+3.  Install new packages `conda install new_package` or `pip install new_pip_package`
+4.  Export the dependencies of the current environment to the `environment.yml` by `conda env export --no-builds > environment.yml`
+5.  Rebuild the docker image for developing environment `sudo docker-compose up --build`
 
 
-## Progresses
+## Previous work
+### Progresses
 
 1. set up new discrete event simulation structure:
     - get rid of the original `ActionManager` based structure
@@ -56,6 +66,28 @@ A research project on the simulation and evaluation of moving target defense in 
 
 7. implement evaluation metrics: Mean Time to Compromise, Attack Success Rate, MTD Execute Frequency.
 
+### Setup the previous works only
+Switch to previous work:
+- [MTDSimTime](https://github.com/MoeBuTa/MTDSimTime)
+- [MTDSim](https://github.com/Ccamm/MTDSim)
+- [MTDSimTze](https://github.com/tzewenlee99/MTDSimTze)
+
+MTDSimTime was run on the conda. You just need to follow the [README.md](https://github.com/MoeBuTa/MTDSimTime/blob/main/README.md) to config the environment.
+
+MTDSim and MTDSimTze were all run on Python 3.9.13 64 Bit. In the root directory in terminal, run the following commands in your virtual environment to setup the environment:
+- Setup virtualenv
+   - `python -m pip install virtualenv venv`
+   - `python -m virtualenv venv`
+- Activate environemnt
+   - `source venv/bin/activate`
+- Install dependencies
+   - `python setup.py install`
+   - `pip install -r requirements.txt`
+- Run an example: The following is only an example of how the function can be made, reference the run.py file or use the –help command to understand the parameters.
+   - For New-Attack-Method: 
+     - `python batchrun.py`
+   - For MTDSim: 
+     - `python -m mtdnetwork.run -m IPShuffle -n 50 -e 10 -s 5 -l 3 results.json`
 
 
 
@@ -76,7 +108,6 @@ A research project on the simulation and evaluation of moving target defense in 
 ### Attack related
 1. Attack metrics
 2. multiple attackers
-3. 
 
 
 
@@ -93,30 +124,6 @@ The system uses the 3-layer HARM model to represent the network. This is a repre
 more info: [MTD parameter](https://github.com/MoeBuTa/MTDSimTime/blob/main/docs/MTD%20Parameters.pdf)
 
 
-## Setup the previous works only
 
-switch to another branch (MTDSim / New-Attack-Method) or go directly to:
-
-[MTDSim](https://github.com/Ccamm/MTDSim)
-
-[MTDSimTze](https://github.com/tzewenlee99/MTDSimTze)
-
-
-
-This was all run on Python 3.9.13 64 Bit. In the root directory in terminal, run the following commands in your virtual environment to setup the environment:
-
-- Setup virtualenv
-   - `python -m pip install virtualenv venv`
-   - `python -m virtualenv venv`
-- Activate environemnt
-   - `source venv/bin/activate`
-- Install dependencies
-   - `python setup.py install`
-   - `pip install -r requirements.txt`
-- Run an example: The following is only an example of how the function can be made, reference the run.py file or use the –help command to understand the parameters.
-   - For New-Attack-Method: 
-     - `python batchrun.py`
-   - For MTDSim: 
-     - `python -m mtdnetwork.run -m IPShuffle -n 50 -e 10 -s 5 -l 3 results.json`
 
 

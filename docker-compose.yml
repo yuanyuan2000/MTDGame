@@ -1,0 +1,37 @@
+version: "3"
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: ./docker/django/Django.Dockerfile
+    command: ["sh", "/scripts/django.sh"]
+    restart: always
+    volumes:
+      - ./backend:/code
+    ports:
+      - "8000:8000"
+    networks:
+      mtdgame:
+        aliases:
+          - mtdgame-backend.local
+    container_name: backend
+
+  frontend:
+    restart: always
+    build:
+      context: .
+      dockerfile: ./docker/react/React.Dockerfile
+    command: ["sh", "/scripts/react.sh"]
+    volumes:
+      - ./frontend:/app
+    ports:
+      - "3000:3000"
+    networks:
+      mtdgame:
+        aliases:
+          - mtdgame-frontend.local
+    container_name: frontend
+
+networks:
+  mtdgame: null

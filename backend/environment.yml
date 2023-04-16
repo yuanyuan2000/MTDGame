@@ -1,7 +1,6 @@
-name: mtdsimtime
+name: mtdgame
 dependencies:
     - python=3.9.13
-    - pywin32
     - pip
     - pip:
         - adal==1.2.7
@@ -22,6 +21,7 @@ dependencies:
         - cycler==0.10.0
         - decorator==4.4.2
         - defusedxml==0.7.1
+        - Django==3.2.10
         - entrypoints==0.3
         - idna==2.10
         - ipykernel==5.5.3
