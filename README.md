@@ -6,23 +6,25 @@ A research project to develop a web-based multiplayer game that facilitates the 
 
 - [Docker](https://www.docker.com/)
 - [Visual Studio Code](https://code.visualstudio.com/)
-- [conda](https://conda.io/projects/conda/en/latest/user-guide/install/index.html)
 
 ## Setup this project
 
-1. Clone this repository to your computer, open VS code and choose right branch
+1. Clone this repository to your computer, install docker desktop, open VS code and choose right branch
 2. open Terminal in VS Code, build docker image for developing environment `sudo docker-compose up --build` if you are first time to start this project or last time install package during the development; otherwise, you can run `sudo docker-compose up`
 3. View MTDGame in the browser : `http://localhost:3000`
 4. Stop development environment Crtl/Cmd+C, then `sudo docker-compose down`. Please remember to do that everytime.
 
 ## Install new packages
 
-### If use the **requirement.txt**
-1. Open a new terminal in VS Code (Terminal > Split Terminal)
-2. Access backend container `sudo docker exec -it backend bash` in a new terminal to install packages `pip install <packages name>` then update requirements.txt `pip freeze > requirements.txt` then type `exit` to exit backend container
-3. Access frontend container `sudo docker exec -it frontend bash` to install packages `yard add <packages name>` then package.json will update automatically then type `exit` to exit frontend container
+### The environment we use now
 
-### If use the **environment.yml**
+1. Open a new terminal in VS Code (Terminal > Split Terminal)
+2. Access backend container `sudo docker exec -it backend bash` in a new terminal to install packages `pip install <packages name>` then update requirements.txt `pip freeze > requirements.txt`, then type `exit` to exit backend container.
+3. Access frontend container `sudo docker exec -it frontend bash` to install packages `yard add <packages name>` then `package.json` and  `yarn.lock` will be updated automatically, then type `exit` to exit frontend container. 
+(Please make sure to use only one package manager for the whole project to avoid possible problems, so don't use conda in backend or npm in frontend)
+
+### If use the **environment.yml** for the backend
+(The default version now is using the requirement.txt. So if you want to use the environment.yml, you need change the code in MTDGame/docker/Django/Django.Dockerfile. Just comment out all the current code and uncomment all the previously commented out code.)
 1.  The `environment.yml` is in `MTDGame/backend`, which includes the environment we want, please switch to the `cd backend`
 2.  Create a new conda environment and activate it in your local machine by `conda env create -f environment.yml` and `conda activate mtdgame`
 3.  Install new packages `conda install new_package` or `pip install new_pip_package`
