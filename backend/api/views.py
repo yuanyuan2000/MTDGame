@@ -21,9 +21,14 @@ class NetworkDataView(APIView):
             {"id": 2, "label": "Node 2", "layer": 1, "x": 50, "y": -250, "color": {"background": "#00FF00"}, "value": 30},
             {"id": 3, "label": "Node 3", "layer": 1, "x": 700, "y": 200, "color": {"background": "#0000FF"}, "value": 30},
         ]
+        # edges = [
+        #     {"from": 1, "to": 2},
+        #     {"from": 2, "to": 3},
+        #     {"from": 3, "to": 1},
+        # ]
         edges = [
-            {"from": 1, "to": 2},
-            {"from": 2, "to": 3},
-            {"from": 3, "to": 1},
+            {"id": 1, "from": 1, "to": 2},
+            {"id": 2, "from": 2, "to": 3},
+            {"id": 3, "from": 3, "to": 1},
         ]
         return Response({"nodes": nodes, "edges": edges})
