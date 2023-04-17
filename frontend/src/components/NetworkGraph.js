@@ -2,18 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { DataSet, Network } from 'vis-network/standalone/esm/vis-network';
 import axios from 'axios';
 
-// Define a prefix for the API URL
-var prefix = "http://localhost:8000"
-
 // Fetch network data from the API
-const fetchNetworkData = async () => {
+const fetchNetworkData = async (prefix) => {
     const response = await axios.get(prefix + '/api/network_data/');
     return response.data;
 };
 
 // Define the NetworkGraph component
-const NetworkGraph = () => {
-    // Initialize state for nodes, edges, and network
+const NetworkGraph = (props) => {
+    const { prefix } = props;
     const [nodes, setNodes] = useState(new DataSet([]));
     const [edges, setEdges] = useState(new DataSet([]));
     const [network, setNetwork] = useState(null);
@@ -21,7 +18,7 @@ const NetworkGraph = () => {
     // Fetch network data and update the state
     useEffect(() => {
         const fetchData = async () => {
-        const networkData = await fetchNetworkData();
+        const networkData = await fetchNetworkData(prefix);
         const newNodes = new DataSet(networkData.nodes);
         const newEdges = new DataSet(networkData.edges);
 

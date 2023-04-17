@@ -1,18 +1,20 @@
 from django.shortcuts import render
-# from rest_framework import generics
-# from .models import Node, Edge
-# from .serializers import NodeSerializer, EdgeSerializer
-
-# class NodeList(generics.ListCreateAPIView):
-#     queryset = Node.objects.all()
-#     serializer_class = NodeSerializer
-
-# class EdgeList(generics.ListCreateAPIView):
-#     queryset = Edge.objects.all()
-#     serializer_class = EdgeSerializer
-
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework import status
+import threading
+from experiments.game import start
+
+def start_game():
+    start()
+
+class StartGameView(APIView):
+    def get(self, request):
+        # Execute the main function of the game asynchronously using threads
+        game_thread = threading.Thread(target=start_game)
+        game_thread.start()
+
+        return Response({"message": "Game started"}, status=status.HTTP_200_OK)
 
 class NetworkDataView(APIView):
     def get(self, request, format=None):
