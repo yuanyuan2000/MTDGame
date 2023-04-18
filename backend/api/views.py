@@ -3,10 +3,12 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 import threading
-from experiments.game import start
+from experiments.game import Game
 
 def start_game():
-    start()
+    # start the game
+    new_game = Game()
+    new_game.start()
 
 class StartGameView(APIView):
     def get(self, request):

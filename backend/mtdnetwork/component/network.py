@@ -42,6 +42,8 @@ class Network:
         self.total_users = None
         self.users_list = None
         self.pos = None
+        self.min_y_pos = 200000
+        self.max_y_pos = -200000
         if seed is not None:
             random.seed(seed)
         self.total_nodes = total_nodes
