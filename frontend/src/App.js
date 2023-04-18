@@ -25,7 +25,7 @@ function App() {
 
   return (
     <div className="App" style={{ width: '100%', height: '800px' }} >
-      <h1>Network Topology</h1>
+      <h1>MTD Multi-Player Game</h1>
       {isGameStarted && <NetworkGraph prefix={prefix} />}
     </div>
   );

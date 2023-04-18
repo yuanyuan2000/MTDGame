@@ -100,6 +100,17 @@ class Game:
     def get_nodes(self):
         return self.nodes
     
+    def get_edges(self):
+        edges = self.time_network.graph.edges
+        # from pprint import pprint
+        # def serialize_edges(edges):
+        #     serialize_edges = []
+        #     for edge in edges:
+        #         serialize_edges.append(vars(edge))
+        #     return serialize_edges
+        # pprint(edges)
+        return edges
+    
     def update_network(self):
         """
         update the information about the network and the nodes in network
@@ -164,8 +175,14 @@ class Game:
 
         # update network information
         self.update_network()
-        from pprint import pprint
-        pprint(vars(self.nodes))
+        
+        # from pprint import pprint
+        # def serialize_nodes(nodes):
+        #     serialized_nodes = []
+        #     for node in nodes:
+        #         serialized_nodes.append(vars(node))
+        #     return serialized_nodes
+        # pprint(serialize_nodes(self.nodes))
 
 
         # start attack
@@ -196,4 +213,4 @@ class Game:
 
         # create_experiment_snapshots([25, 50, 75, 100])
 
-        self.execute_simulation(start_time=0, finish_time=3000, mtd_interval=200, scheme='random', total_nodes=100, new_network=True)
+        self.execute_simulation(start_time=0, finish_time=3000, mtd_interval=200, scheme='random', total_nodes=64, new_network=True)

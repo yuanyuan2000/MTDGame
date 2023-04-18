@@ -60,7 +60,7 @@ class MTDOperation:
                 mtd = self._mtd_scheme.trigger_suspended_mtd()
             else:
                 mtd = self._mtd_scheme.trigger_mtd()
-            logging.info('MTD: %s triggered %.1fs' % (mtd.get_name(), self.env.now + self._proceed_time))
+            # logging.info('MTD: %s triggered %.1fs' % (mtd.get_name(), self.env.now + self._proceed_time))
             resource = self._get_mtd_resource(mtd)
             if len(resource.users) == 0:
                 self.env.process(self._mtd_execute_action(env=self.env, mtd=mtd))
@@ -69,8 +69,8 @@ class MTDOperation:
                 # else discard
                 if mtd.get_priority() not in self.network.get_suspended_mtd():
                     self._mtd_scheme.suspend_mtd(mtd)
-                    logging.info('MTD: %s suspended at %.1fs due to resource occupation' %
-                                 (mtd.get_name(), self.env.now + self._proceed_time))
+                    # logging.info('MTD: %s suspended at %.1fs due to resource occupation' %
+                    #              (mtd.get_name(), self.env.now + self._proceed_time))
 
             # exponential time interval for triggering MTD operations
             yield self.env.timeout(exponential_variates(self._mtd_scheme.get_mtd_trigger_interval(),
@@ -94,7 +94,7 @@ class MTDOperation:
                     resource = self._get_mtd_resource(mtd=suspension_queue[priority])
                     if len(resource.users) == 0:
                         mtd = self._mtd_scheme.trigger_suspended_mtd()
-                        logging.info('MTD: %s triggered %.1fs' % (mtd.get_name(), self.env.now + self._proceed_time))
+                        # logging.info('MTD: %s triggered %.1fs' % (mtd.get_name(), self.env.now + self._proceed_time))
                         yield self.env.process(self._mtd_execute_action(env=self.env, mtd=mtd))
             else:
                 # register and trigger all MTDs
@@ -102,7 +102,7 @@ class MTDOperation:
                     self._mtd_scheme.register_mtd()
                 while self.network.get_mtd_queue():
                     mtd = self._mtd_scheme.trigger_mtd()
-                    logging.info('MTD: %s triggered %.1fs' % (mtd.get_name(), self.env.now + self._proceed_time))
+                    # logging.info('MTD: %s triggered %.1fs' % (mtd.get_name(), self.env.now + self._proceed_time))
                     resource = self._get_mtd_resource(mtd=mtd)
                     if len(resource.users) == 0:
                         # execute MTD
@@ -110,8 +110,8 @@ class MTDOperation:
                     else:
                         # suspend MTD if resource is occupied
                         self._mtd_scheme.suspend_mtd(mtd_strategy=mtd)
-                        logging.info('MTD: %s suspended at %.1fs due to resource occupation' %
-                                     (mtd.get_name(), self.env.now + self._proceed_time))
+                        # logging.info('MTD: %s suspended at %.1fs due to resource occupation' %
+                        #              (mtd.get_name(), self.env.now + self._proceed_time))
 
             # exponential distribution for triggering MTD operations
             yield self.env.timeout(exponential_variates(self._mtd_scheme.get_mtd_trigger_interval(),
@@ -126,7 +126,7 @@ class MTDOperation:
         request = self._get_mtd_resource(mtd).request()
         yield request
         start_time = env.now + self._proceed_time
-        logging.info('MTD: %s deployed in the network at %.1fs.' % (mtd.get_name(), start_time))
+        # logging.info('MTD: %s deployed in the network at %.1fs.' % (mtd.get_name(), start_time))
         yield env.timeout(exponential_variates(mtd.get_execution_time_mean(),
                                                mtd.get_execution_time_std()))
 
@@ -139,7 +139,7 @@ class MTDOperation:
 
         finish_time = env.now + self._proceed_time
         duration = finish_time - start_time
-        logging.info('MTD: %s finished in %.1fs at %.1fs.' % (mtd.get_name(), duration, finish_time))
+        # logging.info('MTD: %s finished in %.1fs at %.1fs.' % (mtd.get_name(), duration, finish_time))
         # release resource
         self._get_mtd_resource(mtd).release(request)
         # append execution records
@@ -164,9 +164,9 @@ class MTDOperation:
             if mtd.get_resource_type() == 'network':
                 self.attack_operation.set_interrupted_mtd(mtd)
                 self.attack_operation.get_attack_process().interrupt()
-                logging.info(
-                    'MTD: Interrupted %s at %.1fs!' % (self.attack_operation.get_adversary().get_curr_process(),
-                                                       env.now + self._proceed_time))
+                # logging.info(
+                #     'MTD: Interrupted %s at %.1fs!' % (self.attack_operation.get_adversary().get_curr_process(),
+                #                                        env.now + self._proceed_time))
                 self.network.get_mtd_stats().add_total_attack_interrupted()
             elif mtd.get_resource_type() == 'application' and \
                     self.attack_operation.get_adversary().get_curr_process() not in [
@@ -175,9 +175,9 @@ class MTDOperation:
                 'SCAN_NEIGHBOR']:
                 self.attack_operation.set_interrupted_mtd(mtd)
                 self.attack_operation.get_attack_process().interrupt()
-                logging.info(
-                    'MTD: Interrupted %s at %.1fs!' % (self.attack_operation.get_adversary().get_curr_process(),
-                                                       env.now + self._proceed_time))
+                # logging.info(
+                #     'MTD: Interrupted %s at %.1fs!' % (self.attack_operation.get_adversary().get_curr_process(),
+                #                                        env.now + self._proceed_time))
                 self.network.get_mtd_stats().add_total_attack_interrupted()
 
     def get_proceed_time(self):

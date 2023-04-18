@@ -42,8 +42,8 @@ class Network:
         self.total_users = None
         self.users_list = None
         self.pos = None
-        self.min_y_pos = 200000
-        self.max_y_pos = -200000
+        self.min_y_pos = 5
+        self.max_y_pos = -5
         if seed is not None:
             random.seed(seed)
         self.total_nodes = total_nodes
@@ -95,7 +95,7 @@ class Network:
             host = self.get_host(host_id)
             host.swap_network(self)
 
-    def gen_graph(self, min_nodes_per_subnet=2, max_subnets_per_layer=5, subnet_m_ratio=0.2,
+    def gen_graph(self, min_nodes_per_subnet=4, max_subnets_per_layer=5, subnet_m_ratio=0.2,
                   prob_inter_layer_edge=0.4):
         """
         Generates a network of subnets using the Barabasi-Albert Random Graph model.
@@ -125,7 +125,7 @@ class Network:
         # future)
         while sum(subnets_per_layer) < self.total_subnets:
             s_index = random.randint(1, self.layers - 1)
-            if subnets_per_layer[s_index] <= max_subnets_per_layer:
+            if subnets_per_layer[s_index] < max_subnets_per_layer:
                 subnets_per_layer[s_index] = subnets_per_layer[s_index] + 1
 
         max_subnet_in_layer = max(subnets_per_layer)
