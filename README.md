@@ -20,7 +20,7 @@ A research project to develop a web-based multiplayer game that facilitates the 
 
 1. Open a new terminal in VS Code (Terminal > Split Terminal)
 2. Access backend container `sudo docker exec -it backend bash` in a new terminal to install packages `pip install <packages name>` then update requirements.txt `pip freeze > requirements.txt`, then type `exit` to exit backend container.
-3. Access frontend container `sudo docker exec -it frontend bash` to install packages `yard add <packages name>` then `package.json` and  `yarn.lock` will be updated automatically, then type `exit` to exit frontend container. 
+3. Access frontend container `sudo docker exec -it frontend bash` to install packages `yarn add <packages name>` then `package.json` and  `yarn.lock` will be updated automatically, then type `exit` to exit frontend container. 
 (Please make sure to use only one package manager for the whole project to avoid possible problems, so don't use conda in backend or npm in frontend)
 
 ### If use the **environment.yml** for the backend

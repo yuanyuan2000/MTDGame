@@ -3,10 +3,13 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 import threading
-from experiments.game import Game
+from game import Game
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+import json
 
 game_instance = Game()
-game_instance.start() 
+game_instance.start()
 
 def start_game():
     # start the game
@@ -53,4 +56,21 @@ class NetworkDataView(APIView):
     def get(self, request, format=None):
         nodes = transform_nodes(game_instance.get_nodes())
         edges = transform_edges(game_instance.get_edges())
+        # haha = game_instance.get_haha()
+        # print("Haha: ", haha)
         return Response({"nodes": nodes, "edges": edges})
+
+@csrf_exempt
+def clicked_node(request):
+    try:
+        if request.method == 'POST':
+            data = json.loads(request.body)
+            node_id = data['nodeId']
+            node_info = game_instance.get_host_info(node_id)
+            print("Node info:", node_info)
+            return JsonResponse({"nodeinfo": node_info}, status=200)
+        else:
+            return JsonResponse({"message": "Invalid request"}, status=400)
+    except TypeError as e:
+        return JsonResponse(str(e))
+    

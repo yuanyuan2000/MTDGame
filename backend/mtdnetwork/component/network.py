@@ -42,8 +42,8 @@ class Network:
         self.total_users = None
         self.users_list = None
         self.pos = None
-        self.min_y_pos = 5
-        self.max_y_pos = -5
+        self.min_y_pos = None
+        self.max_y_pos = None
         if seed is not None:
             random.seed(seed)
         self.total_nodes = total_nodes
@@ -95,8 +95,8 @@ class Network:
             host = self.get_host(host_id)
             host.swap_network(self)
 
-    def gen_graph(self, min_nodes_per_subnet=4, max_subnets_per_layer=5, subnet_m_ratio=0.2,
-                  prob_inter_layer_edge=0.4):
+    def gen_graph(self, min_nodes_per_subnet=3, max_subnets_per_layer=4, subnet_m_ratio=0.2,
+                  prob_inter_layer_edge=0.5):
         """
         Generates a network of subnets using the Barabasi-Albert Random Graph model.
 
@@ -178,11 +178,15 @@ class Network:
                 # Setting offset to next empty node
                 node_id += s_nodes
 
-                subgraph_pos = nx.spring_layout(subgraph)
+                # Setting some parameters to decide the position of nodes
+                layer_distance = 1.5     # it will decide the distance between layers
+                node_distance = 5        # it will decide the distance between nodes in a same subnet
+
+                subgraph_pos = nx.spring_layout(subgraph, k=node_distance, iterations=60)
                 if i != 0:
                     subgraph_pos = {
                         k: np.array(
-                            [v[0] + i * 2.25, v[1] + j * 3 + 1.5 * (max_subnet_in_layer - len(subnet_node_list))])
+                            [v[0] + i * layer_distance, v[1] + j * 3 + 1.5 * (max_subnet_in_layer - len(subnet_node_list))])
                         for k, v in subgraph_pos.items()
                     }
 
@@ -214,6 +218,10 @@ class Network:
 
                 # Adds Subgraph to final graph
                 self.graph = nx.compose(self.graph, subgraph)
+
+        # save the min_y_pos and max_y_pos
+        self.min_y_pos = min_y_pos
+        self.max_y_pos = max_y_pos
 
         # Defines Nodes for whole graph
         nx.set_node_attributes(self.graph, attr)

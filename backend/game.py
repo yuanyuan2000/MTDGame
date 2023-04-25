@@ -1,15 +1,4 @@
-import os
-import sys
-current_directory = os.getcwd()
-experimental_path = os.path.join(current_directory, 'experiments')
-experimental_data_path = os.path.join(experimental_path, 'experimental_data')
-if not os.path.exists(experimental_data_path):
-    os.makedirs(experimental_data_path)
-    plots_path = os.path.join(experimental_data_path, 'plots')
-    os.makedirs(plots_path)
-    results_path = os.path.join(experimental_data_path, 'results')
-    os.makedirs(results_path)
-sys.path.append(current_directory.replace('experiments', ''))
+
 import warnings
 warnings.filterwarnings("ignore")
 import matplotlib.pyplot as plt
@@ -39,9 +28,8 @@ import threading
 import queue
 
 # Constants for game
-WIDTH = 1600
-HEIGHT = 900
-BLANK = 50
+WIDTH = 1000
+HEIGHT = 500
 NODE_RADIUS = 12
 EDGE_WIDTH = 1
 
@@ -68,12 +56,12 @@ class Game:
         self.height = HEIGHT
 
         self.env = simpy.Environment()
-        self.snapshot_checkpoint = None
+        # self.snapshot_checkpoint = None
         self.time_network = None
         self.adversary = None
         self.attack_operation = None
         self.mtd_operation = None
-        self.evaluation = None
+        # self.evaluation = None
         self.nodes = []
 
     def get_env(self):
@@ -111,28 +99,55 @@ class Game:
         # pprint(edges)
         return edges
     
+    def get_haha(self):
+        test_json = {
+            'time_network.graph.nodes.get(host_id).os_type': self.time_network.graph.nodes[10]["host"].os_type,
+            'time_network.graph.nodes.get(host_id).os_version': self.time_network.graph.nodes[10]["host"].os_version,
+            'time_network.graph.nodes.get(host_id).host_id': self.time_network.graph.nodes[10]["host"].host_id,
+            'time_network.graph.nodes.get(host_id).ip': self.time_network.graph.nodes[10]["host"].ip
+        }
+        return test_json
+    
+    def get_host_os_type(self, host_id):
+        return self.time_network.graph.nodes[host_id]["host"].os_type
+    
+    def get_host_os_version(self, host_id):
+        return self.time_network.graph.nodes[host_id]["host"].os_version
+    
+    def get_host_ip(self, host_id):
+        return self.time_network.graph.nodes[host_id]["host"].ip
+    
+    def get_host_info(self, host_id):
+        info = {
+            'host_id': self.time_network.graph.nodes[host_id]["host"].host_id,
+            'os_type': self.time_network.graph.nodes[host_id]["host"].os_type,
+            'os_version': self.time_network.graph.nodes[host_id]["host"].os_version,
+            'ip': self.time_network.graph.nodes[host_id]["host"].ip
+        }
+        return info
+
     def update_network(self):
         """
         update the information about the network and the nodes in network
         """
-        self.scale_x = 140
-        self.scale_y = (self.height - BLANK * 2) // (self.time_network.max_y_pos - self.time_network.min_y_pos)
-        self.shift_y = self.height - BLANK * 2 - self.scale_y * self.time_network.max_y_pos
+        
+        self.scale_x = 100
+        self.scale_y = (self.height) // (self.time_network.max_y_pos - self.time_network.min_y_pos)
+        self.shift_y = self.height - self.scale_y * self.time_network.max_y_pos
 
         pos_dict = self.time_network.pos
         color_list = self.time_network.colour_map
         self.nodes = []
         for key, color in zip(pos_dict, color_list):
-            x = (pos_dict[key][0] * self.scale_x) + BLANK
-            y = (pos_dict[key][1] * self.scale_y) + self.shift_y + BLANK
+            x = (pos_dict[key][0] * self.scale_x)
+            y = (pos_dict[key][1] * self.scale_y) + self.shift_y
             self.nodes.append(Node(key, x, y, color))
 
     
     def execute_simulation(self, start_time=0, finish_time=None, scheme='random', mtd_interval=None, custom_strategies=None,
                         checkpoints=None, total_nodes=50, total_endpoints=5, total_subnets=8, total_layers=4,
-                        target_layer=4, total_database=2, terminate_compromise_ratio=0.8, new_network=False):
+                        target_layer=4, total_database=2, terminate_compromise_ratio=0.8, new_network=True):
         """
-
         :param start_time: the time to start the simulation, need to load timestamp-based snapshots if set start_time > 0
         :param finish_time: the time to finish the simulation. Set to None will run the simulation until
         the network reached compromised threshold (compromise ratio > 0.9)
@@ -151,27 +166,27 @@ class Game:
         """
         
         end_event = self.env.event()
-        self.snapshot_checkpoint = SnapshotCheckpoint(env=self.env, checkpoints=checkpoints)
+        # self.snapshot_checkpoint = SnapshotCheckpoint(env=self.env, checkpoints=checkpoints)
         
 
-        if start_time > 0:
-            try:
-                self.time_network, self.adversary = self.snapshot_checkpoint.load_snapshots_by_time(start_time)
-            except FileNotFoundError:
-                print('No timestamp-based snapshots available! Set start_time = 0 !')
-                return
-        elif not new_network:
-            try:
-                self.time_network, self.adversary = self.snapshot_checkpoint.load_snapshots_by_network_size(total_nodes)
-            except FileNotFoundError:
-                print('set new_network=True')
-        else:
-            self.time_network = TimeNetwork(total_nodes=total_nodes, total_endpoints=total_endpoints,
-                                    total_subnets=total_subnets, total_layers=total_layers,
-                                    target_layer=target_layer, total_database=total_database,
-                                    terminate_compromise_ratio=terminate_compromise_ratio)
-            self.adversary = Adversary(network=self.time_network, attack_threshold=ATTACKER_THRESHOLD)
-            self.snapshot_checkpoint.save_snapshots_by_network_size(self.time_network, self.adversary)
+        # if start_time > 0:
+        #     try:
+        #         self.time_network, self.adversary = self.snapshot_checkpoint.load_snapshots_by_time(start_time)
+        #     except FileNotFoundError:
+        #         print('No timestamp-based snapshots available! Set start_time = 0 !')
+        #         return
+        # elif not new_network:
+        #     try:
+        #         self.time_network, self.adversary = self.snapshot_checkpoint.load_snapshots_by_network_size(total_nodes)
+        #     except FileNotFoundError:
+        #         print('set new_network=True')
+        # else:
+        self.time_network = TimeNetwork(total_nodes=total_nodes, total_endpoints=total_endpoints,
+                                total_subnets=total_subnets, total_layers=total_layers,
+                                target_layer=target_layer, total_database=total_database,
+                                terminate_compromise_ratio=terminate_compromise_ratio)
+        self.adversary = Adversary(network=self.time_network, attack_threshold=ATTACKER_THRESHOLD)
+        # self.snapshot_checkpoint.save_snapshots_by_network_size(self.time_network, self.adversary)
 
         # update network information
         self.update_network()
@@ -197,8 +212,8 @@ class Game:
             self.mtd_operation.proceed_mtd()
 
         # save snapshot by time
-        if checkpoints is not None:
-            self.snapshot_checkpoint.proceed_save(self.time_network, self.adversary)
+        # if checkpoints is not None:
+        #     self.snapshot_checkpoint.proceed_save(self.time_network, self.adversary)
 
         # start simulation
         if finish_time is not None:
@@ -206,11 +221,11 @@ class Game:
         else:
             self.env.run(until=end_event)
 
-        self.evaluation = Evaluation(network=self.time_network, adversary=self.adversary)
+        # self.evaluation = Evaluation(network=self.time_network, adversary=self.adversary)
 
 
     def start(self):
 
         # create_experiment_snapshots([25, 50, 75, 100])
 
-        self.execute_simulation(start_time=0, finish_time=3000, mtd_interval=200, scheme='random', total_nodes=64, new_network=True)
+        self.execute_simulation(start_time=0, finish_time=3000, mtd_interval=200, scheme='random', total_nodes=32, new_network=True)
