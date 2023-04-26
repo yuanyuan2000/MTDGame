@@ -10,7 +10,7 @@ const fetchNetworkData = async (prefix) => {
 
 // Define the NetworkGraph component
 const NetworkGraph = (props) => {
-    const { prefix } = props;
+    const { prefix , handleNodeClick } = props;
     const [nodes, setNodes] = useState(new DataSet([]));
     const [edges, setEdges] = useState(new DataSet([]));
     const [network, setNetwork] = useState(null);
@@ -18,20 +18,25 @@ const NetworkGraph = (props) => {
     // Fetch network data and update the state
     useEffect(() => {
         const fetchData = async () => {
-        const networkData = await fetchNetworkData(prefix);
-        const newNodes = new DataSet(networkData.nodes);
-        const newEdges = new DataSet(networkData.edges);
+            const networkData = await fetchNetworkData(prefix);
 
-        // Update the state with the new data
-        setNodes(newNodes);
-        setEdges(newEdges);
+            // show the network data in the console
+            console.log('GET /api/network_data/:', networkData);
+
+            const newNodes = new DataSet(networkData.nodes);
+            const newEdges = new DataSet(networkData.edges);
+
+            // Update the state with the new data
+            setNodes(newNodes);
+            setEdges(newEdges);
+
         };
 
         // Fetch data immediately after the component is mounted
         fetchData();
 
-        // Fetch data every 2 second
-        const intervalId = setInterval(fetchData, 2000);
+        // Fetch data every 30 second
+        const intervalId = setInterval(fetchData, 30 * 1000);
 
         // Cleanup the interval when the component is unmounted
         return () => clearInterval(intervalId);
@@ -46,7 +51,7 @@ const NetworkGraph = (props) => {
             const data = {
                 nodes: nodes,
                 edges: edges,
-            };           
+            };
             // Customize the graph's appearance with options
             const options = {
                 layout: {
@@ -77,7 +82,7 @@ const NetworkGraph = (props) => {
                         y: true
                     },
                     font: {
-                        color: '#343434',
+                        color: 'black',
                         size: 14, // px
                         face: 'arial',
                         background: 'none',
@@ -152,12 +157,33 @@ const NetworkGraph = (props) => {
             };
             // Create a new network graph with the specified container, data, and options
             const newNetwork = new Network(container, data, options);
+
+            // add a click event listener
+            newNetwork.on("click", async (params) => {
+                if (params.nodes.length > 0) {
+                    const nodeId = params.nodes[0]; // get clicked node ID
+                    // send a POST request about click event to the API
+                    try {
+                        const response = await axios.post(prefix + "/api/network_data/clicked_node/", {
+                            nodeId: nodeId,
+                        });
+                        console.log('POST /api/network_data/clicked_node/:', response.data);
+                        // Call handleNodeClick after getting the IP of the clicked node
+                        if (response.data.nodeinfo) {
+                            handleNodeClick(response.data.nodeinfo.ip); 
+                        }
+                    } catch (error) {
+                        console.error('Error while posting clicked_node:', error);
+                    }
+                }
+            });
+
             setNetwork(newNetwork);
         } else {
             // Update the network instance with the new nodes and edges
             network.setData({ nodes: nodes, edges: edges });
-          }
-        }, [nodes, edges, network]);
+        }
+    }, [nodes, edges, network]);
 
     // Render the network graph container
     return <div id="network-graph" style={{ width: '100%', height: '100%' }} />;
