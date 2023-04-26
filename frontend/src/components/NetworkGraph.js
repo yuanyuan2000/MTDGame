@@ -10,7 +10,7 @@ const fetchNetworkData = async (prefix) => {
 
 // Define the NetworkGraph component
 const NetworkGraph = (props) => {
-    const { prefix } = props;
+    const { prefix , handleNodeClick } = props;
     const [nodes, setNodes] = useState(new DataSet([]));
     const [edges, setEdges] = useState(new DataSet([]));
     const [network, setNetwork] = useState(null);
@@ -168,6 +168,10 @@ const NetworkGraph = (props) => {
                             nodeId: nodeId,
                         });
                         console.log('POST /api/network_data/clicked_node/:', response.data);
+                        // Call handleNodeClick after getting the IP of the clicked node
+                        if (response.data.nodeinfo) {
+                            handleNodeClick(response.data.nodeinfo.ip); 
+                        }
                     } catch (error) {
                         console.error('Error while posting clicked_node:', error);
                     }

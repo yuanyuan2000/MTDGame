@@ -10,6 +10,8 @@ var prefix = "http://localhost:8000"
 function App() {
   // isGameStarted is a game state variable, NetworkGraph is rendered when it is true
   const [isGameStarted, setIsGameStarted] = useState(false);
+  // command is a terminal state variable, when it is changed the terminal is updated
+  const [command, setCommand] = useState(null);
 
   useEffect(() => {
     const startGame = async () => {
@@ -24,12 +26,16 @@ function App() {
     startGame();
   }, []);
 
+  const handleNodeClick = (ip) => {
+    setCommand(`Node IP: ${ip}`);
+  };
+
   return (
     <div className="App">
       <div className="main-container" style={{width: '70%'}}>
         <h1>MTD Multi-Player Game</h1>
         <div className="network-graph-container" style={{width: '100%', height: '70vh'}}>
-          {isGameStarted && <NetworkGraph prefix={prefix} />}
+          {isGameStarted && <NetworkGraph prefix={prefix}  handleNodeClick={handleNodeClick} />}
         </div>
         <div
           className="terminal-wrapper"
@@ -43,7 +49,7 @@ function App() {
           }}
         >
           <div className="terminal-container" style={{ backgroundColor: '#2d2d2d', width: '100%', height: '100%'}}>
-            <Terminal />
+          <Terminal command={command} />
           </div>
         </div>
       </div>

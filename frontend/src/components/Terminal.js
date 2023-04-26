@@ -3,7 +3,7 @@ import { Terminal as XTerm } from 'xterm';
 import { FitAddon } from 'xterm-addon-fit';
 import 'xterm/css/xterm.css';
 
-const Terminal = () => {
+const Terminal = ({ command }) => {
   const terminalRef = useRef(null);
   const xtermRef = useRef(null);
   const fitAddon = useRef(new FitAddon());
@@ -27,6 +27,12 @@ const Terminal = () => {
       window.removeEventListener('resize', handleResize); // Clean up the event listener
     };
   }, []);
+
+  useEffect(() => {
+    if (xtermRef.current && command) {
+      xtermRef.current.writeln(command);
+    }
+  }, [command]);
 
   return (
     <div
