@@ -227,6 +227,7 @@ class Game:
                 'os_type': self.time_network.graph.nodes[host_id]["host"].os_type,
                 'os_version': self.time_network.graph.nodes[host_id]["host"].os_version,
                 'ip': self.time_network.graph.nodes[host_id]["host"].ip,
+                'is_compromised': host.is_compromised(),
                 'service_info': services_info,
             }
 
