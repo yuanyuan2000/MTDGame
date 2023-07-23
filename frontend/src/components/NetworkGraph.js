@@ -170,7 +170,7 @@ const NetworkGraph = (props) => {
                         console.log('POST /api/network_data/clicked_node/:', response.data);
                         // Call handleNodeClick after getting the IP of the clicked node
                         if (response.data.nodeinfo) {
-                            handleNodeClick(response.data.nodeinfo.ip, nodeId); 
+                            handleNodeClick(response.data.nodeinfo, nodeId); 
                         }
                     } catch (error) {
                         console.error('Error while posting clicked_node:', error);

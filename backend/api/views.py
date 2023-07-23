@@ -144,3 +144,42 @@ def topological_shuffling(request):
             return JsonResponse({"message": "Invalid request"}, status=400)
     except TypeError as e:
         return JsonResponse(str(e), status=400)
+    
+@csrf_exempt
+def os_diversity(request):
+    try:
+        if request.method == 'POST':
+            data = json.loads(request.body)
+            # node_id = data['nodeId']
+            is_sucessful = game_instance.os_diversity()
+            return JsonResponse({"is_sucessful": is_sucessful}, status=200)
+        else:
+            return JsonResponse({"message": "Invalid request"}, status=400)
+    except TypeError as e:
+        return JsonResponse(str(e), status=400)
+    
+@csrf_exempt
+def service_diversity(request):
+    try:
+        if request.method == 'POST':
+            data = json.loads(request.body)
+            node_id = data['nodeId']
+            is_sucessful = game_instance.service_diversity(node_id)
+            return JsonResponse({"is_sucessful": is_sucessful}, status=200)
+        else:
+            return JsonResponse({"message": "Invalid request"}, status=400)
+    except TypeError as e:
+        return JsonResponse(str(e), status=400)
+    
+@csrf_exempt
+def get_details(request):
+    try:
+        if request.method == 'POST':
+            data = json.loads(request.body)
+            node_id = data['nodeId']
+            all_details = game_instance.get_host_all_details(node_id)
+            return JsonResponse({"all_details": all_details}, status=200)
+        else:
+            return JsonResponse({"message": "Invalid request"}, status=400)
+    except TypeError as e:
+        return JsonResponse(str(e), status=400)

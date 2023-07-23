@@ -183,31 +183,24 @@ class Game:
     def os_diversity(self):
         mtd_strategy = OSDiversity(network=self.time_network)
         mtd_strategy.mtd_operation()
+        return True
 
     def service_diversity(self, host_id):
         mtd_strategy = ServiceDiversity(network=self.time_network)
         mtd_strategy.mtd_operation(specific_host_id=host_id)
+        return True
 
-
-    def get_service_info(self, host_id):
+    def get_host_all_details(self, host_id):
         """
-        This function gets the service information from a given host.
-        Parameters:
-            host (Host): The host instance from which to extract service information.
-        Returns:
-            dict: A dictionary where the keys are service names, and the values are another dictionary containing
-                each service's vulnerability list, port number, and service ID.
+        This function get all details about a host by a given host_id.
         """
+        all_details = None
         hosts = self.time_network.get_hosts()
         if host_id in hosts:
-            # Get host
-            host = hosts[host_id]
-
-            services_info = {}
             # Get all services
+            services_info = {}
+            host = hosts[host_id]
             all_services = host.get_all_services()
-            
-            # Get all attributes of each node (service)
             test_values = host.get_test_values()
             ports_dict, services_dict = test_values[0], test_values[1]
 
@@ -228,7 +221,16 @@ class Game:
                 port = ports_dict.get(service_id)
                 services_info[service_name] = {"vulnerabilities": vulnerabilities, "port": port, "service_id": service_id}
 
-            return services_info
+            # Return all details about this host
+            all_details = {
+                'host_id': self.time_network.graph.nodes[host_id]["host"].host_id,
+                'os_type': self.time_network.graph.nodes[host_id]["host"].os_type,
+                'os_version': self.time_network.graph.nodes[host_id]["host"].os_version,
+                'ip': self.time_network.graph.nodes[host_id]["host"].ip,
+                'service_info': services_info,
+            }
+
+            return all_details
 
 
     def print_all_service_info(self):
