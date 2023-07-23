@@ -14,6 +14,7 @@ const Terminal = ({ command }) => {
 
     xtermRef.current.open(terminalRef.current);
     xtermRef.current.writeln('Welcome to terminal!');
+    xtermRef.current.writeln('Now you can click the node and apply MTD operation!');
 
     const handleResize = () => {
       fitAddon.current.fit();
@@ -46,3 +47,4 @@ const Terminal = ({ command }) => {
 };
 
 export default Terminal;
+

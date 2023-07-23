@@ -36,11 +36,11 @@ const NetworkGraph = (props) => {
         fetchData();
 
         // Fetch data every 30 second
-        const intervalId = setInterval(fetchData, 30 * 1000);
+        const intervalId = setInterval(fetchData, 2 * 1000);
 
         // Cleanup the interval when the component is unmounted
         return () => clearInterval(intervalId);
-    }, []);
+    }, [prefix]);
 
 
     // Create the network graph
@@ -170,7 +170,7 @@ const NetworkGraph = (props) => {
                         console.log('POST /api/network_data/clicked_node/:', response.data);
                         // Call handleNodeClick after getting the IP of the clicked node
                         if (response.data.nodeinfo) {
-                            handleNodeClick(response.data.nodeinfo.ip); 
+                            handleNodeClick(response.data.nodeinfo.ip, nodeId); 
                         }
                     } catch (error) {
                         console.error('Error while posting clicked_node:', error);
@@ -183,7 +183,7 @@ const NetworkGraph = (props) => {
             // Update the network instance with the new nodes and edges
             network.setData({ nodes: nodes, edges: edges });
         }
-    }, [nodes, edges, network]);
+    }, [nodes, edges, network, handleNodeClick, prefix]);
 
     // Render the network graph container
     return <div id="network-graph" style={{ width: '100%', height: '100%' }} />;

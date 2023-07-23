@@ -55,7 +55,12 @@ class Game:
         self.width = WIDTH
         self.height = HEIGHT
 
-        self.env = simpy.Environment()
+        self.isrunning = False
+        self.room_id = None
+        self.game_mode = None
+        self.creator_role = None
+
+        self.env = None
         # self.snapshot_checkpoint = None
         self.time_network = None
         self.adversary = None
@@ -63,6 +68,27 @@ class Game:
         self.mtd_operation = None
         # self.evaluation = None
         self.nodes = []
+
+    def get_isrunning(self):
+        return self.isrunning
+    
+    def get_room_id(self):
+        return self.room_id
+    
+    def get_creator_role(self):
+        return self.creator_role
+    
+    def get_game_mode(self):
+        return self.game_mode
+    
+    def set_room_id(self, room_id):
+        self.room_id = room_id
+
+    def set_game_mode(self, game_mode):
+        self.game_mode = game_mode
+
+    def set_creator_role(self, creator_role):
+        self.creator_role = creator_role
 
     def get_env(self):
         return self.env
@@ -126,6 +152,102 @@ class Game:
         }
         return info
 
+    def ip_shuffling(self, host_id):
+        """
+        Perform IP Shuffling MTD operation on the specified host.
+        :param host_id: ID of the host that needs to perform IP shuffling operation.
+        """
+        # Get all hosts
+        hosts = self.time_network.get_hosts()
+        if host_id in hosts:
+            # List to hold all IP addresses in the network
+            existing_ips = [host.ip for host in hosts.values()]
+            # Get the host that needs IP shuffling
+            target_host = hosts[host_id]
+            # Generate a new IP address that doesn't conflict with the existing ones
+            new_ip = target_host.get_random_address(existing_addresses=existing_ips)
+            # Assign the new IP to the host
+            target_host.ip = new_ip
+            print(f"IP address of host {host_id} has been changed to {new_ip}")
+            return True
+        else:
+            print(f"Node {host_id} not found in the network.")
+            return False
+        
+    def topology_shuffle(self):
+        mtd_strategy = CompleteTopologyShuffle(network=self.time_network)
+        mtd_strategy.mtd_operation()
+        self.update_network()
+        return True
+
+    def os_diversity(self):
+        mtd_strategy = OSDiversity(network=self.time_network)
+        mtd_strategy.mtd_operation()
+
+    def service_diversity(self, host_id):
+        mtd_strategy = ServiceDiversity(network=self.time_network)
+        mtd_strategy.mtd_operation(specific_host_id=host_id)
+
+
+    def get_service_info(self, host_id):
+        """
+        This function gets the service information from a given host.
+        Parameters:
+            host (Host): The host instance from which to extract service information.
+        Returns:
+            dict: A dictionary where the keys are service names, and the values are another dictionary containing
+                each service's vulnerability list, port number, and service ID.
+        """
+        hosts = self.time_network.get_hosts()
+        if host_id in hosts:
+            # Get host
+            host = hosts[host_id]
+
+            services_info = {}
+            # Get all services
+            all_services = host.get_all_services()
+            
+            # Get all attributes of each node (service)
+            test_values = host.get_test_values()
+            ports_dict, services_dict = test_values[0], test_values[1]
+
+            for service in all_services:
+                service_id = service.id
+                service_name = service.name
+                # Get the vulnerabilities of the service
+                vulnerabilities = []
+                for vulnerability in service.get_all_vulns():
+                    vulnerabilities.append({
+                        "Vulnerability ID": vulnerability.get_id(),
+                        "Complexity": vulnerability.complexity,
+                        "Impact": vulnerability.impact,
+                        "CVSS": vulnerability.cvss,
+                        "Exploitability": vulnerability.exploitability
+                    })
+                # Get the port of the service
+                port = ports_dict.get(service_id)
+                services_info[service_name] = {"vulnerabilities": vulnerabilities, "port": port, "service_id": service_id}
+
+            return services_info
+
+
+    def print_all_service_info(self):
+        service_generator = self.time_network.get_service_generator()
+        for os_type, os_versions in service_generator.os_services.items():
+            print(f'OS Type: {os_type}')
+            for os_version, services in os_versions.items():
+                print(f'  OS Version: {os_version}')
+                for service_name, service_versions in services.items():
+                    for service in service_versions:
+                        print(f'    Service Name: {service.name}, Version: {service.version}')
+                        for vulnerability in service.get_all_vulns():
+                            print(f'      Vulnerability ID: {vulnerability.get_id()}, '
+                                f'Complexity: {vulnerability.complexity}, '
+                                f'Impact: {vulnerability.impact}, '
+                                f'CVSS: {vulnerability.cvss}, '
+                                f'Exploitability: {vulnerability.exploitability}')
+
+
     def update_network(self):
         """
         update the information about the network and the nodes in network
@@ -164,7 +286,7 @@ class Game:
         :param terminate_compromise_ratio: terminate the simulation if reached compromise ratio
         :param new_network: True: create new snapshots based on network size, False: load snapshots based on network size
         """
-        
+        self.env = simpy.Environment()
         end_event = self.env.event()
         # self.snapshot_checkpoint = SnapshotCheckpoint(env=self.env, checkpoints=checkpoints)
         
@@ -225,7 +347,6 @@ class Game:
 
 
     def start(self):
-
+        self.isrunning = True
         # create_experiment_snapshots([25, 50, 75, 100])
-
         self.execute_simulation(start_time=0, finish_time=3000, mtd_interval=200, scheme='random', total_nodes=32, new_network=True)
