@@ -18,21 +18,21 @@ const GameSelection = () => {
         creator_role: role,
         room_id: roomId,
         });
-        navigate(`/game/${response.data.room_id}`);
+        navigate(`/game/${response.data.creator_role}/${response.data.room_id}`);
     } catch (error) {
         console.error("Error create room:", error);
     }
     
   };
   
-
   const joinGame = async () => {
     try {
         const response = await axios.post(prefix + "/api/join_game_room/", {
         opponent_role: role,
         room_id: roomId,
         });
-        navigate(`/game/${response.data.room_id}`);
+        navigate(`/game/${response.data.opponent_role}/${response.data.room_id}`);
+        console.log(response.data.opponent_role)
     } catch (error) {
         console.error("Error join room:", error);
     } 
@@ -85,7 +85,7 @@ const GameSelection = () => {
           <label>Role Selection: </label>
           <select value={role} onChange={(e) => setRole(e.target.value)}>
             <option value="attacker">Attacker</option>
-            <option value="defenser">Defender</option>
+            <option value="defender">Defender</option>
           </select>
         </div>
         <div>

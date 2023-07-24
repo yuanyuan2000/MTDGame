@@ -78,6 +78,9 @@ class Game:
     def get_creator_role(self):
         return self.creator_role
     
+    def get_opponent_role(self):
+        return self.opponent_role
+    
     def get_game_mode(self):
         return self.game_mode
     
@@ -89,6 +92,9 @@ class Game:
 
     def set_creator_role(self, creator_role):
         self.creator_role = creator_role
+
+    def set_opponent_role(self, opponent_role):
+        self.opponent_role = opponent_role
 
     def get_env(self):
         return self.env

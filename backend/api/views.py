@@ -24,32 +24,18 @@ def create_game_room(request):
             'creator_role': request.data['creator_role'],
             'room_id': request.data['room_id']
         }
-        # serializer = GameRoomSerializer(data=data)
-        # if serializer.is_valid():
-        #     serializer.save()
-        #     return Response(serializer.data, status=201)
-        # return Response(serializer.errors, status=400)
         return Response(data, status=201)
 
 
 
 @api_view(['POST'])
 def join_game_room(request):
-    # try:
-    #     room = GameRoom.objects.get(room_id=room_id)
-    # except GameRoom.DoesNotExist:
-    #     return Response(status=404)
-
     if request.method == 'POST':
-        # serializer = GameRoomSerializer(room, data=request.data, partial=True)
-        # if serializer.is_valid():
-        #     serializer.save()
-        #     return Response(serializer.data)
-        # return Response(serializer.errors, status=400)
+        game_instance.set_opponent_role(request.data['opponent_role'])
         if game_instance.get_isrunning() and request.data['room_id'] == game_instance.get_room_id() and request.data['opponent_role'] != game_instance.get_creator_role():
             data = {
                 'game_mode': game_instance.get_game_mode(),
-                'creator_role': game_instance.get_creator_role(),
+                'opponent_role': game_instance.get_opponent_role(),
                 'room_id': game_instance.get_room_id()
             }
             return Response(data, status=201)

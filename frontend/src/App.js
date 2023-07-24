@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import GameSelection from "./components/GameSelection";
-import Game from "./components/Game";
+import DefenderGame from "./components/defender/Game";
+import AttackerGame from "./components/attacker/Game";
 import React from "react";
 
 function App() {
@@ -8,13 +9,15 @@ function App() {
     <Router>
       <Routes>
         <Route exact path="/" element={<GameSelection />} />
-        <Route path="/game/:roomId" element={<Game />} />
+        <Route path="/game/defender/:roomId" element={<DefenderGame />} />
+        <Route path="/game/attacker/:roomId" element={<AttackerGame />} />
       </Routes>
     </Router>
   );
 }
 
 export default App;
+
 
 
 // import './App.css';
