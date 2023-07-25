@@ -4,7 +4,7 @@ import axios from 'axios';
 
 // Fetch network data from the API
 const fetchNetworkData = async (prefix) => {
-    const response = await axios.get(prefix + '/api/network_data/');
+    const response = await axios.get(prefix + '/api/attacker/network_data/');
     return response.data;
 };
 
@@ -15,32 +15,38 @@ const NetworkGraph = (props) => {
     const [edges, setEdges] = useState(new DataSet([]));
     const [network, setNetwork] = useState(null);
 
-    // Fetch network data and update the state
     useEffect(() => {
         const fetchData = async () => {
             const networkData = await fetchNetworkData(prefix);
-
-            // show the network data in the console
-            console.log('GET /api/network_data/:', networkData);
-
+    
             const newNodes = new DataSet(networkData.nodes);
             const newEdges = new DataSet(networkData.edges);
-
-            // Update the state with the new data
+    
             setNodes(newNodes);
             setEdges(newEdges);
-
+    
+            // Iterate over all nodes and set their visibility according to the visible_hosts list
+            newNodes.forEach((node) => {
+                if (networkData.visible_hosts.includes(node.id)) {
+                    newNodes.update({ id: node.id, hidden: false });
+                } else {
+                    newNodes.update({ id: node.id, hidden: true });
+                }
+            });
         };
-
-        // Fetch data immediately after the component is mounted
-        fetchData();
-
-        // Fetch data every 30 second
-        const intervalId = setInterval(fetchData, 2 * 1000);
-
-        // Cleanup the interval when the component is unmounted
-        return () => clearInterval(intervalId);
+    
+        // start after delay and fetch data every interval
+        const delay = 1000;
+        const interval = 2000;
+        const timeoutId = setTimeout(() => {
+            fetchData();
+            const intervalId = setInterval(fetchData, interval);
+            return () => clearInterval(intervalId);
+        }, delay);
+    
+        return () => clearTimeout(timeoutId);
     }, [prefix]);
+    
 
 
     // Create the network graph
@@ -164,10 +170,10 @@ const NetworkGraph = (props) => {
                     const nodeId = params.nodes[0]; // get clicked node ID
                     // send a POST request about click event to the API
                     try {
-                        const response = await axios.post(prefix + "/api/network_data/clicked_node/", {
+                        const response = await axios.post(prefix + "/api/defender/network_data/clicked_node/", {
                             nodeId: nodeId,
                         });
-                        console.log('POST /api/network_data/clicked_node/:', response.data);
+                        // console.log('POST /api/network_data/clicked_node/:', response.data);
                         // Call handleNodeClick after getting the IP of the clicked node
                         if (response.data.nodeinfo) {
                             handleNodeClick(response.data.nodeinfo, nodeId); 

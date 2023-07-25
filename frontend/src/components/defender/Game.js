@@ -46,7 +46,7 @@ function Game() {
             if (resource >= 40) {
                 setResource(resource - 40);
                 try {
-                    const response = await axios.post(prefix + "/api/network_data/ip_shuffling/", {
+                    const response = await axios.post(prefix + "/api/defender/network_data/ip_shuffling/", {
                         nodeId: selectedNodeId,
                     });
                     if (response.data.is_shuffled) {
@@ -69,7 +69,7 @@ function Game() {
         if (resource >= 100) {
             setResource(resource - 100);
             try {
-                const response = await axios.post(prefix + "/api/network_data/topological_shuffling/", {
+                const response = await axios.post(prefix + "/api/defender/network_data/topological_shuffling/", {
                     nodeId: selectedNodeId,
                 });
                 if (response.data.is_shuffled) {
@@ -89,7 +89,7 @@ function Game() {
         if (resource >= 60) {
             setResource(resource - 60);
             try {
-                const response = await axios.post(prefix + "/api/network_data/os_diversity/", {
+                const response = await axios.post(prefix + "/api/defender/network_data/os_diversity/", {
                     nodeId: selectedNodeId,
                 });
                 if (response.data.is_sucessful) {
@@ -110,7 +110,7 @@ function Game() {
             if (resource >= 30) {
                 setResource(resource - 30);
                 try {
-                    const response = await axios.post(prefix + "/api/network_data/service_diversity/", {
+                    const response = await axios.post(prefix + "/api/defender/network_data/service_diversity/", {
                         nodeId: selectedNodeId,
                     });
                     if (response.data.is_sucessful) {
@@ -130,11 +130,11 @@ function Game() {
     };
 
     const handleDetailsClick = async () => {
-        if (selectedNodeId) {
+        if (selectedNodeId !== null) {
             if (resource >= 15) {
                 setResource(resource - 15);
                 try {
-                    const response = await axios.post(prefix + "/api/network_data/get_details/", {
+                    const response = await axios.post(prefix + "/api/defender/network_data/get_details/", {
                         nodeId: selectedNodeId,
                     });
                     if (response.data.all_details) {

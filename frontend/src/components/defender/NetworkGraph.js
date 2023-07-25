@@ -4,7 +4,7 @@ import axios from 'axios';
 
 // Fetch network data from the API
 const fetchNetworkData = async (prefix) => {
-    const response = await axios.get(prefix + '/api/network_data/');
+    const response = await axios.get(prefix + '/api/defender/network_data/');
     return response.data;
 };
 
@@ -21,7 +21,7 @@ const NetworkGraph = (props) => {
             const networkData = await fetchNetworkData(prefix);
 
             // show the network data in the console
-            console.log('GET /api/network_data/:', networkData);
+            // console.log('GET /api/defender/network_data/:', networkData);
 
             const newNodes = new DataSet(networkData.nodes);
             const newEdges = new DataSet(networkData.edges);
@@ -32,14 +32,22 @@ const NetworkGraph = (props) => {
 
         };
 
-        // Fetch data immediately after the component is mounted
-        fetchData();
+        const delay = 1000;  // delay in milliseconds
+        const interval = 2000;  // interval in milliseconds
 
-        // Fetch data every 30 second
-        const intervalId = setInterval(fetchData, 2 * 1000);
+        // Set a timeout to delay the initial fetchData and setInterval calls
+        const timeoutId = setTimeout(() => {
+            fetchData();
 
-        // Cleanup the interval when the component is unmounted
-        return () => clearInterval(intervalId);
+            // Then fetch data every 2 seconds
+            const intervalId = setInterval(fetchData, interval);
+
+            // Clear interval when component unmounts
+            return () => clearInterval(intervalId);
+        }, delay);
+
+        // Clear timeout when component unmounts
+        return () => clearTimeout(timeoutId);
     }, [prefix]);
 
 
@@ -164,10 +172,10 @@ const NetworkGraph = (props) => {
                     const nodeId = params.nodes[0]; // get clicked node ID
                     // send a POST request about click event to the API
                     try {
-                        const response = await axios.post(prefix + "/api/network_data/clicked_node/", {
+                        const response = await axios.post(prefix + "/api/defender/network_data/clicked_node/", {
                             nodeId: nodeId,
                         });
-                        console.log('POST /api/network_data/clicked_node/:', response.data);
+                        // console.log('POST /api/defender/network_data/clicked_node/:', response.data);
                         // Call handleNodeClick after getting the IP of the clicked node
                         if (response.data.nodeinfo) {
                             handleNodeClick(response.data.nodeinfo, nodeId); 

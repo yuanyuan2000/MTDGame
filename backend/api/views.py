@@ -90,6 +90,13 @@ class NetworkDataView(APIView):
         # haha = game_instance.get_haha()
         # print("Haha: ", haha)
         return Response({"nodes": nodes, "edges": edges})
+    
+class NetworkDataView2(APIView):
+    def get(self, request, format=None):
+        nodes = transform_nodes(game_instance.get_nodes())
+        edges = transform_edges(game_instance.get_edges())
+        visible_hosts = game_instance.get_visible_hosts()
+        return Response({"nodes": nodes, "edges": edges, "visible_hosts": visible_hosts})
 
 @csrf_exempt
 def clicked_node(request):
@@ -165,6 +172,59 @@ def get_details(request):
             node_id = data['nodeId']
             all_details = game_instance.get_host_all_details(node_id)
             return JsonResponse({"all_details": all_details}, status=200)
+        else:
+            return JsonResponse({"message": "Invalid request"}, status=400)
+    except TypeError as e:
+        return JsonResponse(str(e), status=400)
+    
+
+@csrf_exempt
+def enum_host(request):
+    try:
+        if request.method == 'POST':
+            data = json.loads(request.body)
+            node_id = data['nodeId']
+            enum_host_list = game_instance.enum_host()
+            return JsonResponse({"enum_host_list": enum_host_list}, status=200)
+        else:
+            return JsonResponse({"message": "Invalid request"}, status=400)
+    except TypeError as e:
+        return JsonResponse(str(e), status=400)
+    
+@csrf_exempt
+def scan_port(request):
+    try:
+        if request.method == 'POST':
+            data = json.loads(request.body)
+            node_id = data['nodeId']
+            scan_port_result = game_instance.scan_port(node_id)
+            return JsonResponse({"scan_port_result": scan_port_result}, status=200)
+        else:
+            return JsonResponse({"message": "Invalid request"}, status=400)
+    except TypeError as e:
+        return JsonResponse(str(e), status=400)
+    
+@csrf_exempt
+def exploit_vuln(request):
+    try:
+        if request.method == 'POST':
+            data = json.loads(request.body)
+            node_id = data['nodeId']
+            exploit_vuln_result = game_instance.exploit_vuln(node_id)
+            return JsonResponse({"exploit_vuln_result": exploit_vuln_result}, status=200)
+        else:
+            return JsonResponse({"message": "Invalid request"}, status=400)
+    except TypeError as e:
+        return JsonResponse(str(e), status=400)
+    
+@csrf_exempt
+def brute_force(request):
+    try:
+        if request.method == 'POST':
+            data = json.loads(request.body)
+            node_id = data['nodeId']
+            brute_force_result = game_instance.brute_force(node_id)
+            return JsonResponse({"brute_force_result": brute_force_result}, status=200)
         else:
             return JsonResponse({"message": "Invalid request"}, status=400)
     except TypeError as e:

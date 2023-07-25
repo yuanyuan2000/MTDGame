@@ -14,7 +14,7 @@ const Terminal = ({ command }) => {
 
     xtermRef.current.open(terminalRef.current);
     xtermRef.current.writeln('Welcome to terminal!');
-    xtermRef.current.writeln('Now you can click the node and apply MTD operation!');
+    xtermRef.current.writeln('Now you can click the node and apply attack operation!');
 
     const handleResize = () => {
       fitAddon.current.fit();

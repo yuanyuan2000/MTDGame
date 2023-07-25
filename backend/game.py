@@ -25,6 +25,7 @@ from mtdnetwork.mtd.usershuffle import UserShuffle
 from mtdnetwork.mtd.osdiversityassignment import OSDiversityAssignment
 import random
 import threading
+import time
 import queue
 
 # Constants for game
@@ -61,6 +62,7 @@ class Game:
         self.creator_role = None
 
         self.env = None
+        self.sim_time = 0
         # self.snapshot_checkpoint = None
         self.time_network = None
         self.adversary = None
@@ -239,7 +241,6 @@ class Game:
 
             return all_details
 
-
     def print_all_service_info(self):
         service_generator = self.time_network.get_service_generator()
         for os_type, os_versions in service_generator.os_services.items():
@@ -255,7 +256,192 @@ class Game:
                                 f'Impact: {vulnerability.impact}, '
                                 f'CVSS: {vulnerability.cvss}, '
                                 f'Exploitability: {vulnerability.exploitability}')
+                            
+    def get_current_compromised_hosts(self):
+        """
+        return a list of host that has been compromised, such as [0, 11, 8, 9]
+        """
+        return self.adversary.get_compromised_hosts()
+    
+    def get_current_uncompromised_hosts(self):
+        """
+        return a list uncompromised host, such as [10, 21, 6, 1, 2, 3, 4]
+        """
+        compromised_hosts = self.get_current_compromised_hosts()
+        uncompromised_hosts = []
+        network = self.time_network
+        visible_network = network.get_hacker_visible_graph()
 
+        # Add every uncompromised host that is reachable and is not an exposed or compromised host
+        for c_host in compromised_hosts:
+            uncompromised_hosts = uncompromised_hosts + [
+                neighbor
+                for neighbor in network.graph.neighbors(c_host)
+                if neighbor not in compromised_hosts and neighbor not in network.exposed_endpoints and
+                len(network.get_path_from_exposed(neighbor, graph=visible_network)[0]) > 0
+            ]
+
+        # Add other uncompromised endpoints
+        uncompromised_hosts = uncompromised_hosts + [
+            ex_node
+            for ex_node in network.exposed_endpoints
+            if ex_node not in compromised_hosts
+        ]
+
+        return uncompromised_hosts
+    
+    def get_current_discovered_hosts(self):
+        """
+        discovered hosts is a list of hosts which is uncompromised and also not been label with 'stop attack', it can be used to continue attacking
+        """
+        uncompromised_hosts = self.get_current_uncompromised_hosts()
+        stop_attack = self.adversary.get_stop_attack()
+        discovered_hosts = [n for n in uncompromised_hosts if n not in stop_attack]
+        return discovered_hosts
+    
+    def get_visible_hosts(self):
+        return self.get_current_compromised_hosts() + self.get_current_uncompromised_hosts()
+    
+    def enum_host(self):
+        adversary = self.adversary
+        adversary.set_curr_process('ENUM_HOST')
+        network = self.time_network
+        adversary.set_host_stack(network.sort_by_distance_from_exposed_and_pivot_host(
+                    adversary.get_host_stack(),
+                    adversary.get_compromised_hosts(),
+                    pivot_host_id=adversary.get_pivot_host_id()
+                ))
+        return adversary.get_host_stack()
+    
+    def scan_port(self, host_id):
+        adversary = self.adversary
+        adversary.set_curr_process('SCAN_PORT')
+        network = self.time_network
+        adversary.set_curr_host_id(host_id)
+        adversary.set_curr_host(network.get_host(adversary.get_curr_host_id()))
+        port_list = adversary.get_curr_host().port_scan()
+        adversary.set_curr_ports(port_list)
+        user_reuse = adversary.get_curr_host().can_auto_compromise_with_users(adversary.get_compromised_users())
+        if user_reuse:
+            # self.update_compromise_progress(self.env.now, self._proceed_time)
+            # self._scan_neighbors()
+            str = 'This node has been automatically compromised because of the same user password.'
+        else:
+            str = 'You can keep on attacking by clicking exploiting vulnerabilities button.'
+
+        scan_port_result = {
+                'port_list': port_list,
+                'user_reuse': user_reuse,
+                'message': str,
+            }
+
+        return scan_port_result
+    
+    def exploit_vuln(self, host_id):
+        adversary = self.adversary
+        adversary.set_curr_process('EXPLOIT_VULN')
+        if host_id != adversary.get_curr_host_id():
+            return -1
+        else:
+            adversary.set_curr_vulns(adversary.get_curr_host().get_vulns(adversary.get_curr_ports()))
+            vulns = adversary.get_curr_vulns()
+
+            def exponential_variates(loc, scale):
+                from scipy.stats import expon
+                return expon.rvs(loc=loc, scale=scale, size=1)[0]
+
+            for vuln in vulns:
+                exploit_time = exponential_variates(vuln.exploit_time(host=adversary.get_curr_host()), 0.5)
+                start_time = self.env.now + self._proceed_time
+                try:
+                    logging.info(
+                        "Adversary: Start %s %s on host %s at %.1fs." % (self.adversary.get_curr_process(), vuln.id,
+                                                                         self.adversary.get_curr_host_id(), start_time))
+                    yield self.env.timeout(exploit_time)
+                except simpy.Interrupt:
+                    self.env.process(self._handle_interrupt(start_time, self.adversary.get_curr_process()))
+                    return
+                finish_time = self.env.now + self._proceed_time
+                logging.info(
+                    "Adversary: Processed %s %s on host %s at %.1fs." % (self.adversary.get_curr_process(), vuln.id,
+                                                                         self.adversary.get_curr_host_id(), finish_time))
+                self.adversary.get_attack_stats().append_attack_operation_record(self.adversary.get_curr_process(),
+                                                                                start_time,
+                                                                                finish_time, self.adversary)
+                vuln.network(host=adversary.get_curr_host())
+                # cumulative vulnerability exploitation attempts
+                adversary.set_curr_attempts(adversary.get_curr_attempts() + 1)
+
+                if adversary.get_curr_host().check_compromised():
+                    for vuln in adversary.get_curr_vulns():
+                        if vuln.is_exploited():
+                            if vuln.exploitability == vuln.cvss / 5.5:
+                                vuln.exploitability = (1 - vuln.exploitability) / 2 + vuln.exploitability
+                                if vuln.exploitability > 1:
+                                    vuln.exploitability = 1
+                                # todo: record vulnerability roa, impact, and complexity
+                                # self.scorer.add_vuln_compromise(self.curr_time, vuln)
+                    # self.update_compromise_progress(self.env.now, self._proceed_time)
+                    # self._scan_neighbors()
+                    return 0
+                else:
+                    return 1
+                
+    def brute_force(self, host_id):
+        adversary = self.adversary
+        if host_id != adversary.get_curr_host_id():
+            return -1
+        else:
+            adversary.set_curr_process('BRUTE_FORCE')
+            _brute_force_result = adversary.get_curr_host().compromise_with_users(
+                adversary.get_compromised_users())
+            if _brute_force_result:
+                self.update_compromise_progress(self.env.now, self._proceed_time)
+                self._scan_neighbors()
+                return 1
+            else:
+                self._enum_host()
+                return 0
+
+    def _scan_neighbors(self):
+        """
+        Starts scanning for neighbors from a host that the hacker can pivot to
+        Puts the new neighbors discovered to the start of the host stack.
+        """
+        adversary = self.adversary
+        adversary.set_curr_process('SCAN_NEIGHBOR')
+        found_neighbors = adversary.get_curr_host().discover_neighbors()
+        new__host_stack = found_neighbors + [
+            node_id
+            for node_id in adversary.get_host_stack()
+            if node_id not in found_neighbors
+        ]
+        adversary.set_host_stack(new__host_stack)
+
+    def update_compromise_progress(self, now, proceed_time):
+        """
+        Updates the Hackers progress state when it compromises a host.
+        """
+        adversary = self.adversary
+        adversary._pivot_host_id = adversary.get_curr_host_id()
+        if adversary.get_curr_host_id() not in adversary.get_compromised_hosts():
+            adversary.get_compromised_hosts().append(adversary.get_curr_host_id())
+            adversary.get_attack_stats().update_compromise_host(adversary.curr_host)
+            logging.info(
+                "Adversary: Host %i has been compromised at %.1fs!" % (
+                    adversary.get_curr_host_id(), now + proceed_time))
+            adversary.get_network().update_reachable_compromise(
+                adversary.get_curr_host_id(), adversary.get_compromised_hosts())
+
+            for user in adversary.get_curr_host().get_compromised_users():
+                if user not in adversary.get_compromised_users():
+                    adversary.get_attack_stats().update_compromise_user(user)
+            adversary._compromised_users = list(set(
+                adversary.get_compromised_users() + adversary.get_curr_host().get_compromised_users()))
+            if adversary.get_network().is_compromised(adversary.get_compromised_hosts()):
+                # terminate the whole process
+                self.end_event.succeed()
+                return
 
     def update_network(self):
         """
@@ -273,6 +459,24 @@ class Game:
             x = (pos_dict[key][0] * self.scale_x)
             y = (pos_dict[key][1] * self.scale_y) + self.shift_y
             self.nodes.append(Node(key, x, y, color))
+
+    def start_real_time_simulation(self, period):
+        # create a threading for real time simulation
+        self.real_time_thread = threading.Thread(target=self._real_time_simulation, args=(period,))
+        self.real_time_thread.start()
+
+    def _real_time_simulation(self, period):
+        start_time = time.perf_counter()   # the number of second from one fix moment
+        while self.isrunning:
+            time.sleep(period)
+            last_time = self.sim_time
+            self.sim_time = time.perf_counter() - start_time  # update the simulation time
+            logging.info("Period from %.3f to %.3f" % (last_time, self.sim_time))
+            # the game will end in 3000 simpy seconds
+            if self.sim_time*300 < 3000:
+                self.env.run(until=self.sim_time*300)
+            else:
+                break
 
     
     def execute_simulation(self, start_time=0, finish_time=None, scheme='random', mtd_interval=None, custom_strategies=None,
@@ -350,7 +554,9 @@ class Game:
         if finish_time is not None:
             self.env.run(until=(finish_time - start_time))
         else:
-            self.env.run(until=end_event)
+            # self.env.run(until=end_event)
+            self.start_real_time_simulation(0.5)
+
 
         # self.evaluation = Evaluation(network=self.time_network, adversary=self.adversary)
 
@@ -358,4 +564,4 @@ class Game:
     def start(self):
         self.isrunning = True
         # create_experiment_snapshots([25, 50, 75, 100])
-        self.execute_simulation(start_time=0, finish_time=3000, mtd_interval=200, scheme='random', total_nodes=32, new_network=True)
+        self.execute_simulation(start_time=0, finish_time=None, mtd_interval=200, scheme='random', total_nodes=32, new_network=True)
