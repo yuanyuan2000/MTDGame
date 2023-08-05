@@ -42,21 +42,26 @@ function Game() {
     };
 
     const handleEnumHostClick = async () => {
-        if (resource >= 15) {
-            setResource(resource - 15);
+        if (resource >= 2) {
+            setResource(resource - 2);
             try {
                 const response = await axios.post(prefix + "/api/attacker/network_data/enum_host/", {
                     nodeId: selectedNodeId,
                 });
-                console.log(response.data.enum_host_list)
+                
+                if (response.data.enum_host_list) {
+                    let hosts = response.data.enum_host_list;
+                    let hostsStr = hosts.join(', ');
+                    setCommand(`You have scan the network, now you can attack these nodes: ${hostsStr}`);
+                }
             } catch (error) {
                 console.error('Error in enum host:', error);
             }
         } else{
-            setCommand('Insufficient resources (<15)');
+            setCommand('Insufficient resources (<2)');
         }
     };
-
+    
     const handleScanPortClick = async () => {
         if (selectedNodeId !== null) {
             if (resource >= 30) {
@@ -65,17 +70,31 @@ function Game() {
                     const response = await axios.post(prefix + "/api/attacker/network_data/scan_port/", {
                         nodeId: selectedNodeId,
                     });
-                    console.log(response.data.scan_port_result)
+                    
+                    let scanResult = response.data.scan_port_result;
+                    
+                    if (scanResult.user_reuse === -1) {
+                        setCommand(scanResult.message);
+                    } else {
+                        if (scanResult.port_list !== null) {
+                            let portsStr = scanResult.port_list.join(', ');
+                            setCommand(`${scanResult.message} Ports: ${portsStr}`);
+                        } else {
+                            setCommand(scanResult.message);
+                        }
+                    }
+                    
                 } catch (error) {
                     console.error('Error', error);
                 }
-            } else{
+            } else {
                 setCommand('Insufficient resources (<30)');
             }
         } else {
             setCommand('No node selected.');
         }
     };
+    
 
     const handleExploitVulnClick = async () => {
         if (selectedNodeId !== null) {
@@ -86,6 +105,11 @@ function Game() {
                         nodeId: selectedNodeId,
                     });
                     console.log(response.data.exploit_vuln_result)
+                    if (response.data.exploit_vuln_result === 1) {
+                        setCommand("Attack failed, please try other methods or change the node.");
+                    } else if (response.data.exploit_vuln_result === 0) {
+                        setCommand("The node has been compromised.");
+                    }
                 } catch (error) {
                     console.error('Error', error);
                 }
@@ -96,7 +120,7 @@ function Game() {
             setCommand("No node selected.");
         }
     };
-
+    
     const handleBruteForceClick = async () => {
         if (selectedNodeId !== null) {
             if (resource >= 40) {
@@ -106,6 +130,11 @@ function Game() {
                         nodeId: selectedNodeId,
                     });
                     console.log(response.data.brute_force_result)
+                    if (response.data.brute_force_result === 1) {
+                        setCommand("Attack failed, please try other methods or change the node.");
+                    } else if (response.data.brute_force_result === 0) {
+                        setCommand("The node has been compromised.");
+                    }
                 } catch (error) {
                     console.error('Error', error);
                 }
@@ -116,6 +145,7 @@ function Game() {
             setCommand('No node selected.');
         }
     };
+    
 
     return (
         <div className="App"

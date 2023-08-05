@@ -85,18 +85,21 @@ def transform_edges(edges):
 
 class NetworkDataView(APIView):
     def get(self, request, format=None):
+        is_running = game_instance.get_isrunning()
+        winner = game_instance.get_winner()
         nodes = transform_nodes(game_instance.get_nodes())
         edges = transform_edges(game_instance.get_edges())
-        # haha = game_instance.get_haha()
-        # print("Haha: ", haha)
-        return Response({"nodes": nodes, "edges": edges})
+        return Response({"is_running": is_running, "winner": winner, "nodes": nodes, "edges": edges})
     
 class NetworkDataView2(APIView):
     def get(self, request, format=None):
+        is_running = game_instance.get_isrunning()
+        winner = game_instance.get_winner()
         nodes = transform_nodes(game_instance.get_nodes())
         edges = transform_edges(game_instance.get_edges())
         visible_hosts = game_instance.get_visible_hosts()
-        return Response({"nodes": nodes, "edges": edges, "visible_hosts": visible_hosts})
+        return Response({"is_running": is_running, "winner": winner, "nodes": nodes, "edges": edges, "visible_hosts": visible_hosts})
+
 
 @csrf_exempt
 def clicked_node(request):

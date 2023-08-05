@@ -2,6 +2,7 @@ from django.urls import path
 from . import views
 from .views import StartGameView, NetworkDataView, clicked_node, ip_shuffling, topological_shuffling, os_diversity, service_diversity, get_details
 from .views import NetworkDataView2, enum_host, scan_port, exploit_vuln, brute_force
+
 urlpatterns = [
     path('create_game_room/', views.create_game_room, name='create_game_room'),
     path('join_game_room/', views.join_game_room, name='join_game_room'),

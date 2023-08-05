@@ -296,7 +296,7 @@ class Network:
     #               prob_inter_layer_edge=0.4):
     #     """
     #     Generates a network of subnets using the Barabasi-Albert Random Graph model.
-    #
+    
     #     Parameters:
     #         min_nodes_per_subnet:
     #             minimum number of computer nodes for each subnet
@@ -318,29 +318,29 @@ class Network:
     #             subnets_per_layer.append(l_subnets)
     #     # Adds 1 to end of array
     #     subnets_per_layer.append(1)
-    #
+    
     #     # Randomly adds one to random subnets until there is the correct amount of subnets (Could be Optimised in
     #     # future)
     #     while sum(subnets_per_layer) < self.total_subnets:
     #         s_index = random.randint(1, self.layers - 2)
     #         if subnets_per_layer[s_index] <= max_subnets_per_layer:
     #             subnets_per_layer[s_index] = subnets_per_layer[s_index] + 1
-    #
+    
     #     max_subnet_in_layer = max(subnets_per_layer)
-    #
+    
     #     # Assign nodes to each layer
     #     nodes_per_layer = [self.total_endpoints]
     #     # Appends the minimum number of nodes that should be in the layer
     #     for subs in subnets_per_layer[1:-1]:
     #         nodes_per_layer.append(min_nodes_per_subnet * subs)
-    #
+    
     #     nodes_per_layer.append(self.total_database)
-    #
+    
     #     # Randomly adds one to random subnets until there is the correct number of nodes (Could be Opitmised in future)
     #     while sum(nodes_per_layer) < self.total_nodes:
     #         n_index = random.randint(1, self.layers - 2)
     #         nodes_per_layer[n_index] = nodes_per_layer[n_index] + 1
-    #
+    
     #     # Assign number of nodes to each subnet
     #     subnet_nodes = []
     #     for i, subnets in enumerate(subnets_per_layer):
@@ -351,7 +351,7 @@ class Network:
     #             n_index = random.randint(0, subnets - 1)
     #             temp_subnet_nodes[n_index] = temp_subnet_nodes[n_index] + 1
     #         subnet_nodes.append(temp_subnet_nodes)
-    #
+    
     #     # generate the graph
     #     self.graph = nx.Graph()
     #     # Node offset
@@ -374,10 +374,10 @@ class Network:
     #             subgraph = nx.relabel_nodes(subgraph, new_node_mapping)
     #             new_attr = {k + node_id: {"subnet": j, "layer": i} for k in range(s_nodes)}
     #             attr = {**attr, **new_attr}
-    #
+    
     #             # Setting offset to next empty node
     #             node_id += s_nodes
-    #
+    
     #             subgraph_pos = nx.spring_layout(subgraph)
     #             if i != 0:
     #                 subgraph_pos = {
@@ -385,7 +385,7 @@ class Network:
     #                         [v[0] + i * 2.25, v[1] + j * 3 + 1.5 * (max_subnet_in_layer - len(subnet_node_list))])
     #                     for k, v in subgraph_pos.items()
     #                 }
-    #
+    
     #                 for k, v in subgraph_pos.items():
     #                     y = v[1] + j * 3 + 1.5 * (max_subnet_in_layer - len(subnet_node_list))
     #                     subgraph_pos[k] = np.array(
@@ -402,19 +402,19 @@ class Network:
     #                 }
     #             # Stores all the positions of items from subgraphs
     #             self.pos = {**self.pos, **subgraph_pos}
-    #
+    
     #             # Selects Target Host
     #             if self.network_type == 0 and i == self.target_layer and j == 1:
     #                 self.target_node = node_id - random.randrange(0, s_nodes)
     #                 print("Target Node is: ", self.target_node)
-    #
+    
     #             # Assigns Colour of nodes based on constant key
     #             for k in range(s_nodes):
     #                 self.colour_map.append(constants.NODE_COLOURS[i])
-    #
+    
     #             # Adds Subgraph to final graph
     #             self.graph = nx.compose(self.graph, subgraph)
-    #
+    
     #     # fix redundant nodes
     #     self.colour_map = self.colour_map[:self.total_nodes]
     #     i = len(self.graph.nodes())
@@ -422,17 +422,17 @@ class Network:
     #         self.graph.remove_node(i-1)
     #         del self.pos[i-1]
     #         i -= 1
-    #
+    
     #     # Defines Nodes for whole graph
     #     nx.set_node_attributes(self.graph, attr)
-    #
+    
     #     # Connect the graph
     #     def get_other_node(node_list, node_degrees, other_node):
     #         n = random.choices(node_list, weights=node_degrees, k=1)[0]
     #         if n == other_node:
     #             return get_other_node(node_list, node_degrees, other_node)
     #         return n
-    #
+    
     #     while not nx.is_connected(self.graph):
     #         node_layers = nx.get_node_attributes(self.graph, "layer")
     #         for i in range(self.layers - 1):
@@ -440,7 +440,7 @@ class Network:
     #             degree_node_a = [self.graph.degree(n) for n in node_a]
     #             node_b = [n for n in node_layers if node_layers[n] == i + 1]
     #             degree_node_b = [self.graph.degree(n) for n in node_b]
-    #
+    
     #             n_a1 = random.choices(node_a, weights=degree_node_a, k=1)[0]
     #             if not nx.is_connected(self.graph.subgraph(node_a + node_b)):
     #                 print(node_b)
@@ -450,14 +450,14 @@ class Network:
     #                     self.graph.subgraph(node_a)):
     #                 n_a2 = get_other_node(node_a, degree_node_a, n_a1)
     #                 self.graph.add_edge(n_a1, n_a2)
-    #
+    
     #     # Updates Colour of target node to red
     #     if self.target_node:
     #         self.colour_map[self.target_node] = "red"
-    #
+    
     #     endpoint_nodes_list = self.exposed_endpoints
     #     blank_endpoints = []
-    #
+    
     #     # Remove edges between endpoint nodes (not needed since adversary can reach them all anyway)
     #     # Store all external nodes with no internal nodes into blank_endpoints
     #     for n in endpoint_nodes_list:
@@ -468,7 +468,7 @@ class Network:
     #         internal_connection = list(self.graph.neighbors(n))
     #         if not internal_connection:
     #             blank_endpoints.append(n)
-    #
+    
     #     # Pulls from blank_endpoints until all exposed endpoints are connected
     #     node_layers = nx.get_node_attributes(self.graph, "layer")
     #     layer1_nodes = [n for n in node_layers if node_layers[n] == 1]
@@ -477,13 +477,13 @@ class Network:
     #         endpoint = blank_endpoints.pop(0)
     #         other_node = random.choices(layer1_nodes, weights=layer1_weights, k=1)[0]
     #         self.graph.add_edge(endpoint, other_node)
-    #
+    
     #     # Fix positions for endpoints
     #     for n in range(self.total_endpoints):
     #         position = (n + 1) / self.total_endpoints * (max_y_pos - min_y_pos) + min_y_pos
     #         new_pos = {n: np.array([0, position])}
     #         self.pos.update(new_pos)
-    #
+    
     #     # handling database nodes
     #     database_nodes_list = self._database
     #     blank_database = []
@@ -495,7 +495,7 @@ class Network:
     #         internal_connection = list(self.graph.neighbors(n))
     #         if not internal_connection:
     #             blank_database.append(n)
-    #
+    
     #     # Pulls from blank_database until all database nodes are connected
     #     second_last_layer_nodes = [n for n in node_layers if node_layers[n] == self.layers - 2]
     #     second_last_layer_weights = [self.graph.degree(n) for n in second_last_layer_nodes]
@@ -504,19 +504,19 @@ class Network:
     #         other_nodes = random.choices(second_last_layer_nodes, weights=second_last_layer_weights, k=5)
     #         for node in other_nodes:
     #             self.graph.add_edge(endpoint, node)
-    #
+    
     #     # Fix positions for endpoints
     #     for n in range(self.total_nodes - self.total_database, self.total_nodes):
     #         position = (self.total_nodes - n) * 1 / self.total_database * 10
     #         new_pos = {n: np.array([(self.layers + 2) * 2.25, position])}
     #         self.pos.update(new_pos)
-    #
+    
     #     # Update Nodes Per Layer for Complete topology shuffling
     #     self.node_per_layer = nodes_per_layer.copy()
     #     self.node_per_layer[0] = self.total_endpoints
     #     self.node_per_layer[-1] = self.total_database
-    #
-    #
+    
+    
     #     # print("Endpoint list:", self.total_endpoints)
     #     # print("Node list:", self.graph.nodes)
     #     # print("Exposed Endpoint list: ", self.exposed_endpoints)

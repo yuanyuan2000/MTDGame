@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { DataSet, Network } from 'vis-network/standalone/esm/vis-network';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 // Fetch network data from the API
 const fetchNetworkData = async (prefix) => {
@@ -11,6 +12,7 @@ const fetchNetworkData = async (prefix) => {
 // Define the NetworkGraph component
 const NetworkGraph = (props) => {
     const { prefix , handleNodeClick } = props;
+    const navigate = useNavigate();
     const [nodes, setNodes] = useState(new DataSet([]));
     const [edges, setEdges] = useState(new DataSet([]));
     const [network, setNetwork] = useState(null);
@@ -24,6 +26,12 @@ const NetworkGraph = (props) => {
     
             setNodes(newNodes);
             setEdges(newEdges);
+
+            // check if game is over and there is a winner
+            if (!networkData.is_running && networkData.winner) {
+                alert(`Game over! The ${networkData.winner} win.`);
+                navigate('/');
+            }
     
             // Iterate over all nodes and set their visibility according to the visible_hosts list
             newNodes.forEach((node) => {
@@ -36,16 +44,22 @@ const NetworkGraph = (props) => {
         };
     
         // start after delay and fetch data every interval
+        let intervalId = null;
         const delay = 1000;
-        const interval = 2000;
+        const interval = 1000;
         const timeoutId = setTimeout(() => {
             fetchData();
-            const intervalId = setInterval(fetchData, interval);
-            return () => clearInterval(intervalId);
+            intervalId = setInterval(fetchData, interval);
+            // return () => clearInterval(intervalId);
         }, delay);
     
-        return () => clearTimeout(timeoutId);
-    }, [prefix]);
+        return () => {
+            clearTimeout(timeoutId);
+            if (intervalId) {
+                clearInterval(intervalId);
+            }
+        };
+    }, [prefix, navigate]);
     
 
 

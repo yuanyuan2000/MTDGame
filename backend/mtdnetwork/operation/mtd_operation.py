@@ -60,7 +60,7 @@ class MTDOperation:
                 mtd = self._mtd_scheme.trigger_suspended_mtd()
             else:
                 mtd = self._mtd_scheme.trigger_mtd()
-            # logging.info('MTD: %s triggered %.1fs' % (mtd.get_name(), self.env.now + self._proceed_time))
+            logging.info('MTD: %s triggered %.1fs' % (mtd.get_name(), self.env.now + self._proceed_time))
             resource = self._get_mtd_resource(mtd)
             if len(resource.users) == 0:
                 self.env.process(self._mtd_execute_action(env=self.env, mtd=mtd))

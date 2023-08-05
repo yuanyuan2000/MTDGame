@@ -124,11 +124,11 @@ class AttackOperation:
             self._interrupted_mtd = None
             adversary.set_curr_host_id(-1)
             adversary.set_curr_host(None)
-            # logging.info('Adversary: Restarting with SCAN_HOST at %.1fs!' % (self.env.now + self._proceed_time))
+            logging.info('Adversary: Restarting with SCAN_HOST at %.1fs!' % (self.env.now + self._proceed_time))
             self._scan_host()
         elif self._interrupted_mtd.get_resource_type() == 'application':
             self._interrupted_mtd = None
-            # logging.info('Adversary: Restarting with SCAN_PORT at %.1fs!' % (self.env.now + self._proceed_time))
+            logging.info('Adversary: Restarting with SCAN_PORT at %.1fs!' % (self.env.now + self._proceed_time))
             self._scan_port()
 
     def _execute_scan_host(self):
@@ -332,9 +332,9 @@ class AttackOperation:
         if adversary.get_curr_host_id() not in adversary.get_compromised_hosts():
             adversary.get_compromised_hosts().append(adversary.get_curr_host_id())
             adversary.get_attack_stats().update_compromise_host(adversary.curr_host)
-            # logging.info(
-            #     "Adversary: Host %i has been compromised at %.1fs!" % (
-            #         adversary.get_curr_host_id(), now + proceed_time))
+            logging.info(
+                "Adversary: Host %i has been compromised at %.1fs!" % (
+                    adversary.get_curr_host_id(), now + proceed_time))
             adversary.get_network().update_reachable_compromise(
                 adversary.get_curr_host_id(), adversary.get_compromised_hosts())
 

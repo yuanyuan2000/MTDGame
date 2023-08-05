@@ -34,6 +34,10 @@ HEIGHT = 500
 NODE_RADIUS = 12
 EDGE_WIDTH = 1
 
+SIMULATION_INTERVAL = 0.5    # the simpy will run in every SIMULATION_INTERVAL second
+GAME_TOTAL_TIME = 3000    # the game will end in GAME_TOTAL_TIME simulation seconds
+SPEED_RATIO = 300    # it means that one physcial second equal to SPEED_RATIO simulation seconds
+
 # def create_experiment_snapshots(network_size_list):
 #     snapshot_checkpoint = SnapshotCheckpoint()
 #     for size in network_size_list:
@@ -49,8 +53,6 @@ class Node:
         self.y = y
         self.color = color
 
-        self.is_chosen = False  # whether the node is chosen by users
-
 class Game:
     def __init__(self) -> None:
         self.width = WIDTH
@@ -60,6 +62,7 @@ class Game:
         self.room_id = None
         self.game_mode = None
         self.creator_role = None
+        self.winner = None
 
         self.env = None
         self.sim_time = 0
@@ -85,6 +88,9 @@ class Game:
     
     def get_game_mode(self):
         return self.game_mode
+    
+    def get_winner(self):
+        return self.winner
     
     def set_room_id(self, room_id):
         self.room_id = room_id
@@ -120,6 +126,7 @@ class Game:
         return self.evaluation
     
     def get_nodes(self):
+        self.update_network()
         return self.nodes
     
     def get_edges(self):
@@ -261,7 +268,8 @@ class Game:
         """
         return a list of host that has been compromised, such as [0, 11, 8, 9]
         """
-        return self.adversary.get_compromised_hosts()
+        compromised_hosts = self.adversary.get_compromised_hosts()
+        return sorted(set(compromised_hosts))
     
     def get_current_uncompromised_hosts(self):
         """
@@ -288,7 +296,7 @@ class Game:
             if ex_node not in compromised_hosts
         ]
 
-        return uncompromised_hosts
+        return sorted(set(uncompromised_hosts))
     
     def get_current_discovered_hosts(self):
         """
@@ -297,113 +305,121 @@ class Game:
         uncompromised_hosts = self.get_current_uncompromised_hosts()
         stop_attack = self.adversary.get_stop_attack()
         discovered_hosts = [n for n in uncompromised_hosts if n not in stop_attack]
-        return discovered_hosts
+        return sorted(set(discovered_hosts))
     
     def get_visible_hosts(self):
         return self.get_current_compromised_hosts() + self.get_current_uncompromised_hosts()
     
     def enum_host(self):
+        """
+        Starts enumerating each host by popping off the host id from the top of the host stack
+        Differences with simualtor: 1.no pivot host and stop attack(which to attack is decided by user); 2.no execution time
+        """
         adversary = self.adversary
         adversary.set_curr_process('ENUM_HOST')
         network = self.time_network
         adversary.set_host_stack(network.sort_by_distance_from_exposed_and_pivot_host(
                     adversary.get_host_stack(),
-                    adversary.get_compromised_hosts(),
-                    pivot_host_id=adversary.get_pivot_host_id()
+                    adversary.get_compromised_hosts()
                 ))
-        return adversary.get_host_stack()
+        self.update_network()
+        # return adversary.get_host_stack()
+        return self.get_current_uncompromised_hosts()
+    
+    def __start_new_attack(self, host_id):
+        """
+        update some parameters when the user start an attack for one node, such as set current host_id, host, ports and vulns
+        """
+        adversary = self.adversary
+        adversary.set_curr_host_id(host_id)
+        adversary.set_curr_host(self.time_network.get_host(adversary.get_curr_host_id()))
+        adversary.set_curr_ports([])
+        adversary.set_curr_vulns([])
+        adversary.get_attack_counter()[adversary.get_curr_host_id()] += 1
     
     def scan_port(self, host_id):
+        """
+        Starts a port scan on the target host
+        Checks if a compromised user has reused their credentials on the target host
+        Phase 1
+        """
+        host_id_str = str(host_id)
+        hosts = self.get_visible_hosts()
         adversary = self.adversary
-        adversary.set_curr_process('SCAN_PORT')
-        network = self.time_network
-        adversary.set_curr_host_id(host_id)
-        adversary.set_curr_host(network.get_host(adversary.get_curr_host_id()))
-        port_list = adversary.get_curr_host().port_scan()
-        adversary.set_curr_ports(port_list)
-        user_reuse = adversary.get_curr_host().can_auto_compromise_with_users(adversary.get_compromised_users())
-        if user_reuse:
-            # self.update_compromise_progress(self.env.now, self._proceed_time)
-            # self._scan_neighbors()
-            str = 'This node has been automatically compromised because of the same user password.'
-        else:
-            str = 'You can keep on attacking by clicking exploiting vulnerabilities button.'
+        port_list, user_reuse, msg = None, -1, f'The node {host_id_str} is illegal to scan the port because it is unvisble to the attacker.'
+        
+        if host_id in hosts:
+            adversary.set_curr_process('SCAN_PORT')
+            self.__start_new_attack(host_id)
+            
+            port_list = adversary.get_curr_host().port_scan()
+            adversary.set_curr_ports(port_list)
+            user_reuse = adversary.get_curr_host().can_auto_compromise_with_users(adversary.get_compromised_users())
+            msg = f'The node {host_id_str} has been automatically compromised because of the same user password.' if user_reuse else f'You can keep on attacking node {host_id_str} by exploiting vulnerabilities according to the port list: {", ".join(map(str, port_list))}'
+            if user_reuse:
+                self.__update_compromise_progress()
+                self.__scan_neighbors()
+                self.time_network.colour_map[adversary.get_curr_host_id()] = "red"
 
-        scan_port_result = {
-                'port_list': port_list,
-                'user_reuse': user_reuse,
-                'message': str,
-            }
-
-        return scan_port_result
+        self.update_network()
+        return {'port_list': port_list, 'user_reuse': user_reuse, 'message': msg, }
     
     def exploit_vuln(self, host_id):
+        hosts = self.get_visible_hosts()
         adversary = self.adversary
-        adversary.set_curr_process('EXPLOIT_VULN')
-        if host_id != adversary.get_curr_host_id():
-            return -1
-        else:
+        if host_id in hosts:
+            adversary.set_curr_process('EXPLOIT_VULN')
+            self.__start_new_attack(host_id)
+
+            adversary.set_curr_ports(adversary.get_curr_host().port_scan())
             adversary.set_curr_vulns(adversary.get_curr_host().get_vulns(adversary.get_curr_ports()))
             vulns = adversary.get_curr_vulns()
 
-            def exponential_variates(loc, scale):
-                from scipy.stats import expon
-                return expon.rvs(loc=loc, scale=scale, size=1)[0]
-
             for vuln in vulns:
-                exploit_time = exponential_variates(vuln.exploit_time(host=adversary.get_curr_host()), 0.5)
-                start_time = self.env.now + self._proceed_time
-                try:
-                    logging.info(
-                        "Adversary: Start %s %s on host %s at %.1fs." % (self.adversary.get_curr_process(), vuln.id,
-                                                                         self.adversary.get_curr_host_id(), start_time))
-                    yield self.env.timeout(exploit_time)
-                except simpy.Interrupt:
-                    self.env.process(self._handle_interrupt(start_time, self.adversary.get_curr_process()))
-                    return
-                finish_time = self.env.now + self._proceed_time
-                logging.info(
-                    "Adversary: Processed %s %s on host %s at %.1fs." % (self.adversary.get_curr_process(), vuln.id,
-                                                                         self.adversary.get_curr_host_id(), finish_time))
-                self.adversary.get_attack_stats().append_attack_operation_record(self.adversary.get_curr_process(),
-                                                                                start_time,
-                                                                                finish_time, self.adversary)
+                logging.info("Adversary: Processed %s %s on host %s at %.1fs." % (self.adversary.get_curr_process(), vuln.id,
+                                                                         self.adversary.get_curr_host_id(), self.env.now))
                 vuln.network(host=adversary.get_curr_host())
-                # cumulative vulnerability exploitation attempts
                 adversary.set_curr_attempts(adversary.get_curr_attempts() + 1)
 
-                if adversary.get_curr_host().check_compromised():
-                    for vuln in adversary.get_curr_vulns():
-                        if vuln.is_exploited():
-                            if vuln.exploitability == vuln.cvss / 5.5:
-                                vuln.exploitability = (1 - vuln.exploitability) / 2 + vuln.exploitability
-                                if vuln.exploitability > 1:
-                                    vuln.exploitability = 1
-                                # todo: record vulnerability roa, impact, and complexity
-                                # self.scorer.add_vuln_compromise(self.curr_time, vuln)
-                    # self.update_compromise_progress(self.env.now, self._proceed_time)
-                    # self._scan_neighbors()
-                    return 0
-                else:
-                    return 1
+            if adversary.get_curr_host().check_compromised():
+                for vuln in adversary.get_curr_vulns():
+                    if vuln.is_exploited():
+                        if vuln.exploitability == vuln.cvss / 5.5:
+                            vuln.exploitability = (1 - vuln.exploitability) / 2 + vuln.exploitability
+                            if vuln.exploitability > 1:
+                                vuln.exploitability = 1
+                self.__update_compromise_progress()
+                self.__scan_neighbors()
+                self.time_network.colour_map[adversary.get_curr_host_id()] = "red"
+                self.update_network()
+                return 0
+            else:
+                self.update_network()
+                return 1
+                
+        return -1
                 
     def brute_force(self, host_id):
+        hosts = self.get_visible_hosts()
         adversary = self.adversary
-        if host_id != adversary.get_curr_host_id():
-            return -1
-        else:
+        if host_id in hosts:
             adversary.set_curr_process('BRUTE_FORCE')
-            _brute_force_result = adversary.get_curr_host().compromise_with_users(
-                adversary.get_compromised_users())
-            if _brute_force_result:
-                self.update_compromise_progress(self.env.now, self._proceed_time)
-                self._scan_neighbors()
-                return 1
-            else:
-                self._enum_host()
-                return 0
+            self.__start_new_attack(host_id)
 
-    def _scan_neighbors(self):
+            _brute_force_result = adversary.get_curr_host().compromise_with_users(adversary.get_compromised_users())
+            if _brute_force_result:
+                self.__update_compromise_progress()
+                self.__scan_neighbors()
+                self.time_network.colour_map[host_id] = "red"
+                self.update_network()
+                return 0
+            else:
+                self.update_network()
+                return 1
+            
+        return -1
+
+    def __scan_neighbors(self):
         """
         Starts scanning for neighbors from a host that the hacker can pivot to
         Puts the new neighbors discovered to the start of the host stack.
@@ -418,28 +434,27 @@ class Game:
         ]
         adversary.set_host_stack(new__host_stack)
 
-    def update_compromise_progress(self, now, proceed_time):
+    def __update_compromise_progress(self):
         """
-        Updates the Hackers progress state when it compromises a host.
+        Updates some parameters when the current host is compromised
         """
         adversary = self.adversary
         adversary._pivot_host_id = adversary.get_curr_host_id()
         if adversary.get_curr_host_id() not in adversary.get_compromised_hosts():
             adversary.get_compromised_hosts().append(adversary.get_curr_host_id())
             adversary.get_attack_stats().update_compromise_host(adversary.curr_host)
-            logging.info(
-                "Adversary: Host %i has been compromised at %.1fs!" % (
-                    adversary.get_curr_host_id(), now + proceed_time))
-            adversary.get_network().update_reachable_compromise(
-                adversary.get_curr_host_id(), adversary.get_compromised_hosts())
+            logging.info("Adversary: Host %i has been compromised at %.1fs!" % (adversary.get_curr_host_id(), self.env.now))
+            adversary.get_network().update_reachable_compromise(adversary.get_curr_host_id(), adversary.get_compromised_hosts())
 
+            # update the user password list for next attack to try
             for user in adversary.get_curr_host().get_compromised_users():
                 if user not in adversary.get_compromised_users():
                     adversary.get_attack_stats().update_compromise_user(user)
-            adversary._compromised_users = list(set(
-                adversary.get_compromised_users() + adversary.get_curr_host().get_compromised_users()))
+            adversary._compromised_users = list(set(adversary.get_compromised_users() + adversary.get_curr_host().get_compromised_users()))
+
             if adversary.get_network().is_compromised(adversary.get_compromised_hosts()):
                 # terminate the whole process
+                logging.info(f"Now more than 80 percents of nodes has been compromised, the attackers win at {self.env.now:.1f}s!")
                 self.end_event.succeed()
                 return
 
@@ -453,6 +468,11 @@ class Game:
         self.shift_y = self.height - self.scale_y * self.time_network.max_y_pos
 
         pos_dict = self.time_network.pos
+        for index in self.get_current_compromised_hosts():
+            if self.time_network.colour_map[index] != 'red':
+                # some node color has been refresh because of topological shuffling, we need to change it back according to the compromised list
+                logging.info(f"Change the node {index} color from {self.time_network.colour_map[index]} to red!")
+                self.time_network.colour_map[index] = 'red'        
         color_list = self.time_network.colour_map
         self.nodes = []
         for key, color in zip(pos_dict, color_list):
@@ -471,12 +491,13 @@ class Game:
             time.sleep(period)
             last_time = self.sim_time
             self.sim_time = time.perf_counter() - start_time  # update the simulation time
-            logging.info("Period from %.3f to %.3f" % (last_time, self.sim_time))
-            # the game will end in 3000 simpy seconds
-            if self.sim_time*300 < 3000:
-                self.env.run(until=self.sim_time*300)
+            # logging.info("Period from %.3f to %.3f" % (last_time, self.sim_time))
+            if self.sim_time * SPEED_RATIO < GAME_TOTAL_TIME:
+                self.env.run(until=self.sim_time * SPEED_RATIO)
             else:
-                break
+                self.winner = 'Defender'
+                self.isrunning = False
+        logging.info("Simulation thread has stopped.")
 
     
     def execute_simulation(self, start_time=0, finish_time=None, scheme='random', mtd_interval=None, custom_strategies=None,
@@ -555,7 +576,7 @@ class Game:
             self.env.run(until=(finish_time - start_time))
         else:
             # self.env.run(until=end_event)
-            self.start_real_time_simulation(0.5)
+            self.start_real_time_simulation(SIMULATION_INTERVAL)
 
 
         # self.evaluation = Evaluation(network=self.time_network, adversary=self.adversary)

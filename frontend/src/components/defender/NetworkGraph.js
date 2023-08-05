@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { DataSet, Network } from 'vis-network/standalone/esm/vis-network';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 // Fetch network data from the API
 const fetchNetworkData = async (prefix) => {
@@ -11,6 +12,7 @@ const fetchNetworkData = async (prefix) => {
 // Define the NetworkGraph component
 const NetworkGraph = (props) => {
     const { prefix , handleNodeClick } = props;
+    const navigate = useNavigate();
     const [nodes, setNodes] = useState(new DataSet([]));
     const [edges, setEdges] = useState(new DataSet([]));
     const [network, setNetwork] = useState(null);
@@ -30,25 +32,31 @@ const NetworkGraph = (props) => {
             setNodes(newNodes);
             setEdges(newEdges);
 
+            // check if game is over and there is a winner
+            if (!networkData.is_running && networkData.winner) {
+                alert(`Game over! The ${networkData.winner} win.`);
+                navigate('/');
+            }
         };
 
+        let intervalId = null;
         const delay = 1000;  // delay in milliseconds
-        const interval = 2000;  // interval in milliseconds
+        const interval = 1000;  // interval in milliseconds
 
         // Set a timeout to delay the initial fetchData and setInterval calls
         const timeoutId = setTimeout(() => {
             fetchData();
-
-            // Then fetch data every 2 seconds
-            const intervalId = setInterval(fetchData, interval);
-
-            // Clear interval when component unmounts
-            return () => clearInterval(intervalId);
+            intervalId = setInterval(fetchData, interval);
         }, delay);
 
-        // Clear timeout when component unmounts
-        return () => clearTimeout(timeoutId);
-    }, [prefix]);
+        // Clear timer when component unmounts
+        return () => {
+            clearTimeout(timeoutId);
+            if (intervalId) {
+                clearInterval(intervalId);
+            }
+        };
+    }, [prefix, navigate]);
 
 
     // Create the network graph

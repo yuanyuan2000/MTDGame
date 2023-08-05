@@ -128,7 +128,7 @@ class Host:
         Sets the host as compromised
         """
         self.compromised = True
-        # self.change_node_color(color="red")
+        self.change_node_color(color="red")
 
     def possible_user_compromise(self):
         """
@@ -449,14 +449,15 @@ class Host:
         """
         Changes the color of the host on the overall network
         """
-        i = 0
-        host_index = -1
-        while i < len(self.network.colour_map):
-            if self.network.colour_map[i] == self.host_id:
-                host_index = i
-            i += 1
-        self.network.colour_map[host_index] = color
-        pass
+        # i = 0
+        # host_index = -1
+        # while i < len(self.network.colour_map):
+        #     if self.network.colour_map[i] == self.host_id:
+        #         host_index = i
+        #     i += 1
+        # self.network.colour_map[host_index] = color
+        # pass
+        self.network.colour_map[self.host_id] = color
 
     def set_host_users(self, users_list):
         """
