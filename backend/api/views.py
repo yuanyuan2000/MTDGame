@@ -87,18 +87,22 @@ class NetworkDataView(APIView):
     def get(self, request, format=None):
         is_running = game_instance.get_isrunning()
         winner = game_instance.get_winner()
+        time_used = game_instance.get_sim_time()
+        total_time = game_instance.get_total_time()
         nodes = transform_nodes(game_instance.get_nodes())
         edges = transform_edges(game_instance.get_edges())
-        return Response({"is_running": is_running, "winner": winner, "nodes": nodes, "edges": edges})
+        return Response({"is_running": is_running, "winner": winner, "time_used": time_used, "total_time": total_time, "nodes": nodes, "edges": edges})
     
 class NetworkDataView2(APIView):
     def get(self, request, format=None):
         is_running = game_instance.get_isrunning()
         winner = game_instance.get_winner()
+        time_used = game_instance.get_sim_time()
+        total_time = game_instance.get_total_time()
         nodes = transform_nodes(game_instance.get_nodes())
         edges = transform_edges(game_instance.get_edges())
         visible_hosts = game_instance.get_visible_hosts()
-        return Response({"is_running": is_running, "winner": winner, "nodes": nodes, "edges": edges, "visible_hosts": visible_hosts})
+        return Response({"is_running": is_running, "winner": winner, "time_used": time_used, "total_time": total_time, "nodes": nodes, "edges": edges, "visible_hosts": visible_hosts})
 
 
 @csrf_exempt

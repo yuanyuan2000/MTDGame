@@ -1,63 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { DataSet, Network } from 'vis-network/standalone/esm/vis-network';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
 
-// Fetch network data from the API
-const fetchNetworkData = async (prefix) => {
-    const response = await axios.get(prefix + '/api/defender/network_data/');
-    return response.data;
-};
-
-// Define the NetworkGraph component
 const NetworkGraph = (props) => {
-    const { prefix , handleNodeClick } = props;
-    const navigate = useNavigate();
-    const [nodes, setNodes] = useState(new DataSet([]));
-    const [edges, setEdges] = useState(new DataSet([]));
+    const { prefix , handleNodeClick, nodes: initialNodes, edges: initialEdges, visibleHosts } = props;
+    const [nodes, setNodes] = useState(new DataSet(initialNodes));
+    const [edges, setEdges] = useState(new DataSet(initialEdges));
     const [network, setNetwork] = useState(null);
-
-    // Fetch network data and update the state
+    
     useEffect(() => {
-        const fetchData = async () => {
-            const networkData = await fetchNetworkData(prefix);
+        const newNodes = new DataSet(initialNodes);
+        const newEdges = new DataSet(initialEdges);
+    
+        setNodes(newNodes);
+        setEdges(newEdges);
 
-            // show the network data in the console
-            // console.log('GET /api/defender/network_data/:', networkData);
-
-            const newNodes = new DataSet(networkData.nodes);
-            const newEdges = new DataSet(networkData.edges);
-
-            // Update the state with the new data
-            setNodes(newNodes);
-            setEdges(newEdges);
-
-            // check if game is over and there is a winner
-            if (!networkData.is_running && networkData.winner) {
-                alert(`Game over! The ${networkData.winner} win.`);
-                navigate('/');
-            }
-        };
-
-        let intervalId = null;
-        const delay = 1000;  // delay in milliseconds
-        const interval = 1000;  // interval in milliseconds
-
-        // Set a timeout to delay the initial fetchData and setInterval calls
-        const timeoutId = setTimeout(() => {
-            fetchData();
-            intervalId = setInterval(fetchData, interval);
-        }, delay);
-
-        // Clear timer when component unmounts
-        return () => {
-            clearTimeout(timeoutId);
-            if (intervalId) {
-                clearInterval(intervalId);
-            }
-        };
-    }, [prefix, navigate]);
-
+    }, [initialNodes, initialEdges, visibleHosts]);
 
     // Create the network graph
     useEffect(() => {

@@ -36,7 +36,7 @@ EDGE_WIDTH = 1
 
 SIMULATION_INTERVAL = 0.5    # the simpy will run in every SIMULATION_INTERVAL second
 GAME_TOTAL_TIME = 3000    # the game will end in GAME_TOTAL_TIME simulation seconds
-SPEED_RATIO = 300    # it means that one physcial second equal to SPEED_RATIO simulation seconds
+SPEED_RATIO = 30    # it means that one physcial second equal to SPEED_RATIO simulation seconds
 
 # def create_experiment_snapshots(network_size_list):
 #     snapshot_checkpoint = SnapshotCheckpoint()
@@ -66,6 +66,7 @@ class Game:
 
         self.env = None
         self.sim_time = 0
+        self.total_time = GAME_TOTAL_TIME / SPEED_RATIO
         # self.snapshot_checkpoint = None
         self.time_network = None
         self.adversary = None
@@ -91,6 +92,12 @@ class Game:
     
     def get_winner(self):
         return self.winner
+    
+    def get_sim_time(self):
+        return self.sim_time
+    
+    def get_total_time(self):
+        return self.total_time
     
     def set_room_id(self, room_id):
         self.room_id = room_id
@@ -131,13 +138,6 @@ class Game:
     
     def get_edges(self):
         edges = self.time_network.graph.edges
-        # from pprint import pprint
-        # def serialize_edges(edges):
-        #     serialize_edges = []
-        #     for edge in edges:
-        #         serialize_edges.append(vars(edge))
-        #     return serialize_edges
-        # pprint(edges)
         return edges
     
     def get_haha(self):

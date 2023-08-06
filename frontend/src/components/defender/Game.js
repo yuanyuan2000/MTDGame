@@ -2,10 +2,9 @@ import React, { useEffect, useState } from "react";
 import NetworkGraph from "./NetworkGraph";
 import Terminal from "./Terminal";
 import axios from "axios";
+import { useNavigate } from 'react-router-dom';
 
-// Define a prefix for the API URL
 var prefix = "http://localhost:8000";
-// a global variable to store the selected node id
 var selectedNodeId = null; 
 
 function Game() {
@@ -13,8 +12,10 @@ function Game() {
     const [isGameStarted, setIsGameStarted] = useState(false);
     // command is a terminal state variable, when it is changed the terminal is updated
     const [command, setCommand] = useState(null);
-    // resource is the resource for the user
     const [resource, setResource] = useState(0);
+    const [networkData, setNetworkData] = useState(null);
+    const [gameTime, setGameTime] = useState(0.0);
+    const navigate = useNavigate();
 
     useEffect(() => {
         const startGame = async () => {
@@ -28,6 +29,45 @@ function Game() {
         };
         startGame();
     }, []);
+
+    useEffect(() => {
+        // Fetch network data from the API
+        const fetchNetworkData = async (prefix) => {
+            const response = await axios.get(prefix + '/api/attacker/network_data/');
+            return response.data;
+        };
+
+        const fetchData = async () => {
+            const networkData = await fetchNetworkData(prefix);
+            setNetworkData(networkData);
+
+            if (!networkData.is_running && networkData.winner) {
+                alert(`Game over! The ${networkData.winner} win.`);
+                navigate('/');
+            }
+        };
+
+        let intervalId = null;
+        const delay = 1000;
+        const interval = 1000;
+        const timeoutId = setTimeout(() => {
+            fetchData();
+            intervalId = setInterval(fetchData, interval);
+        }, delay);
+    
+        return () => {
+            clearTimeout(timeoutId);
+            if (intervalId) {
+                clearInterval(intervalId);
+            }
+        };
+    }, [navigate]);
+
+    useEffect(() => {
+        if (networkData && typeof networkData.time_used === "number" && typeof networkData.total_time === "number") {
+            setGameTime((networkData.total_time - networkData.time_used).toFixed(1));
+        }
+    }, [networkData]);
 
     useEffect(() => {
         const intervalId = setInterval(() => {
@@ -194,8 +234,8 @@ function Game() {
                     className="network-graph-container"
                     style={{ width: "100%", height: "70vh" }}
                 >
-                    {isGameStarted && (
-                        <NetworkGraph prefix={prefix} handleNodeClick={handleNodeClick} />
+                    {isGameStarted && networkData && (
+                        <NetworkGraph prefix={prefix} handleNodeClick={handleNodeClick} nodes={networkData.nodes} edges={networkData.edges} visibleHosts={networkData.visible_hosts} />
                     )}
                 </div>
                 <div
@@ -209,6 +249,7 @@ function Game() {
                         height: "80%", // Set the desired height
                     }}
                 >
+                    <p style={{ fontSize: "18px", color: "green" }}>Game time remaining: {gameTime} seconds</p>
                     <div
                         className="terminal-container"
                         style={{
@@ -228,7 +269,7 @@ function Game() {
                         <button onClick={handleServiceDiversityClick} style={{ width: "100px", height: "35px", backgroundColor: "#262626", color: "white", border: "none", borderRadius: "5px", cursor: "pointer", zIndex: 100  }}>Service Diversity</button>
                     </div>
                     <div>
-                        <p>Resources: {resource}</p>
+                    <p style={{ fontSize: "18px", color: "blue" }}>Resources: {resource}</p>
                         <progress value={resource} max="100" />
                     </div>
                 </div>
