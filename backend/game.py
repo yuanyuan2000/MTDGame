@@ -36,14 +36,9 @@ EDGE_WIDTH = 1
 
 SIMULATION_INTERVAL = 0.5    # the simpy will run in every SIMULATION_INTERVAL second
 GAME_TOTAL_TIME = 3000    # the game will end in GAME_TOTAL_TIME simulation seconds
-SPEED_RATIO = 30    # it means that one physcial second equal to SPEED_RATIO simulation seconds
-
-# def create_experiment_snapshots(network_size_list):
-#     snapshot_checkpoint = SnapshotCheckpoint()
-#     for size in network_size_list:
-#         time_network = TimeNetwork(total_nodes=size)
-#         adversary = Adversary(network=time_network, attack_threshold=ATTACKER_THRESHOLD)
-#         snapshot_checkpoint.save_snapshots_by_network_size(time_network, adversary)
+SPEED_RATIO = 10    # it means that one physcial second equal to SPEED_RATIO simulation seconds
+TOTAL_NODE = 32
+MAX_DIVERSITY_SCORE = 15
 
 class Node:
 
@@ -67,13 +62,16 @@ class Game:
         self.env = None
         self.sim_time = 0
         self.total_time = GAME_TOTAL_TIME / SPEED_RATIO
-        # self.snapshot_checkpoint = None
+
         self.time_network = None
         self.adversary = None
         self.attack_operation = None
         self.mtd_operation = None
-        # self.evaluation = None
+
         self.nodes = []
+        self.target_node_num = random.randint(TOTAL_NODE - 8, TOTAL_NODE - 1)
+        self.attacker_visible_nodes = []
+        self.diversity_scores = []
 
     def get_isrunning(self):
         return self.isrunning
@@ -198,11 +196,15 @@ class Game:
     def os_diversity(self):
         mtd_strategy = OSDiversity(network=self.time_network)
         mtd_strategy.mtd_operation()
+        # add the diversity score for hosts(maximum is MAX_DIVERSITY_SCORE), so it is more difficult for attcker to exploit vulnerabilities
+        self.diversity_scores = [num + 1 if num < MAX_DIVERSITY_SCORE else num for num in self.diversity_scores]
         return True
 
     def service_diversity(self, host_id):
         mtd_strategy = ServiceDiversity(network=self.time_network)
         mtd_strategy.mtd_operation(specific_host_id=host_id)
+        if self.diversity_scores[host_id] < MAX_DIVERSITY_SCORE:
+            self.diversity_scores[host_id] += 1
         return True
 
     def get_host_all_details(self, host_id):
@@ -243,6 +245,7 @@ class Game:
                 'os_version': self.time_network.graph.nodes[host_id]["host"].os_version,
                 'ip': self.time_network.graph.nodes[host_id]["host"].ip,
                 'is_compromised': host.is_compromised(),
+                'diversity_score': self.diversity_scores[host_id],
                 'service_info': services_info,
             }
 
@@ -308,7 +311,24 @@ class Game:
         return sorted(set(discovered_hosts))
     
     def get_visible_hosts(self):
-        return self.get_current_compromised_hosts() + self.get_current_uncompromised_hosts()
+        """
+        when the attacker use this API to get the visble data to do some operation or draw the network
+        we need to judge if the nodes are still in the can_visible_list(the compromised and uncompromised hosts)
+        because some nodes may become unvisible because of some MTD operation during this time
+        """
+        can_visible_list = self.get_current_compromised_hosts() + self.get_current_uncompromised_hosts()
+        self.attacker_visible_nodes = [node for node in self.attacker_visible_nodes if node in can_visible_list]
+        return self.attacker_visible_nodes
+    
+    def scan_host(self):
+        """
+        update the visble nodes from the current compromised and uncompromised host list
+        """
+        adversary = self.adversary
+        adversary.set_curr_process('SCAN_HOST')
+        self.attacker_visible_nodes = self.get_current_compromised_hosts() + self.get_current_uncompromised_hosts()
+        self.update_network()
+        return self.get_current_uncompromised_hosts()
     
     def enum_host(self):
         """
@@ -354,7 +374,14 @@ class Game:
             
             port_list = adversary.get_curr_host().port_scan()
             adversary.set_curr_ports(port_list)
-            user_reuse = adversary.get_curr_host().can_auto_compromise_with_users(adversary.get_compromised_users())
+            # for game balance, p(reuse password) = 0.15+num_compromised_hosts/(2*TOTAL_NODE), so it is [0.15, 0.65] (depends on the numer of compromised hosts)
+            def probability_function():
+                num_compromised_hosts = len(self.get_current_compromised_hosts())
+                x = 0.15 + num_compromised_hosts / (2 * TOTAL_NODE)
+                random_number = random.random()
+                return random_number < x
+            # user_reuse = adversary.get_curr_host().can_auto_compromise_with_users(adversary.get_compromised_users())
+            user_reuse = probability_function()
             msg = f'The node {host_id_str} has been automatically compromised because of the same user password.' if user_reuse else f'You can keep on attacking node {host_id_str} by exploiting vulnerabilities according to the port list: {", ".join(map(str, port_list))}'
             if user_reuse:
                 self.__update_compromise_progress()
@@ -375,19 +402,27 @@ class Game:
             adversary.set_curr_vulns(adversary.get_curr_host().get_vulns(adversary.get_curr_ports()))
             vulns = adversary.get_curr_vulns()
 
-            for vuln in vulns:
-                logging.info("Adversary: Processed %s %s on host %s at %.1fs." % (self.adversary.get_curr_process(), vuln.id,
-                                                                         self.adversary.get_curr_host_id(), self.env.now))
-                vuln.network(host=adversary.get_curr_host())
-                adversary.set_curr_attempts(adversary.get_curr_attempts() + 1)
+            # for game balance, p(exploit) = 0.75-diversity_score/(2*MAX_DIVERSITY_SCORE), so it is [0.25, 0.75] (depends on the diversity score)
+            def probability_function():
+                x = 0.75 - self.diversity_scores[host_id] / (2 * MAX_DIVERSITY_SCORE)
+                random_number = random.random()
+                return random_number < x
 
-            if adversary.get_curr_host().check_compromised():
-                for vuln in adversary.get_curr_vulns():
-                    if vuln.is_exploited():
-                        if vuln.exploitability == vuln.cvss / 5.5:
-                            vuln.exploitability = (1 - vuln.exploitability) / 2 + vuln.exploitability
-                            if vuln.exploitability > 1:
-                                vuln.exploitability = 1
+            # for vuln in vulns:
+            #     logging.info("Adversary: Processed %s %s on host %s at %.1fs." % (self.adversary.get_curr_process(), vuln.id,
+            #                                                              self.adversary.get_curr_host_id(), self.env.now))
+            #     vuln.network(host=adversary.get_curr_host())
+            #     adversary.set_curr_attempts(adversary.get_curr_attempts() + 1)
+
+            # if adversary.get_curr_host().check_compromised():
+            #     for vuln in adversary.get_curr_vulns():
+            #         if vuln.is_exploited():
+            #             if vuln.exploitability == vuln.cvss / 5.5:
+            #                 vuln.exploitability = (1 - vuln.exploitability) / 2 + vuln.exploitability
+            #                 if vuln.exploitability > 1:
+            #                     vuln.exploitability = 1
+            exploit_result = probability_function()
+            if exploit_result:
                 self.__update_compromise_progress()
                 self.__scan_neighbors()
                 self.time_network.colour_map[adversary.get_curr_host_id()] = "red"
@@ -406,8 +441,15 @@ class Game:
             adversary.set_curr_process('BRUTE_FORCE')
             self.__start_new_attack(host_id)
 
-            _brute_force_result = adversary.get_curr_host().compromise_with_users(adversary.get_compromised_users())
-            if _brute_force_result:
+            # for game balance, p(brute force) = 0.5+num_compromised_hosts/(2*TOTAL_NODE), so it is [0.5, 1] (depends on the numer of compromised hosts)
+            def probability_function():
+                num_compromised_hosts = len(self.get_current_compromised_hosts())
+                x = 0.5 + num_compromised_hosts / (2 * TOTAL_NODE)
+                random_number = random.random()
+                return random_number < x
+            # brute_force_result = adversary.get_curr_host().compromise_with_users(adversary.get_compromised_users())
+            brute_force_result = probability_function()
+            if brute_force_result:
                 self.__update_compromise_progress()
                 self.__scan_neighbors()
                 self.time_network.colour_map[host_id] = "red"
@@ -452,11 +494,12 @@ class Game:
                     adversary.get_attack_stats().update_compromise_user(user)
             adversary._compromised_users = list(set(adversary.get_compromised_users() + adversary.get_curr_host().get_compromised_users()))
 
-            if adversary.get_network().is_compromised(adversary.get_compromised_hosts()):
-                # terminate the whole process
-                logging.info(f"Now more than 80 percents of nodes has been compromised, the attackers win at {self.env.now:.1f}s!")
-                self.end_event.succeed()
-                return
+            # judge if the attacker win
+            # if adversary.get_network().is_compromised(adversary.get_compromised_hosts()):
+            #     logging.info(f"Now more than 80 percents of nodes has been compromised, the attackers win at {self.env.now:.1f}s!")
+            #     self.end_event.succeed()
+            #     self.winner = 'Attacker'
+            #     self.isrunning = False
 
     def update_network(self):
         """
@@ -472,7 +515,11 @@ class Game:
             if self.time_network.colour_map[index] != 'red':
                 # some node color has been refresh because of topological shuffling, we need to change it back according to the compromised list
                 logging.info(f"Change the node {index} color from {self.time_network.colour_map[index]} to red!")
-                self.time_network.colour_map[index] = 'red'        
+                self.time_network.colour_map[index] = 'red'
+        if self.time_network.colour_map[self.target_node_num] != 'white':
+            logging.info(f"Change the target node {self.target_node_num} color from {self.time_network.colour_map[self.target_node_num]} to white!")
+            self.time_network.colour_map[self.target_node_num] = 'white'
+
         color_list = self.time_network.colour_map
         self.nodes = []
         for key, color in zip(pos_dict, color_list):
@@ -495,13 +542,20 @@ class Game:
             if self.sim_time * SPEED_RATIO < GAME_TOTAL_TIME:
                 self.env.run(until=self.sim_time * SPEED_RATIO)
             else:
+                logging.info(f"Now the time out, the defenders win at {self.env.now:.1f}s!")
                 self.winner = 'Defender'
                 self.isrunning = False
+
+            if self.target_node_num in self.get_current_compromised_hosts():
+                logging.info(f"Now the target node has been compromised, the attackers win at {self.env.now:.1f}s!")
+                self.winner = 'Attacker'
+                self.isrunning = False
+            
         logging.info("Simulation thread has stopped.")
 
     
     def execute_simulation(self, start_time=0, finish_time=None, scheme='random', mtd_interval=None, custom_strategies=None,
-                        checkpoints=None, total_nodes=50, total_endpoints=5, total_subnets=8, total_layers=4,
+                        checkpoints=None, total_nodes=32, total_endpoints=5, total_subnets=8, total_layers=4,
                         target_layer=4, total_database=2, terminate_compromise_ratio=0.8, new_network=True):
         """
         :param start_time: the time to start the simulation, need to load timestamp-based snapshots if set start_time > 0
@@ -522,39 +576,17 @@ class Game:
         """
         self.env = simpy.Environment()
         end_event = self.env.event()
-        # self.snapshot_checkpoint = SnapshotCheckpoint(env=self.env, checkpoints=checkpoints)
-        
 
-        # if start_time > 0:
-        #     try:
-        #         self.time_network, self.adversary = self.snapshot_checkpoint.load_snapshots_by_time(start_time)
-        #     except FileNotFoundError:
-        #         print('No timestamp-based snapshots available! Set start_time = 0 !')
-        #         return
-        # elif not new_network:
-        #     try:
-        #         self.time_network, self.adversary = self.snapshot_checkpoint.load_snapshots_by_network_size(total_nodes)
-        #     except FileNotFoundError:
-        #         print('set new_network=True')
-        # else:
         self.time_network = TimeNetwork(total_nodes=total_nodes, total_endpoints=total_endpoints,
                                 total_subnets=total_subnets, total_layers=total_layers,
                                 target_layer=target_layer, total_database=total_database,
                                 terminate_compromise_ratio=terminate_compromise_ratio)
         self.adversary = Adversary(network=self.time_network, attack_threshold=ATTACKER_THRESHOLD)
-        # self.snapshot_checkpoint.save_snapshots_by_network_size(self.time_network, self.adversary)
 
         # update network information
         self.update_network()
-        
-        # from pprint import pprint
-        # def serialize_nodes(nodes):
-        #     serialized_nodes = []
-        #     for node in nodes:
-        #         serialized_nodes.append(vars(node))
-        #     return serialized_nodes
-        # pprint(serialize_nodes(self.nodes))
-
+        self.attacker_visible_nodes = [i for i in range(total_endpoints)]
+        self.diversity_scores = [0 for _ in range(TOTAL_NODE)]
 
         # start attack
         self.attack_operation = AttackOperation(env=self.env, end_event=end_event, adversary=self.adversary, proceed_time=0)
@@ -567,10 +599,6 @@ class Game:
                                         mtd_trigger_interval=mtd_interval, custom_strategies=custom_strategies)
             self.mtd_operation.proceed_mtd()
 
-        # save snapshot by time
-        # if checkpoints is not None:
-        #     self.snapshot_checkpoint.proceed_save(self.time_network, self.adversary)
-
         # start simulation
         if finish_time is not None:
             self.env.run(until=(finish_time - start_time))
@@ -578,11 +606,7 @@ class Game:
             # self.env.run(until=end_event)
             self.start_real_time_simulation(SIMULATION_INTERVAL)
 
-
-        # self.evaluation = Evaluation(network=self.time_network, adversary=self.adversary)
-
-
     def start(self):
         self.isrunning = True
         # create_experiment_snapshots([25, 50, 75, 100])
-        self.execute_simulation(start_time=0, finish_time=None, mtd_interval=200, scheme='random', total_nodes=32, new_network=True)
+        self.execute_simulation(start_time=0, finish_time=None, mtd_interval=200, scheme='random', total_nodes=TOTAL_NODE, new_network=True)

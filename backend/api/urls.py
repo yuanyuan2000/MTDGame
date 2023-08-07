@@ -1,7 +1,7 @@
 from django.urls import path
 from . import views
 from .views import StartGameView, NetworkDataView, clicked_node, ip_shuffling, topological_shuffling, os_diversity, service_diversity, get_details
-from .views import NetworkDataView2, enum_host, scan_port, exploit_vuln, brute_force
+from .views import NetworkDataView2, scan_host, scan_port, exploit_vuln, brute_force
 
 urlpatterns = [
     path('create_game_room/', views.create_game_room, name='create_game_room'),
@@ -15,7 +15,7 @@ urlpatterns = [
     path('defender/network_data/service_diversity/', service_diversity, name='service_diversity'),
     path('defender/network_data/get_details/', get_details, name='get_details'),
     path('attacker/network_data/', NetworkDataView2.as_view(), name='network-data'),
-    path('attacker/network_data/enum_host/', enum_host, name='enum_host'),
+    path('attacker/network_data/scan_host/', scan_host, name='scan_host'),
     path('attacker/network_data/scan_port/', scan_port, name='scan_port'),
     path('attacker/network_data/exploit_vuln/', exploit_vuln, name='exploit_vuln'),
     path('attacker/network_data/brute_force/', brute_force, name='brute_force'),

@@ -13,8 +13,8 @@ const Terminal = ({ command }) => {
     xtermRef.current.loadAddon(fitAddon.current);
 
     xtermRef.current.open(terminalRef.current);
-    xtermRef.current.writeln('Welcome to terminal!');
-    xtermRef.current.writeln('Now you can click the node and apply attack operation!');
+    xtermRef.current.writeln('Hi attacker, welcome to MTD game!');
+    xtermRef.current.writeln('Your job is to find the main database(a white node) and compromise it. Now you can click the node and apply attack operation!');
 
     const handleResize = () => {
       fitAddon.current.fit();

@@ -186,13 +186,13 @@ def get_details(request):
     
 
 @csrf_exempt
-def enum_host(request):
+def scan_host(request):
     try:
         if request.method == 'POST':
             data = json.loads(request.body)
             node_id = data['nodeId']
-            enum_host_list = game_instance.enum_host()
-            return JsonResponse({"enum_host_list": enum_host_list}, status=200)
+            scan_host_list = game_instance.scan_host()
+            return JsonResponse({"scan_host_list": scan_host_list}, status=200)
         else:
             return JsonResponse({"message": "Invalid request"}, status=400)
     except TypeError as e:

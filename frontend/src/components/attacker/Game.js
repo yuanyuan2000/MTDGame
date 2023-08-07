@@ -81,31 +81,31 @@ function Game() {
         selectedNodeId = nodeId;
     };
 
-    const handleEnumHostClick = async () => {
-        if (resource >= 2) {
-            setResource(resource - 2);
+    const handleScanHostClick = async () => {
+        if (resource >= 5) {
+            setResource(resource - 5);
             try {
-                const response = await axios.post(prefix + "/api/attacker/network_data/enum_host/", {
+                const response = await axios.post(prefix + "/api/attacker/network_data/scan_host/", {
                     nodeId: selectedNodeId,
                 });
                 
-                if (response.data.enum_host_list) {
-                    let hosts = response.data.enum_host_list;
+                if (response.data.scan_host_list) {
+                    let hosts = response.data.scan_host_list;
                     let hostsStr = hosts.join(', ');
-                    setCommand(`You have scan the network, now you can attack these nodes: ${hostsStr}`);
+                    setCommand(`You have scaned the network, now you can attack these nodes: ${hostsStr}`);
                 }
             } catch (error) {
                 console.error('Error in enum host:', error);
             }
         } else{
-            setCommand('Insufficient resources (<2)');
+            setCommand('Insufficient resources (<5)');
         }
     };
     
     const handleScanPortClick = async () => {
         if (selectedNodeId !== null) {
-            if (resource >= 30) {
-                setResource(resource - 30);
+            if (resource >= 10) {
+                setResource(resource - 10);
                 try {
                     const response = await axios.post(prefix + "/api/attacker/network_data/scan_port/", {
                         nodeId: selectedNodeId,
@@ -128,7 +128,7 @@ function Game() {
                     console.error('Error', error);
                 }
             } else {
-                setCommand('Insufficient resources (<30)');
+                setCommand('Insufficient resources (<10)');
             }
         } else {
             setCommand('No node selected.');
@@ -138,8 +138,8 @@ function Game() {
 
     const handleExploitVulnClick = async () => {
         if (selectedNodeId !== null) {
-            if (resource >= 30) {
-                setResource(resource - 30);
+            if (resource >= 40) {
+                setResource(resource - 40);
                 try {
                     const response = await axios.post(prefix + "/api/attacker/network_data/exploit_vuln/", {
                         nodeId: selectedNodeId,
@@ -154,7 +154,7 @@ function Game() {
                     console.error('Error', error);
                 }
             } else{
-                setCommand('Insufficient resources (<30)');
+                setCommand('Insufficient resources (<40)');
             }
         } else {
             setCommand("No node selected.");
@@ -163,8 +163,8 @@ function Game() {
     
     const handleBruteForceClick = async () => {
         if (selectedNodeId !== null) {
-            if (resource >= 40) {
-                setResource(resource - 40);
+            if (resource >= 50) {
+                setResource(resource - 50);
                 try {
                     const response = await axios.post(prefix + "/api/attacker/network_data/brute_force/", {
                         nodeId: selectedNodeId,
@@ -179,7 +179,7 @@ function Game() {
                     console.error('Error', error);
                 }
             } else{
-                setCommand('Insufficient resources (<40)');
+                setCommand('Insufficient resources (<50)');
             }
         } else {
             setCommand('No node selected.');
@@ -227,7 +227,7 @@ function Game() {
                         <Terminal command={command} />
                     </div>
                     <div style={{ display: "flex", justifyContent: "center", marginTop: "-40px" }}>
-                        <button onClick={handleEnumHostClick} style={{ marginRight: "10px", width: "100px", height: "35px", backgroundColor: "#262626", color: "white", border: "none", borderRadius: "5px", cursor: "pointer", zIndex: 100 }}>Enum Host</button>
+                        <button onClick={handleScanHostClick} style={{ marginRight: "10px", width: "100px", height: "35px", backgroundColor: "#262626", color: "white", border: "none", borderRadius: "5px", cursor: "pointer", zIndex: 100 }}>Scan Host</button>
                         <button onClick={handleScanPortClick} style={{ marginRight: "10px", width: "100px", height: "35px", backgroundColor: "#262626", color: "white", border: "none", borderRadius: "5px", cursor: "pointer", zIndex: 100 }}>Scan Port</button>
                         <button onClick={handleExploitVulnClick} style={{ marginRight: "10px", width: "100px", height: "35px", backgroundColor: "#262626", color: "white", border: "none", borderRadius: "5px", cursor: "pointer", zIndex: 100  }}>Exploit Vuln</button>
                         <button onClick={handleBruteForceClick} style={{ width: "100px", height: "35px", backgroundColor: "#262626", color: "white", border: "none", borderRadius: "5px", cursor: "pointer", zIndex: 100  }}>Brute force</button>
