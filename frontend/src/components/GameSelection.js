@@ -1,11 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-
-// Define a prefix for the API URL
-var prefix = "http://localhost:8000";
+import { UrlPrefixContext } from '../App';
 
 const GameSelection = () => {
+  const prefix = useContext(UrlPrefixContext);
   const [gameMode, setGameMode] = useState("human");
   const [role, setRole] = useState("attacker");
   const [roomId, setRoomId] = useState("");

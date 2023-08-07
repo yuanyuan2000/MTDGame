@@ -1,13 +1,19 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import NetworkGraph from "./NetworkGraph";
 import Terminal from "./Terminal";
 import axios from "axios";
 import { useNavigate } from 'react-router-dom';
+import { UrlPrefixContext } from '../../App';
 
-var prefix = "http://localhost:8000";
-var selectedNodeId = null; 
+var selectedNodeId = null;
+var RES_GET_DETAIL = 5;
+var RES_IP_SHUFFLING = 30;
+var RES_TOPO_SHUFFLING = 80;
+var RES_OS_DIVERSITY = 50;
+var RES_SERVICE_DIVERSITY = 15;
 
 function Game() {
+    const prefix = useContext(UrlPrefixContext);
     // isGameStarted is a game state variable, NetworkGraph is rendered when it is true
     const [isGameStarted, setIsGameStarted] = useState(false);
     // command is a terminal state variable, when it is changed the terminal is updated
@@ -28,7 +34,7 @@ function Game() {
             }
         };
         startGame();
-    }, []);
+    }, [prefix]);
 
     useEffect(() => {
         // Fetch network data from the API
@@ -61,7 +67,7 @@ function Game() {
                 clearInterval(intervalId);
             }
         };
-    }, [navigate]);
+    }, [prefix, navigate]);
 
     useEffect(() => {
         if (networkData && typeof networkData.time_used === "number" && typeof networkData.total_time === "number") {
@@ -83,8 +89,8 @@ function Game() {
 
     const handleIPShufflingClick = async () => {
         if (selectedNodeId !== null) {
-            if (resource >= 20) {
-                setResource(resource - 20);
+            if (resource >= RES_IP_SHUFFLING) {
+                setResource(resource - RES_IP_SHUFFLING);
                 try {
                     const response = await axios.post(prefix + "/api/defender/network_data/ip_shuffling/", {
                         nodeId: selectedNodeId,
@@ -98,7 +104,7 @@ function Game() {
                     console.error('Error while posting ip_shuffling:', error);
                 }
             } else{
-                setCommand('Insufficient resources (<20)');
+                setCommand(`Insufficient resources (< ${RES_IP_SHUFFLING})`);
             }
         } else {
             setCommand('No node selected.');
@@ -106,8 +112,8 @@ function Game() {
     };
 
     const handleTopologicalShufflingClick = async () => {
-        if (resource >= 50) {
-            setResource(resource - 50);
+        if (resource >= RES_TOPO_SHUFFLING) {
+            setResource(resource - RES_TOPO_SHUFFLING);
             try {
                 const response = await axios.post(prefix + "/api/defender/network_data/topological_shuffling/", {
                     nodeId: selectedNodeId,
@@ -121,13 +127,13 @@ function Game() {
                 console.error('Error while posting topological_shuffling:', error);
             }
         } else{
-            setCommand('Insufficient resources (<50)');
+            setCommand(`Insufficient resources (< ${RES_TOPO_SHUFFLING})`);
         }
     };
 
     const handleOSDiversityClick = async () => {
-        if (resource >= 30) {
-            setResource(resource - 30);
+        if (resource >= RES_OS_DIVERSITY) {
+            setResource(resource - RES_OS_DIVERSITY);
             try {
                 const response = await axios.post(prefix + "/api/defender/network_data/os_diversity/", {
                     nodeId: selectedNodeId,
@@ -141,14 +147,14 @@ function Game() {
                 console.error('Error while posting os_diversity:', error);
             }
         } else{
-            setCommand('Insufficient resources (<30)');
+            setCommand(`Insufficient resources (< ${RES_OS_DIVERSITY})`);
         }
     };
 
     const handleServiceDiversityClick = async () => {
         if (selectedNodeId !== null) {
-            if (resource >= 10) {
-                setResource(resource - 10);
+            if (resource >= RES_SERVICE_DIVERSITY) {
+                setResource(resource - RES_SERVICE_DIVERSITY);
                 try {
                     const response = await axios.post(prefix + "/api/defender/network_data/service_diversity/", {
                         nodeId: selectedNodeId,
@@ -162,7 +168,7 @@ function Game() {
                     console.error('Error while posting service_diversity:', error);
                 }
             } else{
-                setCommand('Insufficient resources (<10)');
+                setCommand(`Insufficient resources (< ${RES_SERVICE_DIVERSITY})`);
             }
         } else {
             setCommand('No node selected.');
@@ -171,8 +177,8 @@ function Game() {
 
     const handleDetailsClick = async () => {
         if (selectedNodeId !== null) {
-            if (resource >= 5) {
-                setResource(resource - 5);
+            if (resource >= RES_GET_DETAIL) {
+                setResource(resource - RES_GET_DETAIL);
                 try {
                     const response = await axios.post(prefix + "/api/defender/network_data/get_details/", {
                         nodeId: selectedNodeId,
@@ -218,7 +224,7 @@ function Game() {
                     console.error('Error while posting get_details:', error);
                 }
             } else{
-                setCommand('Insufficient resources (<5)');
+                setCommand(`Insufficient resources (< ${RES_GET_DETAIL})`);
             }
         } else {
             setCommand("No node selected.");

@@ -99,10 +99,11 @@ class NetworkDataView2(APIView):
         winner = game_instance.get_winner()
         time_used = game_instance.get_sim_time()
         total_time = game_instance.get_total_time()
+        new_message = game_instance.get_attacker_new_message()
         nodes = transform_nodes(game_instance.get_nodes())
         edges = transform_edges(game_instance.get_edges())
         visible_hosts = game_instance.get_visible_hosts()
-        return Response({"is_running": is_running, "winner": winner, "time_used": time_used, "total_time": total_time, "nodes": nodes, "edges": edges, "visible_hosts": visible_hosts})
+        return Response({"is_running": is_running, "winner": winner, "time_used": time_used, "total_time": total_time, "new_message": new_message, "nodes": nodes, "edges": edges, "visible_hosts": visible_hosts})
 
 
 @csrf_exempt
@@ -230,7 +231,7 @@ def brute_force(request):
         if request.method == 'POST':
             data = json.loads(request.body)
             node_id = data['nodeId']
-            brute_force_result = game_instance.brute_force(node_id)
+            brute_force_result = game_instance.start_brute_force(node_id)
             return JsonResponse({"brute_force_result": brute_force_result}, status=200)
         else:
             return JsonResponse({"message": "Invalid request"}, status=400)

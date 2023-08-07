@@ -26,7 +26,7 @@ from mtdnetwork.mtd.osdiversityassignment import OSDiversityAssignment
 import random
 import threading
 import time
-import queue
+from collections import deque
 
 # Constants for game
 WIDTH = 1000
@@ -71,8 +71,11 @@ class Game:
         self.nodes = []
         self.target_node_num = random.randint(TOTAL_NODE - 8, TOTAL_NODE - 1)
         self.attacker_visible_nodes = []
-        self.diversity_scores = []
-
+        self.diversity_scores = []     # a int list(len:TOTAL_NODE), more score a node has, more difficult to exploit
+        self.brute_force_progress = []  # a bool list(len:TOTAL_NODE), False means the progress has been interrupt by user MTD operation
+        self.attacker_new_message = deque()   # a queue that store new messages for sending to the attacker, it will be deleted after sending
+        self.attacker_message_id_counter = 0
+        
     def get_isrunning(self):
         return self.isrunning
     
@@ -138,14 +141,28 @@ class Game:
         edges = self.time_network.graph.edges
         return edges
     
-    def get_haha(self):
-        test_json = {
-            'time_network.graph.nodes.get(host_id).os_type': self.time_network.graph.nodes[10]["host"].os_type,
-            'time_network.graph.nodes.get(host_id).os_version': self.time_network.graph.nodes[10]["host"].os_version,
-            'time_network.graph.nodes.get(host_id).host_id': self.time_network.graph.nodes[10]["host"].host_id,
-            'time_network.graph.nodes.get(host_id).ip': self.time_network.graph.nodes[10]["host"].ip
-        }
-        return test_json
+    # def get_attacker_new_message(self):
+    #     """
+    #     get the new message for the attacker from the message queue, and then deque them
+    #     """
+    #     messages = list(self.attacker_new_message)
+    #     self.attacker_new_message = deque()
+    #     for message in messages:
+    #         logging.info(f"Sent message to frontend: {message}")
+    #     return messages
+
+    def get_attacker_new_message(self):
+        messages = list(self.attacker_new_message)[-10:]   # only send the 10 newest messagess
+        return messages
+    
+    def add_attacker_new_message(self, message_content):
+        message_id = self.attacker_message_id_counter
+        self.attacker_new_message.append({'id': message_id, 'content': message_content})
+        self.attacker_message_id_counter += 1
+
+        # if the number of messages more than 10, delete the old messages
+        if len(self.attacker_new_message) > 10:
+            self.attacker_new_message.popleft()
     
     def get_host_os_type(self, host_id):
         return self.time_network.graph.nodes[host_id]["host"].os_type
@@ -170,21 +187,17 @@ class Game:
         Perform IP Shuffling MTD operation on the specified host.
         :param host_id: ID of the host that needs to perform IP shuffling operation.
         """
-        # Get all hosts
         hosts = self.time_network.get_hosts()
         if host_id in hosts:
-            # List to hold all IP addresses in the network
-            existing_ips = [host.ip for host in hosts.values()]
-            # Get the host that needs IP shuffling
+            existing_ips = [host.ip for host in hosts.values()]  # list to hold all IP addresses in the network
             target_host = hosts[host_id]
             # Generate a new IP address that doesn't conflict with the existing ones
             new_ip = target_host.get_random_address(existing_addresses=existing_ips)
-            # Assign the new IP to the host
             target_host.ip = new_ip
-            print(f"IP address of host {host_id} has been changed to {new_ip}")
+            # Interrupt the brute force progress for this IP
+            self.brute_force_progress[host_id] = False
             return True
         else:
-            print(f"Node {host_id} not found in the network.")
             return False
         
     def topology_shuffle(self):
@@ -324,8 +337,6 @@ class Game:
         """
         update the visble nodes from the current compromised and uncompromised host list
         """
-        adversary = self.adversary
-        adversary.set_curr_process('SCAN_HOST')
         self.attacker_visible_nodes = self.get_current_compromised_hosts() + self.get_current_uncompromised_hosts()
         self.update_network()
         return self.get_current_uncompromised_hosts()
@@ -333,10 +344,9 @@ class Game:
     def enum_host(self):
         """
         Starts enumerating each host by popping off the host id from the top of the host stack
-        Differences with simualtor: 1.no pivot host and stop attack(which to attack is decided by user); 2.no execution time
+        Differences with simualtor: 1.no pivot host and stop attack(which to attack is decided by user); 2.no set progress and no execution time
         """
         adversary = self.adversary
-        adversary.set_curr_process('ENUM_HOST')
         network = self.time_network
         adversary.set_host_stack(network.sort_by_distance_from_exposed_and_pivot_host(
                     adversary.get_host_stack(),
@@ -369,15 +379,14 @@ class Game:
         port_list, user_reuse, msg = None, -1, f'The node {host_id_str} is illegal to scan the port because it is unvisble to the attacker.'
         
         if host_id in hosts:
-            adversary.set_curr_process('SCAN_PORT')
             self.__start_new_attack(host_id)
             
             port_list = adversary.get_curr_host().port_scan()
             adversary.set_curr_ports(port_list)
-            # for game balance, p(reuse password) = 0.15+num_compromised_hosts/(2*TOTAL_NODE), so it is [0.15, 0.65] (depends on the numer of compromised hosts)
+            # for game balance, p(reuse password) = 0+num_compromised_hosts/(2*TOTAL_NODE), so it is [0, 0.5] (depends on the numer of compromised hosts)
             def probability_function():
                 num_compromised_hosts = len(self.get_current_compromised_hosts())
-                x = 0.15 + num_compromised_hosts / (2 * TOTAL_NODE)
+                x = 0 + num_compromised_hosts / (2 * TOTAL_NODE)
                 random_number = random.random()
                 return random_number < x
             # user_reuse = adversary.get_curr_host().can_auto_compromise_with_users(adversary.get_compromised_users())
@@ -395,16 +404,15 @@ class Game:
         hosts = self.get_visible_hosts()
         adversary = self.adversary
         if host_id in hosts:
-            adversary.set_curr_process('EXPLOIT_VULN')
             self.__start_new_attack(host_id)
 
             adversary.set_curr_ports(adversary.get_curr_host().port_scan())
             adversary.set_curr_vulns(adversary.get_curr_host().get_vulns(adversary.get_curr_ports()))
             vulns = adversary.get_curr_vulns()
 
-            # for game balance, p(exploit) = 0.75-diversity_score/(2*MAX_DIVERSITY_SCORE), so it is [0.25, 0.75] (depends on the diversity score)
+            # for game balance, p(exploit) = 0.65-diversity_score/(2*MAX_DIVERSITY_SCORE), so it is [0.15, 0.65] (depends on the diversity score)
             def probability_function():
-                x = 0.75 - self.diversity_scores[host_id] / (2 * MAX_DIVERSITY_SCORE)
+                x = 0.65 - self.diversity_scores[host_id] / (2 * MAX_DIVERSITY_SCORE)
                 random_number = random.random()
                 return random_number < x
 
@@ -433,33 +441,46 @@ class Game:
                 return 1
                 
         return -1
-                
-    def brute_force(self, host_id):
-        hosts = self.get_visible_hosts()
-        adversary = self.adversary
-        if host_id in hosts:
-            adversary.set_curr_process('BRUTE_FORCE')
-            self.__start_new_attack(host_id)
 
-            # for game balance, p(brute force) = 0.5+num_compromised_hosts/(2*TOTAL_NODE), so it is [0.5, 1] (depends on the numer of compromised hosts)
-            def probability_function():
-                num_compromised_hosts = len(self.get_current_compromised_hosts())
-                x = 0.5 + num_compromised_hosts / (2 * TOTAL_NODE)
-                random_number = random.random()
-                return random_number < x
-            # brute_force_result = adversary.get_curr_host().compromise_with_users(adversary.get_compromised_users())
-            brute_force_result = probability_function()
-            if brute_force_result:
+    def start_brute_force(self, host_id):
+        hosts = self.get_visible_hosts()
+        if host_id in hosts:
+            # set the brute force progress to be True before attacking
+            self.brute_force_progress[host_id] = True
+            # create a Timer to run finish_brute_force in 5 seconds
+            timer = threading.Timer(5.0, self.finish_brute_force, args=(host_id,))
+            timer.start()
+            return 0
+        else:
+            return -1
+                
+    def finish_brute_force(self, host_id):
+        self.__start_new_attack(host_id)
+        # for game balance, p(brute force) = 0.4+num_compromised_hosts/(2*TOTAL_NODE), so it is [0.4, 0.9] (depends on the numer of compromised hosts)
+        def probability_function():
+            num_compromised_hosts = len(self.get_current_compromised_hosts())
+            x = 0.4 + num_compromised_hosts / (2 * TOTAL_NODE)
+            random_number = random.random()
+            return random_number < x
+        # brute_force_result = adversary.get_curr_host().compromise_with_users(adversary.get_compromised_users())
+        brute_force_result = probability_function()
+
+        if host_id in self.get_current_compromised_hosts():
+            self.add_attacker_new_message(f"Message: Node {host_id} has been already successfully compromised.")
+        else:
+            if brute_force_result and self.brute_force_progress[host_id]:
                 self.__update_compromise_progress()
                 self.__scan_neighbors()
                 self.time_network.colour_map[host_id] = "red"
-                self.update_network()
-                return 0
+                self.add_attacker_new_message(f"Message: Node {host_id} has been successfully compromised by brute force.")
+            elif self.brute_force_progress[host_id]:
+                self.add_attacker_new_message(f"Message: Failed to compromise node {host_id}")
+                self.add_attacker_new_message(f"It may because you haven't get enough proper passwords.")
             else:
-                self.update_network()
-                return 1
-            
-        return -1
+                self.add_attacker_new_message(f"Message: Failed to compromise node {host_id}.")
+                self.add_attacker_new_message(f"It may because some MTD operation interrupt your progress.")
+        
+        self.update_network()
 
     def __scan_neighbors(self):
         """
@@ -467,7 +488,6 @@ class Game:
         Puts the new neighbors discovered to the start of the host stack.
         """
         adversary = self.adversary
-        adversary.set_curr_process('SCAN_NEIGHBOR')
         found_neighbors = adversary.get_curr_host().discover_neighbors()
         new__host_stack = found_neighbors + [
             node_id
@@ -587,6 +607,7 @@ class Game:
         self.update_network()
         self.attacker_visible_nodes = [i for i in range(total_endpoints)]
         self.diversity_scores = [0 for _ in range(TOTAL_NODE)]
+        self.brute_force_progress = [True for _ in range(TOTAL_NODE)]
 
         # start attack
         self.attack_operation = AttackOperation(env=self.env, end_event=end_event, adversary=self.adversary, proceed_time=0)

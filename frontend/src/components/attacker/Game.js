@@ -1,13 +1,18 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import NetworkGraph from "./NetworkGraph";
 import Terminal from "./Terminal";
 import axios from "axios";
 import { useNavigate } from 'react-router-dom';
+import { UrlPrefixContext } from '../../App';
 
-var prefix = "http://localhost:8000";
 var selectedNodeId = null; 
+var RES_SCAN_HOST = 5;
+var RES_SCAN_PORT = 10;
+var RES_EXPLOIT_VULN = 40;
+var RES_BRUTE_FORCE = 50;
 
 function Game() {
+    const prefix = useContext(UrlPrefixContext);
     // isGameStarted is a game state variable, NetworkGraph is rendered when it is true
     const [isGameStarted, setIsGameStarted] = useState(false);
     // command is a terminal state variable, when it is changed the terminal is updated
@@ -15,6 +20,7 @@ function Game() {
     const [resource, setResource] = useState(0);
     const [networkData, setNetworkData] = useState(null);
     const [gameTime, setGameTime] = useState(0.0);
+    const [displayedMessageIds, setDisplayedMessageIds] = useState([]);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -28,7 +34,7 @@ function Game() {
             }
         };
         startGame();
-    }, []);
+    }, [prefix]);
 
     useEffect(() => {
         // Fetch network data from the API
@@ -37,9 +43,23 @@ function Game() {
             return response.data;
         };
 
+        const displayMessages = (messages) => {
+            const newMessages = messages.filter(msg => !displayedMessageIds.includes(msg.id));
+            newMessages.forEach((message, index) => {
+                setTimeout(() => {
+                    setCommand(message.content);
+                }, index * 30);
+            });
+            setDisplayedMessageIds(displayedMessageIds.concat(newMessages.map(msg => msg.id)));
+        };
+
         const fetchData = async () => {
             const networkData = await fetchNetworkData(prefix);
             setNetworkData(networkData);
+
+            if (networkData.new_message && networkData.new_message.length > 0) {
+                displayMessages(networkData.new_message);
+            }
 
             if (!networkData.is_running && networkData.winner) {
                 alert(`Game over! The ${networkData.winner} win.`);
@@ -61,7 +81,7 @@ function Game() {
                 clearInterval(intervalId);
             }
         };
-    }, [navigate]);
+    }, [prefix, navigate, displayedMessageIds]);
 
     useEffect(() => {
         if (networkData && typeof networkData.time_used === "number" && typeof networkData.total_time === "number") {
@@ -82,8 +102,8 @@ function Game() {
     };
 
     const handleScanHostClick = async () => {
-        if (resource >= 5) {
-            setResource(resource - 5);
+        if (resource >= RES_SCAN_HOST) {
+            setResource(resource - RES_SCAN_HOST);
             try {
                 const response = await axios.post(prefix + "/api/attacker/network_data/scan_host/", {
                     nodeId: selectedNodeId,
@@ -98,14 +118,14 @@ function Game() {
                 console.error('Error in enum host:', error);
             }
         } else{
-            setCommand('Insufficient resources (<5)');
+            setCommand(`Insufficient resources (< ${RES_SCAN_HOST})`);
         }
     };
     
     const handleScanPortClick = async () => {
         if (selectedNodeId !== null) {
-            if (resource >= 10) {
-                setResource(resource - 10);
+            if (resource >= RES_SCAN_PORT) {
+                setResource(resource - RES_SCAN_PORT);
                 try {
                     const response = await axios.post(prefix + "/api/attacker/network_data/scan_port/", {
                         nodeId: selectedNodeId,
@@ -117,8 +137,8 @@ function Game() {
                         setCommand(scanResult.message);
                     } else {
                         if (scanResult.port_list !== null) {
-                            let portsStr = scanResult.port_list.join(', ');
-                            setCommand(`${scanResult.message} Ports: ${portsStr}`);
+                            // let portsStr = scanResult.port_list.join(', ');
+                            setCommand(`${scanResult.message}`);
                         } else {
                             setCommand(scanResult.message);
                         }
@@ -128,7 +148,7 @@ function Game() {
                     console.error('Error', error);
                 }
             } else {
-                setCommand('Insufficient resources (<10)');
+                setCommand(`Insufficient resources (< ${RES_SCAN_PORT})`);
             }
         } else {
             setCommand('No node selected.');
@@ -138,8 +158,8 @@ function Game() {
 
     const handleExploitVulnClick = async () => {
         if (selectedNodeId !== null) {
-            if (resource >= 40) {
-                setResource(resource - 40);
+            if (resource >= RES_EXPLOIT_VULN) {
+                setResource(resource - RES_EXPLOIT_VULN);
                 try {
                     const response = await axios.post(prefix + "/api/attacker/network_data/exploit_vuln/", {
                         nodeId: selectedNodeId,
@@ -154,7 +174,7 @@ function Game() {
                     console.error('Error', error);
                 }
             } else{
-                setCommand('Insufficient resources (<40)');
+                setCommand(`Insufficient resources (< ${RES_EXPLOIT_VULN})`);
             }
         } else {
             setCommand("No node selected.");
@@ -163,23 +183,23 @@ function Game() {
     
     const handleBruteForceClick = async () => {
         if (selectedNodeId !== null) {
-            if (resource >= 50) {
-                setResource(resource - 50);
+            if (resource >= RES_BRUTE_FORCE) {
+                setResource(resource - RES_BRUTE_FORCE);
                 try {
                     const response = await axios.post(prefix + "/api/attacker/network_data/brute_force/", {
                         nodeId: selectedNodeId,
                     });
                     console.log(response.data.brute_force_result)
-                    if (response.data.brute_force_result === 1) {
-                        setCommand("Attack failed, please try other methods or change the node.");
-                    } else if (response.data.brute_force_result === 0) {
-                        setCommand("The node has been compromised.");
+                    if (response.data.brute_force_result === 0) {
+                        setCommand("Brute force compromising start...");
+                    } else if (response.data.brute_force_result === -1) {
+                        setCommand("The node can not be accessed now.");
                     }
                 } catch (error) {
                     console.error('Error', error);
                 }
             } else{
-                setCommand('Insufficient resources (<50)');
+                setCommand(`Insufficient resources (< ${RES_BRUTE_FORCE})`);
             }
         } else {
             setCommand('No node selected.');
