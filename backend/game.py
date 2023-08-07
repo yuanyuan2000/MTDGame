@@ -39,6 +39,8 @@ GAME_TOTAL_TIME = 3000    # the game will end in GAME_TOTAL_TIME simulation seco
 SPEED_RATIO = 10    # it means that one physcial second equal to SPEED_RATIO simulation seconds
 TOTAL_NODE = 32
 MAX_DIVERSITY_SCORE = 10
+EXPLOIT_VULN_TIME = 3
+BRUTE_FORCE_TIME = 5
 
 class Node:
 
@@ -370,59 +372,67 @@ class Game:
         self.update_network()
         return {'port_list': port_list, 'user_reuse': user_reuse, 'message': msg, }
     
-    def exploit_vuln(self, host_id):
-        hosts = self.get_visible_hosts()
+    def start_exploit_vuln(self, host_id):
+        if host_id in self.get_visible_hosts() and host_id not in self.get_current_compromised_hosts():
+            # create a Timer to run finish_exploit_vuln in EXPLOIT_VULN_TIME seconds
+            timer = threading.Timer(EXPLOIT_VULN_TIME, self.finish_exploit_vuln, args=(host_id,))
+            timer.start()
+            return 0
+        else:
+            return -1
+    
+    def finish_exploit_vuln(self, host_id):
         adversary = self.adversary
-        if host_id in hosts:
-            adversary.set_curr_host_id(host_id)
-            adversary.set_curr_host(self.time_network.get_host(adversary.get_curr_host_id()))
-            adversary.set_curr_ports([])
-            adversary.set_curr_vulns([])           
-            adversary.get_attack_counter()[adversary.get_curr_host_id()] += 1
+        adversary.set_curr_host_id(host_id)
+        adversary.set_curr_host(self.time_network.get_host(adversary.get_curr_host_id()))
+        adversary.set_curr_ports([])
+        adversary.set_curr_vulns([])           
+        adversary.get_attack_counter()[adversary.get_curr_host_id()] += 1
+        adversary.set_curr_ports(adversary.get_curr_host().port_scan())
+        adversary.set_curr_vulns(adversary.get_curr_host().get_vulns(adversary.get_curr_ports()))
+        
+        # for game balance, p(exploit) = 0.7-diversity_score/(2*MAX_DIVERSITY_SCORE), so it is [0.2, 0.7] (depends on the diversity score)
+        def probability_function():
+            x = 0.7 - self.diversity_scores[host_id] / (2 * MAX_DIVERSITY_SCORE)
+            random_number = random.random()
+            return random_number < x
+        
+        # vulns = adversary.get_curr_vulns()
+        # for vuln in vulns:
+        #     logging.info("Adversary: Processed %s %s on host %s at %.1fs." % (adversary.get_curr_process(), vuln.id,
+        #                                                              adversary.get_curr_host_id(), self.env.now))
+        #     vuln.network(host=adversary.get_curr_host())
+        #     adversary.set_curr_attempts(adversary.get_curr_attempts() + 1)
+        # if adversary.get_curr_host().check_compromised():
+        #     for vuln in adversary.get_curr_vulns():
+        #         if vuln.is_exploited():
+        #             if vuln.exploitability == vuln.cvss / 5.5:
+        #                 vuln.exploitability = (1 - vuln.exploitability) / 2 + vuln.exploitability
+        #                 if vuln.exploitability > 1:
+        #                     vuln.exploitability = 1
+        exploit_result = probability_function()
 
-            adversary.set_curr_ports(adversary.get_curr_host().port_scan())
-            adversary.set_curr_vulns(adversary.get_curr_host().get_vulns(adversary.get_curr_ports()))
-            vulns = adversary.get_curr_vulns()
-
-            # for game balance, p(exploit) = 0.7-diversity_score/(2*MAX_DIVERSITY_SCORE), so it is [0.2, 0.7] (depends on the diversity score)
-            def probability_function():
-                x = 0.7 - self.diversity_scores[host_id] / (2 * MAX_DIVERSITY_SCORE)
-                random_number = random.random()
-                return random_number < x
-
-            # for vuln in vulns:
-            #     logging.info("Adversary: Processed %s %s on host %s at %.1fs." % (adversary.get_curr_process(), vuln.id,
-            #                                                              adversary.get_curr_host_id(), self.env.now))
-            #     vuln.network(host=adversary.get_curr_host())
-            #     adversary.set_curr_attempts(adversary.get_curr_attempts() + 1)
-
-            # if adversary.get_curr_host().check_compromised():
-            #     for vuln in adversary.get_curr_vulns():
-            #         if vuln.is_exploited():
-            #             if vuln.exploitability == vuln.cvss / 5.5:
-            #                 vuln.exploitability = (1 - vuln.exploitability) / 2 + vuln.exploitability
-            #                 if vuln.exploitability > 1:
-            #                     vuln.exploitability = 1
-            exploit_result = probability_function()
+        if host_id in self.get_current_compromised_hosts():
+            self.add_attacker_new_message(f"Message: Node {host_id} has been already successfully compromised.")
+        else:
             if exploit_result:
                 self.__update_compromise_progress()
                 self.__scan_neighbors()
                 self.time_network.colour_map[adversary.get_curr_host_id()] = "red"
+                self.add_attacker_new_message(f"Message: Node {host_id} has been successfully compromised by exploit vulnerabilities.")
                 self.update_network()
-                return 0
             else:
-                self.update_network()
-                return 1
-                
-        return -1
-
+                self.add_attacker_new_message(f"Message: Exploiting the vulnerability of services on node {host_id} failed")
+                self.add_attacker_new_message(f"It may because few services on this host are vulnerable.")
+            
+        self.update_network()
+        
     def start_brute_force(self, host_id):
-        hosts = self.get_visible_hosts()
-        if host_id in hosts:
+        if host_id in self.get_visible_hosts() and host_id not in self.get_current_compromised_hosts():
             # set the brute force progress to be True before attacking
             self.brute_force_progress[host_id] = True
-            # create a Timer to run finish_brute_force in 5 seconds
-            timer = threading.Timer(5.0, self.finish_brute_force, args=(host_id,))
+            # create a Timer to run finish_brute_force in BRUTE_FORCE_TIME seconds
+            timer = threading.Timer(BRUTE_FORCE_TIME, self.finish_brute_force, args=(host_id,))
             timer.start()
             return 0
         else:
@@ -454,10 +464,10 @@ class Game:
                 self.time_network.colour_map[host_id] = "red"
                 self.add_attacker_new_message(f"Message: Node {host_id} has been successfully compromised by brute force.")
             elif self.brute_force_progress[host_id]:
-                self.add_attacker_new_message(f"Message: Failed to compromise node {host_id}")
+                self.add_attacker_new_message(f"Message: Brute-forcing host on node {host_id} failed")
                 self.add_attacker_new_message(f"It may because you haven't get enough proper passwords.")
             else:
-                self.add_attacker_new_message(f"Message: Failed to compromise node {host_id}.")
+                self.add_attacker_new_message(f"Message: Brute-forcing host on node {host_id} failed")
                 self.add_attacker_new_message(f"It may because some MTD operation interrupt your progress.")
         
         self.update_network()
@@ -497,7 +507,6 @@ class Game:
         """
         update the information about the network and the nodes in network
         """
-        
         self.scale_x = 100
         self.scale_y = (self.height) // (self.time_network.max_y_pos - self.time_network.min_y_pos)
         self.shift_y = self.height - self.scale_y * self.time_network.max_y_pos

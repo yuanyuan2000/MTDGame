@@ -9,7 +9,7 @@ var selectedNodeId = null;
 var RES_SCAN_HOST = 5;
 var RES_SCAN_PORT = 10;
 var RES_EXPLOIT_VULN = 40;
-var RES_BRUTE_FORCE = 50;
+var RES_BRUTE_FORCE = 60;
 
 function Game() {
     const prefix = useContext(UrlPrefixContext);
@@ -164,11 +164,11 @@ function Game() {
                     const response = await axios.post(prefix + "/api/attacker/network_data/exploit_vuln/", {
                         nodeId: selectedNodeId,
                     });
-                    console.log(response.data.exploit_vuln_result)
-                    if (response.data.exploit_vuln_result === 1) {
-                        setCommand("Attack failed, please try other methods or change the node.");
-                    } else if (response.data.exploit_vuln_result === 0) {
-                        setCommand("The node has been compromised.");
+                    // console.log(response.data.exploit_vuln_result)
+                    if (response.data.exploit_vuln_result === 0) {
+                        setCommand("Exploit vulnerabilities start...");
+                    } else if (response.data.exploit_vuln_result === -1) {
+                        setCommand("The node can not be accessed or has been compromised now.");
                     }
                 } catch (error) {
                     console.error('Error', error);
@@ -189,11 +189,11 @@ function Game() {
                     const response = await axios.post(prefix + "/api/attacker/network_data/brute_force/", {
                         nodeId: selectedNodeId,
                     });
-                    console.log(response.data.brute_force_result)
+                    // console.log(response.data.brute_force_result)
                     if (response.data.brute_force_result === 0) {
                         setCommand("Brute force compromising start...");
                     } else if (response.data.brute_force_result === -1) {
-                        setCommand("The node can not be accessed now.");
+                        setCommand("The node can not be accessed or has been compromised now.");
                     }
                 } catch (error) {
                     console.error('Error', error);

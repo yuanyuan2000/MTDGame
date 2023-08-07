@@ -216,7 +216,7 @@ def exploit_vuln(request):
         if request.method == 'POST':
             data = json.loads(request.body)
             node_id = data['nodeId']
-            exploit_vuln_result = game_instance.exploit_vuln(node_id)
+            exploit_vuln_result = game_instance.start_exploit_vuln(node_id)
             return JsonResponse({"exploit_vuln_result": exploit_vuln_result}, status=200)
         else:
             return JsonResponse({"message": "Invalid request"}, status=400)

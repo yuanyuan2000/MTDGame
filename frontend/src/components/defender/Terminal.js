@@ -14,7 +14,8 @@ const Terminal = ({ command }) => {
 
     xtermRef.current.open(terminalRef.current);
     xtermRef.current.writeln('Hi defender, welcome to MTD game!');
-    xtermRef.current.writeln('Your job is to protect main database(the white node) during the game time. Now you can apply some MTD operation to protect it!');
+    xtermRef.current.writeln('A host will turn red when it has been compromised by attcker.');
+    xtermRef.current.writeln('Your job is to protect the main database(white node) for 5 minutes. Apply some MTD operation to protect it now!');
 
     const handleResize = () => {
       fitAddon.current.fit();
