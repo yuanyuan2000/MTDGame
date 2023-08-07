@@ -14,7 +14,8 @@ const Terminal = ({ command }) => {
 
     xtermRef.current.open(terminalRef.current);
     xtermRef.current.writeln('Hi attacker, welcome to MTD game!');
-    xtermRef.current.writeln('Your job is to find the main database(a white node) and compromise it. Now you can click the node and apply attack operation!');
+    xtermRef.current.writeln('There are some nodes in a network, but you can only access 5 endpoints now.');
+    xtermRef.current.writeln('Your job is to find the main database(a white node) and compromise it. Start to attack endpoints now and find more nodes!');
 
     const handleResize = () => {
       fitAddon.current.fit();

@@ -9,7 +9,7 @@ var selectedNodeId = null;
 var RES_GET_DETAIL = 5;
 var RES_IP_SHUFFLING = 30;
 var RES_TOPO_SHUFFLING = 100;
-var RES_OS_DIVERSITY = 50;
+var RES_OS_DIVERSITY = 45;
 var RES_SERVICE_DIVERSITY = 15;
 
 function Game() {
@@ -160,7 +160,7 @@ function Game() {
                         nodeId: selectedNodeId,
                     });
                     if (response.data.is_sucessful) {
-                        setCommand('You have change the service of the host on this node. Now it is more difficult for attacker to exploit its vulnerabilities.');
+                        setCommand('You have improved the services on this node. Now it is more difficult for attacker to exploit its vulnerabilities.');
                     } else {
                         setCommand('Service diversity failed. It may because: 1. Don\'t choose a valid node. 2. Don\'t have enough resource to do this MTD operation');
                     }
