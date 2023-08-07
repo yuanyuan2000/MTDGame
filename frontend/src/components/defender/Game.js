@@ -8,7 +8,7 @@ import { UrlPrefixContext } from '../../App';
 var selectedNodeId = null;
 var RES_GET_DETAIL = 5;
 var RES_IP_SHUFFLING = 30;
-var RES_TOPO_SHUFFLING = 80;
+var RES_TOPO_SHUFFLING = 100;
 var RES_OS_DIVERSITY = 50;
 var RES_SERVICE_DIVERSITY = 15;
 

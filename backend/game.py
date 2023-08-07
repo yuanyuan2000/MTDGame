@@ -38,7 +38,7 @@ SIMULATION_INTERVAL = 0.5    # the simpy will run in every SIMULATION_INTERVAL s
 GAME_TOTAL_TIME = 3000    # the game will end in GAME_TOTAL_TIME simulation seconds
 SPEED_RATIO = 10    # it means that one physcial second equal to SPEED_RATIO simulation seconds
 TOTAL_NODE = 32
-MAX_DIVERSITY_SCORE = 15
+MAX_DIVERSITY_SCORE = 10
 
 class Node:
 
@@ -410,9 +410,9 @@ class Game:
             adversary.set_curr_vulns(adversary.get_curr_host().get_vulns(adversary.get_curr_ports()))
             vulns = adversary.get_curr_vulns()
 
-            # for game balance, p(exploit) = 0.65-diversity_score/(2*MAX_DIVERSITY_SCORE), so it is [0.15, 0.65] (depends on the diversity score)
+            # for game balance, p(exploit) = 0.7-diversity_score/(2*MAX_DIVERSITY_SCORE), so it is [0.2, 0.7] (depends on the diversity score)
             def probability_function():
-                x = 0.65 - self.diversity_scores[host_id] / (2 * MAX_DIVERSITY_SCORE)
+                x = 0.7 - self.diversity_scores[host_id] / (2 * MAX_DIVERSITY_SCORE)
                 random_number = random.random()
                 return random_number < x
 
@@ -601,6 +601,9 @@ class Game:
                                 total_subnets=total_subnets, total_layers=total_layers,
                                 target_layer=target_layer, total_database=total_database,
                                 terminate_compromise_ratio=terminate_compromise_ratio)
+        
+        logging.info(f"Game mode: {self.game_mode}; Creator role: {self.creator_role}")
+
         self.adversary = Adversary(network=self.time_network, attack_threshold=ATTACKER_THRESHOLD)
 
         # update network information
@@ -611,13 +614,14 @@ class Game:
 
         # start attack
         self.attack_operation = AttackOperation(env=self.env, end_event=end_event, adversary=self.adversary, proceed_time=0)
-        self.attack_operation.proceed_attack()
+        if self.get_game_mode() == 'ai' or self.get_game_mode() == 'human':
+            self.attack_operation.proceed_attack()
 
         # start mtd
-        if scheme != 'None':
-            self.mtd_operation = MTDOperation(env=self.env, end_event=end_event, network=self.time_network, scheme=scheme,
-                                        attack_operation=self.attack_operation, proceed_time=0,
-                                        mtd_trigger_interval=mtd_interval, custom_strategies=custom_strategies)
+        self.mtd_operation = MTDOperation(env=self.env, end_event=end_event, network=self.time_network, scheme=scheme,
+                                    attack_operation=self.attack_operation, proceed_time=0,
+                                    mtd_trigger_interval=mtd_interval, custom_strategies=custom_strategies)
+        if self.get_game_mode() == 'ai':
             self.mtd_operation.proceed_mtd()
 
         # start simulation
@@ -629,5 +633,4 @@ class Game:
 
     def start(self):
         self.isrunning = True
-        # create_experiment_snapshots([25, 50, 75, 100])
         self.execute_simulation(start_time=0, finish_time=None, mtd_interval=200, scheme='random', total_nodes=TOTAL_NODE, new_network=True)

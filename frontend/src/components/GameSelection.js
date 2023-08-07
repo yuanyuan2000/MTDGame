@@ -77,7 +77,7 @@ const GameSelection = () => {
             onChange={(e) => setGameMode(e.target.value)}
           >
             <option value="human">Human vs Human</option>
-            <option value="ai">Human vs AI</option>
+            <option value="ai">Human vs Computer</option>
           </select>
         </div>
         <div>

@@ -26,8 +26,6 @@ def create_game_room(request):
         }
         return Response(data, status=201)
 
-
-
 @api_view(['POST'])
 def join_game_room(request):
     if request.method == 'POST':
@@ -57,7 +55,6 @@ class StartGameView(APIView):
         return Response({"message": "Game started"}, status=status.HTTP_200_OK)
     
 def transform_nodes(old_nodes):
-    # print('-------------',type(old_nodes))
     new_nodes = []
     for node in old_nodes:
         new_node = {
@@ -70,7 +67,6 @@ def transform_nodes(old_nodes):
             "value": 30,
         }
         new_nodes.append(new_node)
-        # print(new_node)
     return new_nodes
 
 def transform_edges(edges):
