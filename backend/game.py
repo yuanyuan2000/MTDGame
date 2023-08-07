@@ -374,15 +374,15 @@ class Game:
         hosts = self.get_visible_hosts()
         adversary = self.adversary
         if host_id in hosts:
-            self.adversary.set_curr_host_id(host_id)
-            self.adversary.set_curr_host(self.time_network.get_host(self.adversary.get_curr_host_id()))
-            self.adversary.set_curr_ports([])
-            self.adversary.set_curr_vulns([])           
-            self.adversary.get_attack_counter()[self.adversary.get_curr_host_id()] += 1
+            adversary.set_curr_host_id(host_id)
+            adversary.set_curr_host(self.time_network.get_host(adversary.get_curr_host_id()))
+            adversary.set_curr_ports([])
+            adversary.set_curr_vulns([])           
+            adversary.get_attack_counter()[adversary.get_curr_host_id()] += 1
 
-            self.adversary.set_curr_ports(self.adversary.get_curr_host().port_scan())
-            self.adversary.set_curr_vulns(self.adversary.get_curr_host().get_vulns(self.adversary.get_curr_ports()))
-            vulns = self.adversary.get_curr_vulns()
+            adversary.set_curr_ports(adversary.get_curr_host().port_scan())
+            adversary.set_curr_vulns(adversary.get_curr_host().get_vulns(adversary.get_curr_ports()))
+            vulns = adversary.get_curr_vulns()
 
             # for game balance, p(exploit) = 0.7-diversity_score/(2*MAX_DIVERSITY_SCORE), so it is [0.2, 0.7] (depends on the diversity score)
             def probability_function():
@@ -391,8 +391,8 @@ class Game:
                 return random_number < x
 
             # for vuln in vulns:
-            #     logging.info("Adversary: Processed %s %s on host %s at %.1fs." % (self.adversary.get_curr_process(), vuln.id,
-            #                                                              self.adversary.get_curr_host_id(), self.env.now))
+            #     logging.info("Adversary: Processed %s %s on host %s at %.1fs." % (adversary.get_curr_process(), vuln.id,
+            #                                                              adversary.get_curr_host_id(), self.env.now))
             #     vuln.network(host=adversary.get_curr_host())
             #     adversary.set_curr_attempts(adversary.get_curr_attempts() + 1)
 
@@ -407,7 +407,7 @@ class Game:
             if exploit_result:
                 self.__update_compromise_progress()
                 self.__scan_neighbors()
-                self.time_network.colour_map[self.adversary.get_curr_host_id()] = "red"
+                self.time_network.colour_map[adversary.get_curr_host_id()] = "red"
                 self.update_network()
                 return 0
             else:
@@ -480,18 +480,18 @@ class Game:
         """
         Updates some parameters when the current host is compromised
         """
-        # adversary = self.adversary
-        self.adversary._pivot_host_id = self.adversary.get_curr_host_id()
-        if self.adversary.get_curr_host_id() not in self.adversary.get_compromised_hosts():
-            self.adversary.get_compromised_hosts().append(self.adversary.get_curr_host_id())
-            logging.info("Adversary: Host %i has been compromised at %.1fs!" % (self.adversary.get_curr_host_id(), self.env.now))
-            self.adversary.get_network().update_reachable_compromise(self.adversary.get_curr_host_id(), self.adversary.get_compromised_hosts())
+        adversary = self.adversary
+        adversary._pivot_host_id = adversary.get_curr_host_id()
+        if adversary.get_curr_host_id() not in adversary.get_compromised_hosts():
+            adversary.get_compromised_hosts().append(adversary.get_curr_host_id())
+            logging.info("Adversary: Host %i has been compromised at %.1fs!" % (adversary.get_curr_host_id(), self.env.now))
+            adversary.get_network().update_reachable_compromise(adversary.get_curr_host_id(), adversary.get_compromised_hosts())
 
             # update the user password list for next attack to try
-            for user in self.adversary.get_curr_host().get_compromised_users():
-                if user not in self.adversary.get_compromised_users():
-                    self.adversary.get_attack_stats().update_compromise_user(user)
-            self.adversary._compromised_users = list(set(self.adversary.get_compromised_users() + self.adversary.get_curr_host().get_compromised_users()))
+            for user in adversary.get_curr_host().get_compromised_users():
+                if user not in adversary.get_compromised_users():
+                    adversary.get_attack_stats().update_compromise_user(user)
+            adversary._compromised_users = list(set(adversary.get_compromised_users() + adversary.get_curr_host().get_compromised_users()))
 
     def update_network(self):
         """
@@ -586,14 +586,14 @@ class Game:
 
         # start attack
         self.attack_operation = AttackOperation(env=self.env, end_event=end_event, adversary=self.adversary, proceed_time=0)
-        if self.get_game_mode() == 'Computer':
+        if self.get_game_mode() == 'Computer' and self.get_creator_role() == 'defender':
             self.attack_operation.proceed_attack()
 
         # start mtd
         self.mtd_operation = MTDOperation(env=self.env, end_event=end_event, network=self.time_network, scheme=scheme,
                                     attack_operation=self.attack_operation, proceed_time=0,
                                     mtd_trigger_interval=mtd_interval, custom_strategies=custom_strategies)
-        if self.get_game_mode() == 'Computer':
+        if self.get_game_mode() == 'Computer' and self.get_creator_role() == 'attacker':
             self.mtd_operation.proceed_mtd()
 
         # start simulation
