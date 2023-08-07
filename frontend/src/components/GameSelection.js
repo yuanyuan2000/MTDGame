@@ -5,7 +5,7 @@ import { UrlPrefixContext } from '../App';
 
 const GameSelection = () => {
   const prefix = useContext(UrlPrefixContext);
-  const [gameMode, setGameMode] = useState("human");
+  const [gameMode, setGameMode] = useState("Human");
   const [role, setRole] = useState("attacker");
   const [roomId, setRoomId] = useState("");
   const navigate = useNavigate();
@@ -19,7 +19,8 @@ const GameSelection = () => {
         });
         navigate(`/game/${response.data.creator_role}/${response.data.room_id}`);
     } catch (error) {
-        console.error("Error create room:", error);
+        // console.error("Error create room:", error);
+        alert(`Your game room has been created. Please input right room number and click Join Game.`);
     }
     
   };
@@ -27,13 +28,13 @@ const GameSelection = () => {
   const joinGame = async () => {
     try {
         const response = await axios.post(prefix + "/api/join_game_room/", {
-        opponent_role: role,
+        joiner_role: role,
         room_id: roomId,
         });
-        navigate(`/game/${response.data.opponent_role}/${response.data.room_id}`);
-        console.log(response.data.opponent_role)
+        navigate(`/game/${response.data.joiner_role}/${response.data.room_id}`);
     } catch (error) {
-        console.error("Error join room:", error);
+        // console.error("Error join room:", error);
+        alert(`Join game failed. It may because the room has not been created.`);
     } 
   };
 
@@ -76,8 +77,8 @@ const GameSelection = () => {
             value={gameMode}
             onChange={(e) => setGameMode(e.target.value)}
           >
-            <option value="human">Human vs Human</option>
-            <option value="ai">Human vs Computer</option>
+            <option value="Human">Human vs Human</option>
+            <option value="Computer">Human vs Computer</option>
           </select>
         </div>
         <div>

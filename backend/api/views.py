@@ -16,24 +16,26 @@ game_instance = Game()
 @api_view(['POST'])
 def create_game_room(request):
     if request.method == 'POST':
-        game_instance.set_game_mode(request.data['game_mode'])
-        game_instance.set_creator_role(request.data['creator_role'])
-        game_instance.set_room_id(request.data['room_id'])
-        data = {
-            'game_mode': request.data['game_mode'],
-            'creator_role': request.data['creator_role'],
-            'room_id': request.data['room_id']
-        }
-        return Response(data, status=201)
+        if not game_instance.get_isrunning():
+            game_instance.set_game_mode(request.data['game_mode'])
+            game_instance.set_creator_role(request.data['creator_role'])
+            game_instance.set_room_id(request.data['room_id'])
+            data = {
+                'game_mode': request.data['game_mode'],
+                'creator_role': request.data['creator_role'],
+                'room_id': request.data['room_id']
+            }
+            return Response(data, status=201)
+        else:
+            return Response(ValueError, status=400)
 
 @api_view(['POST'])
 def join_game_room(request):
     if request.method == 'POST':
-        game_instance.set_opponent_role(request.data['opponent_role'])
-        if game_instance.get_isrunning() and request.data['room_id'] == game_instance.get_room_id() and request.data['opponent_role'] != game_instance.get_creator_role():
+        if game_instance.get_isrunning() and request.data['room_id'] == game_instance.get_room_id():
             data = {
                 'game_mode': game_instance.get_game_mode(),
-                'opponent_role': game_instance.get_opponent_role(),
+                'joiner_role': request.data['joiner_role'],
                 'room_id': game_instance.get_room_id()
             }
             return Response(data, status=201)

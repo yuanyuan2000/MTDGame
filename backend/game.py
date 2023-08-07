@@ -85,9 +85,6 @@ class Game:
     def get_creator_role(self):
         return self.creator_role
     
-    def get_opponent_role(self):
-        return self.opponent_role
-    
     def get_game_mode(self):
         return self.game_mode
     
@@ -108,9 +105,6 @@ class Game:
 
     def set_creator_role(self, creator_role):
         self.creator_role = creator_role
-
-    def set_opponent_role(self, opponent_role):
-        self.opponent_role = opponent_role
 
     def get_env(self):
         return self.env
@@ -140,19 +134,11 @@ class Game:
     def get_edges(self):
         edges = self.time_network.graph.edges
         return edges
-    
-    # def get_attacker_new_message(self):
-    #     """
-    #     get the new message for the attacker from the message queue, and then deque them
-    #     """
-    #     messages = list(self.attacker_new_message)
-    #     self.attacker_new_message = deque()
-    #     for message in messages:
-    #         logging.info(f"Sent message to frontend: {message}")
-    #     return messages
 
     def get_attacker_new_message(self):
         messages = list(self.attacker_new_message)[-10:]   # only send the 10 newest messagess
+        # for message in messages:
+        #     logging.info(f"Sent message to frontend: {message}")
         return messages
     
     def add_attacker_new_message(self, message_content):
@@ -282,14 +268,14 @@ class Game:
                             
     def get_current_compromised_hosts(self):
         """
-        return a list of host that has been compromised, such as [0, 11, 8, 9]
+        return a list of host that has been compromised, such as [0, 1, 2]
         """
         compromised_hosts = self.adversary.get_compromised_hosts()
         return sorted(set(compromised_hosts))
     
     def get_current_uncompromised_hosts(self):
         """
-        return a list uncompromised host, such as [10, 21, 6, 1, 2, 3, 4]
+        return a list uncompromised host, such as [5, 7, 8], which are the set of neighbours of compromised hosts and the endpoints(not include unvisible host)
         """
         compromised_hosts = self.get_current_compromised_hosts()
         uncompromised_hosts = []
@@ -313,15 +299,6 @@ class Game:
         ]
 
         return sorted(set(uncompromised_hosts))
-    
-    def get_current_discovered_hosts(self):
-        """
-        discovered hosts is a list of hosts which is uncompromised and also not been label with 'stop attack', it can be used to continue attacking
-        """
-        uncompromised_hosts = self.get_current_uncompromised_hosts()
-        stop_attack = self.adversary.get_stop_attack()
-        discovered_hosts = [n for n in uncompromised_hosts if n not in stop_attack]
-        return sorted(set(discovered_hosts))
     
     def get_visible_hosts(self):
         """
@@ -614,14 +591,14 @@ class Game:
 
         # start attack
         self.attack_operation = AttackOperation(env=self.env, end_event=end_event, adversary=self.adversary, proceed_time=0)
-        if self.get_game_mode() == 'ai' or self.get_game_mode() == 'human':
+        if self.get_game_mode() == 'Computer' or self.get_game_mode() == 'Human':
             self.attack_operation.proceed_attack()
 
         # start mtd
         self.mtd_operation = MTDOperation(env=self.env, end_event=end_event, network=self.time_network, scheme=scheme,
                                     attack_operation=self.attack_operation, proceed_time=0,
                                     mtd_trigger_interval=mtd_interval, custom_strategies=custom_strategies)
-        if self.get_game_mode() == 'ai':
+        if self.get_game_mode() == 'Computer':
             self.mtd_operation.proceed_mtd()
 
         # start simulation
