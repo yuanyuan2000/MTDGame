@@ -137,8 +137,8 @@ def topological_shuffling(request):
         if request.method == 'POST':
             data = json.loads(request.body)
             # node_id = data['nodeId']
-            is_shuffled = game_instance.topology_shuffle()
-            return JsonResponse({"is_shuffled": is_shuffled}, status=200)
+            topo_shuffle_result = game_instance.topology_shuffle()
+            return JsonResponse({"topo_shuffle_result": topo_shuffle_result}, status=200)
         else:
             return JsonResponse({"message": "Invalid request"}, status=400)
     except TypeError as e:

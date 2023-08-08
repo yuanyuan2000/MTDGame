@@ -37,10 +37,14 @@ EDGE_WIDTH = 1
 SIMULATION_INTERVAL = 0.5    # the simpy will run in every SIMULATION_INTERVAL second
 GAME_TOTAL_TIME = 3000    # the game will end in GAME_TOTAL_TIME simulation seconds
 SPEED_RATIO = 10    # it means that one physcial second equal to SPEED_RATIO simulation seconds
+
 TOTAL_NODE = 32
+TOTAL_TARGET_NODE_NUM = 3
+
 MAX_DIVERSITY_SCORE = 10
-EXPLOIT_VULN_TIME = 3
-BRUTE_FORCE_TIME = 5
+EXPLOIT_VULN_DURATION = 3
+BRUTE_FORCE_DURATION = 5
+MAX_TOPO_SHUFFLE_TIME = 2
 
 class Node:
 
@@ -71,12 +75,13 @@ class Game:
         self.mtd_operation = None
 
         self.nodes = []
-        self.target_node_num = random.randint(TOTAL_NODE - 8, TOTAL_NODE - 1)
+        self.target_node_num_list = []
         self.attacker_visible_nodes = []
         self.diversity_scores = []     # a int list(len:TOTAL_NODE), more score a node has, more difficult to exploit
         self.brute_force_progress = []  # a bool list(len:TOTAL_NODE), False means the progress has been interrupt by user MTD operation
         self.attacker_new_message = deque()   # a queue that store new messages for sending to the attacker, it will be deleted after sending
         self.attacker_message_id_counter = 0
+        self.topo_shuffle_time = 0
         
     def get_isrunning(self):
         return self.isrunning
@@ -189,10 +194,14 @@ class Game:
             return False
         
     def topology_shuffle(self):
-        mtd_strategy = CompleteTopologyShuffle(network=self.time_network)
-        mtd_strategy.mtd_operation()
-        self.update_network()
-        return True
+        if self.topo_shuffle_time < MAX_TOPO_SHUFFLE_TIME:
+            mtd_strategy = CompleteTopologyShuffle(network=self.time_network)
+            mtd_strategy.mtd_operation()
+            self.update_network()
+            self.topo_shuffle_time += 1
+            return 1
+        else:
+            return 0
 
     def os_diversity(self):
         mtd_strategy = OSDiversity(network=self.time_network)
@@ -376,9 +385,9 @@ class Game:
         # return 1 if the host has been compromised
         if host_id in self.get_current_compromised_hosts():
             return 1
-        # return 0 after running finish_exploit_vuln after EXPLOIT_VULN_TIME seconds
+        # return 0 after running finish_exploit_vuln after EXPLOIT_VULN_DURATION seconds
         elif host_id in self.get_visible_hosts():
-            timer = threading.Timer(EXPLOIT_VULN_TIME, self.finish_exploit_vuln, args=(host_id,))
+            timer = threading.Timer(EXPLOIT_VULN_DURATION, self.finish_exploit_vuln, args=(host_id,))
             timer.start()
             return 0
         # return -1 if the host is unvisible(it will happen when some MTD executed after attacker choose a node and before him click the button)
@@ -437,8 +446,8 @@ class Game:
         elif host_id in self.get_visible_hosts():
             # set the brute force progress to be True before attacking
             self.brute_force_progress[host_id] = True
-            # create a Timer to run finish_brute_force in BRUTE_FORCE_TIME seconds
-            timer = threading.Timer(BRUTE_FORCE_TIME, self.finish_brute_force, args=(host_id,))
+            # create a Timer to run finish_brute_force in BRUTE_FORCE_DURATION seconds
+            timer = threading.Timer(BRUTE_FORCE_DURATION, self.finish_brute_force, args=(host_id,))
             timer.start()
             return 0
         else:
@@ -521,11 +530,12 @@ class Game:
         for index in self.get_current_compromised_hosts():
             if self.time_network.colour_map[index] != 'red':
                 # some node color has been refresh because of topological shuffling, we need to change it back according to the compromised list
-                logging.info(f"Change the node {index} color from {self.time_network.colour_map[index]} to red!")
+                # logging.info(f"Change the node {index} color from {self.time_network.colour_map[index]} to red!")
                 self.time_network.colour_map[index] = 'red'
-        if self.time_network.colour_map[self.target_node_num] != 'white':
-            logging.info(f"Change the target node {self.target_node_num} color from {self.time_network.colour_map[self.target_node_num]} to white!")
-            self.time_network.colour_map[self.target_node_num] = 'white'
+        for index in self.target_node_num_list:
+            if self.time_network.colour_map[index] != 'white':
+                # logging.info(f"Change the target node {index} color from {self.time_network.colour_map[index]} to white!")
+                self.time_network.colour_map[index] = 'white'
 
         color_list = self.time_network.colour_map
         self.nodes = []
@@ -553,10 +563,11 @@ class Game:
                 self.winner = 'Defender'
                 self.isrunning = False
 
-            if self.target_node_num in self.get_current_compromised_hosts():
-                logging.info(f"Now the target node has been compromised, the attackers win at {self.env.now:.1f}s!")
-                self.winner = 'Attacker'
-                self.isrunning = False
+            for node_id in self.target_node_num_list:
+                if node_id in self.get_current_compromised_hosts():
+                    logging.info(f"Now the target node has been compromised, the attackers win at {self.env.now:.1f}s!")
+                    self.winner = 'Attacker'
+                    self.isrunning = False
             
         logging.info("Simulation thread has stopped.")
 
@@ -593,12 +604,14 @@ class Game:
 
         self.adversary = Adversary(network=self.time_network, attack_threshold=ATTACKER_THRESHOLD)
 
-        # update network information
-        self.update_network()
-        self.attacker_visible_nodes = [i for i in range(total_endpoints)]
+        # init some game parameters and update network
+        self.target_node_num_list = random.sample(range(TOTAL_NODE - 9, TOTAL_NODE - 1), TOTAL_TARGET_NODE_NUM)
         self.diversity_scores = [0 for _ in range(TOTAL_NODE)]
+        self.topo_shuffle_time = 0
+        self.attacker_visible_nodes = [i for i in range(total_endpoints)]
         self.brute_force_progress = [True for _ in range(TOTAL_NODE)]
         self.attacker_new_message = deque()
+        self.update_network()
 
         # start attack
         self.attack_operation = AttackOperation(env=self.env, end_event=end_event, adversary=self.adversary, proceed_time=0)

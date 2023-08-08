@@ -6,9 +6,11 @@ import { useNavigate } from 'react-router-dom';
 import { UrlPrefixContext } from '../../App';
 
 var selectedNodeId = null;
+var RES_ADD_STEP = 60;
+var RES_REFRESH_DURATION = 3500;
 var RES_GET_DETAIL = 5;
 var RES_IP_SHUFFLING = 30;
-var RES_TOPO_SHUFFLING = 100;
+var RES_TOPO_SHUFFLING = 60;
 var RES_OS_DIVERSITY = 45;
 var RES_SERVICE_DIVERSITY = 15;
 
@@ -71,14 +73,14 @@ function Game() {
 
     useEffect(() => {
         if (networkData && typeof networkData.time_used === "number" && typeof networkData.total_time === "number") {
-            setGameTime((networkData.total_time - networkData.time_used).toFixed(1));
+            setGameTime((networkData.total_time - networkData.time_used).toFixed(0));
         }
     }, [networkData]);
 
     useEffect(() => {
         const intervalId = setInterval(() => {
-            setResource((prevResource) => Math.min(prevResource + 4, 100));
-        }, 1000);
+            setResource((prevResource) => Math.min(prevResource + RES_ADD_STEP, 100));
+        }, RES_REFRESH_DURATION);
         return () => clearInterval(intervalId);
     }, []);
 
@@ -118,10 +120,11 @@ function Game() {
                 const response = await axios.post(prefix + "/api/defender/network_data/topological_shuffling/", {
                     nodeId: selectedNodeId,
                 });
-                if (response.data.is_shuffled) {
+                if (response.data.topo_shuffle_result === 1) {
                     setCommand('You have completely changed the total topological network.');
                 } else {
-                    setCommand('Toplogical shuffling failed. It may because: 1. Don\'t have enough resource to do this MTD operation');
+                    setCommand('Sorry, there are only two chances to do full topological shuffling in a game.');
+                    setResource((prevResource) => Math.min(prevResource + 60, 100));
                 }
             } catch (error) {
                 console.error('Error while posting topological_shuffling:', error);
@@ -273,8 +276,8 @@ function Game() {
                     <div style={{ display: "flex", justifyContent: "center", marginTop: "-40px" }}>
                         <button onClick={handleDetailsClick} style={{ marginRight: "10px", width: "100px", height: "35px", backgroundColor: "#262626", color: "white", border: "none", borderRadius: "5px", cursor: "pointer", zIndex: 100 }}>Health Check</button>
                         <button onClick={handleIPShufflingClick} style={{ marginRight: "10px", width: "100px", height: "35px", backgroundColor: "#262626", color: "white", border: "none", borderRadius: "5px", cursor: "pointer", zIndex: 100 }}>IP Shuffling</button>
-                        <button onClick={handleTopologicalShufflingClick} style={{ marginRight: "10px", width: "100px", height: "35px", backgroundColor: "#262626", color: "white", border: "none", borderRadius: "5px", cursor: "pointer", zIndex: 100  }}>Topological Shuffling</button>
-                        <button onClick={handleOSDiversityClick} style={{ marginRight: "10px", width: "100px", height: "35px", backgroundColor: "#262626", color: "white", border: "none", borderRadius: "5px", cursor: "pointer", zIndex: 100  }}>OS Diversity</button>
+                        <button onClick={handleTopologicalShufflingClick} style={{ marginRight: "10px", width: "120px", height: "35px", backgroundColor: "#262626", color: "white", border: "none", borderRadius: "5px", cursor: "pointer", zIndex: 100  }}>Full Topological Shuffling</button>
+                        <button onClick={handleOSDiversityClick} style={{ marginRight: "10px", width: "100px", height: "35px", backgroundColor: "#262626", color: "white", border: "none", borderRadius: "5px", cursor: "pointer", zIndex: 100  }}>Full OS Diversity</button>
                         <button onClick={handleServiceDiversityClick} style={{ width: "100px", height: "35px", backgroundColor: "#262626", color: "white", border: "none", borderRadius: "5px", cursor: "pointer", zIndex: 100  }}>Service Diversity</button>
                     </div>
                     <div>

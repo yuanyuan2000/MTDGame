@@ -5,11 +5,13 @@ import axios from "axios";
 import { useNavigate } from 'react-router-dom';
 import { UrlPrefixContext } from '../../App';
 
-var selectedNodeId = null; 
+var selectedNodeId = null;
+var RES_ADD_STEP = 60;
+var RES_REFRESH_DURATION = 3500;
 var RES_SCAN_HOST = 5;
-var RES_SCAN_PORT = 10;
-var RES_EXPLOIT_VULN = 40;
-var RES_BRUTE_FORCE = 60;
+var RES_SCAN_PORT = 5;
+var RES_EXPLOIT_VULN = 15;
+var RES_BRUTE_FORCE = 30;
 
 function Game() {
     const prefix = useContext(UrlPrefixContext);
@@ -85,14 +87,14 @@ function Game() {
 
     useEffect(() => {
         if (networkData && typeof networkData.time_used === "number" && typeof networkData.total_time === "number") {
-            setGameTime((networkData.total_time - networkData.time_used).toFixed(1));
+            setGameTime((networkData.total_time - networkData.time_used).toFixed(0));
         }
     }, [networkData]);
 
     useEffect(() => {
         const intervalId = setInterval(() => {
-            setResource((prevResource) => Math.min(prevResource + 4, 100));
-        }, 1000);
+            setResource((prevResource) => Math.min(prevResource + RES_ADD_STEP, 100));
+        }, RES_REFRESH_DURATION);
         return () => clearInterval(intervalId);
     }, []);
 
