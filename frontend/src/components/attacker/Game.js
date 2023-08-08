@@ -167,8 +167,10 @@ function Game() {
                     // console.log(response.data.exploit_vuln_result)
                     if (response.data.exploit_vuln_result === 0) {
                         setCommand("Exploit vulnerabilities start...");
+                    } else if (response.data.exploit_vuln_result === 1) {
+                        setCommand("The node has been compromised");
                     } else if (response.data.exploit_vuln_result === -1) {
-                        setCommand("The node can not be accessed or has been compromised now.");
+                        setCommand(`Sorry, node ${selectedNodeId} can not be accessed now`);
                     }
                 } catch (error) {
                     console.error('Error', error);
@@ -192,8 +194,10 @@ function Game() {
                     // console.log(response.data.brute_force_result)
                     if (response.data.brute_force_result === 0) {
                         setCommand("Brute force compromising start...");
+                    } else if (response.data.brute_force_result === 1) {
+                        setCommand("The node has been compromised");
                     } else if (response.data.brute_force_result === -1) {
-                        setCommand("The node can not be accessed or has been compromised now.");
+                        setCommand(`Sorry, node ${selectedNodeId} can not be accessed now`);
                     }
                 } catch (error) {
                     console.error('Error', error);
@@ -228,7 +232,7 @@ function Game() {
                     style={{
                         position: "fixed",
                         right: 0, // Set the desired distance from the right edge
-                        bottom: "15%", // Set the desired distance from the bottom edge
+                        bottom: "20%", // Set the desired distance from the bottom edge
                         zIndex: 1000, // Ensure the terminal is on top
                         width: "35%", // Set the desired width
                         height: "80%", // Set the desired height

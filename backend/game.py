@@ -373,11 +373,15 @@ class Game:
         return {'port_list': port_list, 'user_reuse': user_reuse, 'message': msg, }
     
     def start_exploit_vuln(self, host_id):
-        if host_id in self.get_visible_hosts() and host_id not in self.get_current_compromised_hosts():
-            # create a Timer to run finish_exploit_vuln in EXPLOIT_VULN_TIME seconds
+        # return 1 if the host has been compromised
+        if host_id in self.get_current_compromised_hosts():
+            return 1
+        # return 0 after running finish_exploit_vuln after EXPLOIT_VULN_TIME seconds
+        elif host_id in self.get_visible_hosts():
             timer = threading.Timer(EXPLOIT_VULN_TIME, self.finish_exploit_vuln, args=(host_id,))
             timer.start()
             return 0
+        # return -1 if the host is unvisible(it will happen when some MTD executed after attacker choose a node and before him click the button)
         else:
             return -1
     
@@ -413,22 +417,24 @@ class Game:
         exploit_result = probability_function()
 
         if host_id in self.get_current_compromised_hosts():
-            self.add_attacker_new_message(f"Message: Node {host_id} has been already successfully compromised.")
+            self.add_attacker_new_message(f"Message: Node {host_id} has been already compromised")
         else:
             if exploit_result:
                 self.__update_compromise_progress()
                 self.__scan_neighbors()
                 self.time_network.colour_map[adversary.get_curr_host_id()] = "red"
-                self.add_attacker_new_message(f"Message: Node {host_id} has been successfully compromised by exploit vulnerabilities.")
+                self.add_attacker_new_message(f"Message: Node {host_id} vulnerability exploited")
                 self.update_network()
             else:
-                self.add_attacker_new_message(f"Message: Exploiting the vulnerability of services on node {host_id} failed")
+                self.add_attacker_new_message(f"Message: Exploiting vulnerability of services on node {host_id} failed")
                 self.add_attacker_new_message(f"It may because few services on this host are vulnerable.")
             
         self.update_network()
         
     def start_brute_force(self, host_id):
-        if host_id in self.get_visible_hosts() and host_id not in self.get_current_compromised_hosts():
+        if host_id in self.get_current_compromised_hosts():
+            return 1
+        elif host_id in self.get_visible_hosts():
             # set the brute force progress to be True before attacking
             self.brute_force_progress[host_id] = True
             # create a Timer to run finish_brute_force in BRUTE_FORCE_TIME seconds
@@ -456,18 +462,18 @@ class Game:
         brute_force_result = probability_function()
 
         if host_id in self.get_current_compromised_hosts():
-            self.add_attacker_new_message(f"Message: Node {host_id} has been already successfully compromised.")
+            self.add_attacker_new_message(f"Message: Node {host_id} has been already compromised")
         else:
             if brute_force_result and self.brute_force_progress[host_id]:
                 self.__update_compromise_progress()
                 self.__scan_neighbors()
                 self.time_network.colour_map[host_id] = "red"
-                self.add_attacker_new_message(f"Message: Node {host_id} has been successfully compromised by brute force.")
+                self.add_attacker_new_message(f"Message: Node {host_id} was brute-forced")
             elif self.brute_force_progress[host_id]:
-                self.add_attacker_new_message(f"Message: Brute-forcing host on node {host_id} failed")
+                self.add_attacker_new_message(f"Message: Brute-forcing node {host_id} failed")
                 self.add_attacker_new_message(f"It may because you haven't get enough proper passwords.")
             else:
-                self.add_attacker_new_message(f"Message: Brute-forcing host on node {host_id} failed")
+                self.add_attacker_new_message(f"Message: Brute-forcing node {host_id} failed")
                 self.add_attacker_new_message(f"It may because some MTD operation interrupt your progress.")
         
         self.update_network()
@@ -592,6 +598,7 @@ class Game:
         self.attacker_visible_nodes = [i for i in range(total_endpoints)]
         self.diversity_scores = [0 for _ in range(TOTAL_NODE)]
         self.brute_force_progress = [True for _ in range(TOTAL_NODE)]
+        self.attacker_new_message = deque()
 
         # start attack
         self.attack_operation = AttackOperation(env=self.env, end_event=end_event, adversary=self.adversary, proceed_time=0)

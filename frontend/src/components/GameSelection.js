@@ -45,7 +45,6 @@ const GameSelection = () => {
     justifyContent: "center",
     minHeight: "100vh",
     backgroundColor: "#e5e5e5",
-    padding: "2rem",
   };
 
   const formStyle = {

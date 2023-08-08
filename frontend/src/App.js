@@ -7,8 +7,8 @@ import React, { createContext } from 'react';
 export const UrlPrefixContext = createContext();
 
 function App() {
-  const prefix = "http://localhost:8000";
-  // const prefix = "http://192.168.137.23:8000";
+  // const prefix = "http://localhost:8000";
+  const prefix = "http://192.168.137.23:8000";
   return (
     <UrlPrefixContext.Provider value={prefix}>
       <Router>
