@@ -100,8 +100,10 @@ class NetworkDataView2(APIView):
         new_message = game_instance.get_attacker_new_message()
         nodes = transform_nodes(game_instance.get_nodes())
         edges = transform_edges(game_instance.get_edges())
-        visible_hosts = game_instance.get_visible_hosts()
-        return Response({"is_running": is_running, "winner": winner, "time_used": time_used, "total_time": total_time, "new_message": new_message, "nodes": nodes, "edges": edges, "visible_hosts": visible_hosts})
+        visible_nodes = game_instance.get_visible_hosts()
+        visible_edges = game_instance.get_visible_edges()
+        return Response({"is_running": is_running, "winner": winner, "time_used": time_used, "total_time": total_time, 
+                         "new_message": new_message, "nodes": nodes, "edges": edges, "visible_nodes": visible_nodes, "visible_edges": visible_edges,})
 
 
 @csrf_exempt
@@ -190,8 +192,8 @@ def scan_host(request):
         if request.method == 'POST':
             data = json.loads(request.body)
             node_id = data['nodeId']
-            scan_host_list = game_instance.scan_host()
-            return JsonResponse({"scan_host_list": scan_host_list}, status=200)
+            scan_host_result = game_instance.scan_host(node_id)
+            return JsonResponse({"scan_host_result": scan_host_result}, status=200)
         else:
             return JsonResponse({"message": "Invalid request"}, status=400)
     except TypeError as e:

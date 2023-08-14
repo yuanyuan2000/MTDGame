@@ -57,6 +57,7 @@ function Game() {
 
         const fetchData = async () => {
             const networkData = await fetchNetworkData(prefix);
+            // console.log(networkData)
             setNetworkData(networkData);
 
             if (networkData.new_message && networkData.new_message.length > 0) {
@@ -104,23 +105,29 @@ function Game() {
     };
 
     const handleScanHostClick = async () => {
-        if (resource >= RES_SCAN_HOST) {
-            setResource(resource - RES_SCAN_HOST);
-            try {
-                const response = await axios.post(prefix + "/api/attacker/network_data/scan_host/", {
-                    nodeId: selectedNodeId,
-                });
-                
-                if (response.data.scan_host_list) {
-                    let hosts = response.data.scan_host_list;
-                    let hostsStr = hosts.join(', ');
-                    setCommand(`You have scaned the network, now you can attack these nodes: ${hostsStr}`);
+        if (selectedNodeId !== null) {
+            if (resource >= RES_SCAN_HOST) {
+                setResource(resource - RES_SCAN_HOST);
+                try {
+                    const response = await axios.post(prefix + "/api/attacker/network_data/scan_host/", {
+                        nodeId: selectedNodeId,
+                    });
+                    
+                    if (response.data.scan_host_result === 1) {
+                        setCommand(`You have scaned the hosts connected with node ${selectedNodeId}, now you can attack these nodes`);
+                    } else if (response.data.scan_host_result === 0){
+                        setCommand(`Node ${selectedNodeId} is uncompromised, please attack it first`);
+                    } else if (response.data.scan_host_result === -1){
+                        setCommand(`Sorry, there is no path from the endpoints to the node ${selectedNodeId}`);
+                    }
+                } catch (error) {
+                    console.error('Error in scan host:', error);
                 }
-            } catch (error) {
-                console.error('Error in enum host:', error);
+            } else{
+                setCommand(`Insufficient resources (< ${RES_SCAN_HOST})`);
             }
-        } else{
-            setCommand(`Insufficient resources (< ${RES_SCAN_HOST})`);
+        } else {
+            setCommand('No node selected.');
         }
     };
     
@@ -226,7 +233,7 @@ function Game() {
                     style={{ width: "100%", height: "70vh" }}
                 >
                     {isGameStarted && networkData && (
-                        <NetworkGraph prefix={prefix} handleNodeClick={handleNodeClick} nodes={networkData.nodes} edges={networkData.edges} visibleHosts={networkData.visible_hosts} />
+                        <NetworkGraph prefix={prefix} handleNodeClick={handleNodeClick} nodes={networkData.nodes} edges={networkData.edges} visible_nodes={networkData.visible_nodes} visible_edges={networkData.visible_edges} />
                     )}
                 </div>
                 <div

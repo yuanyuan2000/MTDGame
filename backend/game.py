@@ -8,6 +8,7 @@ logging.basicConfig(format='%(message)s', level=logging.INFO)
 
 import simpy
 import pandas as pd
+import networkx as nx
 from mtdnetwork.component.time_network import TimeNetwork
 from mtdnetwork.operation.mtd_operation import MTDOperation
 from mtdnetwork.data.constants import ATTACKER_THRESHOLD, OS_TYPES
@@ -77,6 +78,7 @@ class Game:
         self.nodes = []
         self.target_node_num_list = []
         self.attacker_visible_nodes = []
+        self.attacker_visible_edges = []
         self.diversity_scores = []     # a int list(len:TOTAL_NODE), more score a node has, more difficult to exploit
         self.brute_force_progress = []  # a bool list(len:TOTAL_NODE), False means the progress has been interrupt by user MTD operation
         self.attacker_new_message = deque()   # a queue that store new messages for sending to the attacker, it will be deleted after sending
@@ -199,6 +201,10 @@ class Game:
             mtd_strategy.mtd_operation()
             self.update_network()
             self.topo_shuffle_time += 1
+            self.set_visible_hosts()
+            self.set_visible_edges()
+            self.add_attacker_new_message(f"Message: It seems defender have changed the topology of network")
+            self.add_attacker_new_message(f"Try rescan host please")
             return 1
         else:
             return 0
@@ -286,7 +292,7 @@ class Game:
     
     def get_current_uncompromised_hosts(self):
         """
-        return a list uncompromised host, such as [5, 7, 8], which are the set of neighbours of compromised hosts and the endpoints(not include unvisible host)
+        return a list uncompromised host, such as [5, 7, 8], which are the set of neighbours of compromised hosts and the endpoints
         """
         compromised_hosts = self.get_current_compromised_hosts()
         uncompromised_hosts = []
@@ -317,33 +323,66 @@ class Game:
         we need to judge if the nodes are still in the can_visible_list(the compromised and uncompromised hosts)
         because some nodes may become unvisible because of some MTD operation during this time
         """
-        can_visible_list = self.get_current_compromised_hosts() + self.get_current_uncompromised_hosts()
-        self.attacker_visible_nodes = [node for node in self.attacker_visible_nodes if node in can_visible_list]
+        # can_visible_list = self.get_current_compromised_hosts() + self.get_current_uncompromised_hosts()
+        # self.attacker_visible_nodes = [node for node in self.attacker_visible_nodes if node in can_visible_list]
         return self.attacker_visible_nodes
     
-    def scan_host(self):
-        """
-        update the visble nodes from the current compromised and uncompromised host list
-        """
-        self.attacker_visible_nodes = self.get_current_compromised_hosts() + self.get_current_uncompromised_hosts()
-        self.update_network()
-        return self.get_current_uncompromised_hosts()
+    def get_visible_edges(self):
+        return [index + 1 for index, is_visible in enumerate(self.attacker_visible_edges) if is_visible]
     
-    def enum_host(self):
+    def set_visible_hosts(self):
         """
-        Starts enumerating each host by popping off the host id from the top of the host stack
-        Differences with simualtor: 1.no pivot host and stop attack(which to attack is decided by user); 2.no set progress and no execution time
+        this function is used to reset the value of the self.attacker_visible_nodes after some MTD opertion or when the game starts
+        only the exposed endpoints and the compromised host can be set as visible
         """
-        adversary = self.adversary
-        network = self.time_network
-        adversary.set_host_stack(network.sort_by_distance_from_exposed_and_pivot_host(
-                    adversary.get_host_stack(),
-                    adversary.get_compromised_hosts()
-                ))
-        self.update_network()
-        # return adversary.get_host_stack()
-        return self.get_current_uncompromised_hosts()
-    
+        exposed_endpoints = self.time_network.exposed_endpoints
+        compromised_hosts = self.get_current_compromised_hosts()
+        can_visible_list = set(exposed_endpoints + compromised_hosts)
+        self.attacker_visible_nodes = [i for i in can_visible_list]
+
+    def set_visible_edges(self):
+        """
+        set all the edges visibility to False
+        """
+        self.attacker_visible_edges = [False] * len(self.get_edges())
+
+    def scan_host(self, host_id):
+        """
+        update the attacker visible nodes, so next interval when the get_visible_hosts() is used the attacker will see more nodes
+        return 0 if the host_id is uncompromised, because only the compromised hosts can scan their neighbour
+        return -1 if there is no visible path from the endpoints to that node
+        """
+        if host_id not in self.get_current_compromised_hosts():
+            return 0
+        
+        def transform_edges(edges):
+            transformed_edges = []
+            for idx, edge in enumerate(edges, start=1):
+                transformed_edges.append({ "id": idx, "from": edge[0], "to": edge[1] })
+            return transformed_edges
+        edges = transform_edges(self.get_edges())
+        # Check if all edges connected to the host_id are invisible, if so, there is no visible path from the endpoints to this node
+        exposed_endpoints = self.time_network.exposed_endpoints
+        if host_id not in exposed_endpoints:
+            all_edges_invisible = True
+            for edge in edges:
+                if (edge['from'] == host_id or edge['to'] == host_id) and self.attacker_visible_edges[edge['id'] - 1]:
+                    all_edges_invisible = False
+                    break
+
+            if all_edges_invisible:
+                return -1
+
+        # Find all the nodes connected with the host_id and set them and their edge to be visible
+        for edge in edges:
+            if edge['from'] == host_id or edge['to'] == host_id:
+                connected_node_id = edge['to'] if edge['from'] == host_id else edge['from']
+                self.attacker_visible_nodes.append(connected_node_id)
+                self.attacker_visible_edges[edge['id'] - 1] = True
+                # logging.info(f"set the edge connect from {edge['from']} to {edge['to']} to be True")
+
+        return 1
+
     def scan_port(self, host_id):
         """
         Starts a port scan on the target host
@@ -608,10 +647,11 @@ class Game:
         self.target_node_num_list = random.sample(range(TOTAL_NODE - 9, TOTAL_NODE - 1), TOTAL_TARGET_NODE_NUM)
         self.diversity_scores = [0 for _ in range(TOTAL_NODE)]
         self.topo_shuffle_time = 0
-        self.attacker_visible_nodes = [i for i in range(total_endpoints)]
+        self.set_visible_hosts()
+        self.set_visible_edges()
         self.brute_force_progress = [True for _ in range(TOTAL_NODE)]
         self.attacker_new_message = deque()
-        self.update_network()
+        self.update_network()   # get the position, color for all nodes and append them to self.nodes for frontend to access
 
         # start attack
         self.attack_operation = AttackOperation(env=self.env, end_event=end_event, adversary=self.adversary, proceed_time=0)
