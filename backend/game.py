@@ -346,22 +346,17 @@ class Game:
         """
         self.attacker_visible_edges = [False] * len(self.get_edges())
 
-    def scan_host(self, host_id):
+    def judge_if_reachable(self, host_id):
         """
-        update the attacker visible nodes, so next interval when the get_visible_hosts() is used the attacker will see more nodes
-        return 0 if the host_id is uncompromised, because only the compromised hosts can scan their neighbour
-        return -1 if there is no visible path from the endpoints to that node
+        judge if it is reachable from the endpoints to the host_id node
+        we can simply judge by checking if all edges connected to the host_id are invisible, if so, there is no visible path from the endpoints to this node
         """
-        if host_id not in self.get_current_compromised_hosts():
-            return 0
-        
         def transform_edges(edges):
             transformed_edges = []
             for idx, edge in enumerate(edges, start=1):
                 transformed_edges.append({ "id": idx, "from": edge[0], "to": edge[1] })
             return transformed_edges
         edges = transform_edges(self.get_edges())
-        # Check if all edges connected to the host_id are invisible, if so, there is no visible path from the endpoints to this node
         exposed_endpoints = self.time_network.exposed_endpoints
         if host_id not in exposed_endpoints:
             all_edges_invisible = True
@@ -371,8 +366,28 @@ class Game:
                     break
 
             if all_edges_invisible:
-                return -1
+                return False
+        return True
 
+    def scan_host(self, host_id):
+        """
+        update the attacker visible nodes, so next interval when the get_visible_hosts() is used the attacker will see more nodes
+        return 0 if the host_id is uncompromised, because only the compromised hosts can scan their neighbour
+        return -1 if this node is not reachable
+        """
+        if host_id not in self.get_current_compromised_hosts():
+            return 0
+        
+        if not self.judge_if_reachable(host_id):
+            return -1
+        
+        def transform_edges(edges):
+            transformed_edges = []
+            for idx, edge in enumerate(edges, start=1):
+                transformed_edges.append({ "id": idx, "from": edge[0], "to": edge[1] })
+            return transformed_edges
+        edges = transform_edges(self.get_edges())
+        
         # Find all the nodes connected with the host_id and set them and their edge to be visible
         for edge in edges:
             if edge['from'] == host_id or edge['to'] == host_id:
@@ -393,8 +408,8 @@ class Game:
         hosts = self.get_visible_hosts()
         adversary = self.adversary
         
-        port_list, user_reuse, msg = None, -1, f'The node {host_id_str} is illegal to scan the port because it is unvisble to the attacker.'
-        if host_id in hosts: 
+        port_list, user_reuse, msg = None, -1, f'The node {host_id_str} is illegal to scan the port because it is unvisble or unreachable to the attacker.'
+        if host_id in hosts and self.judge_if_reachable(host_id):
             adversary.set_curr_host_id(host_id)
             adversary.set_curr_host(self.time_network.get_host(adversary.get_curr_host_id()))
             adversary.set_curr_ports([])
@@ -424,12 +439,13 @@ class Game:
         # return 1 if the host has been compromised
         if host_id in self.get_current_compromised_hosts():
             return 1
-        # return 0 after running finish_exploit_vuln after EXPLOIT_VULN_DURATION seconds
-        elif host_id in self.get_visible_hosts():
+        # return 0 before running finish_exploit_vuln in EXPLOIT_VULN_DURATION seconds, this node should be visible and reachable
+        elif host_id in self.get_visible_hosts() and self.judge_if_reachable(host_id):
             timer = threading.Timer(EXPLOIT_VULN_DURATION, self.finish_exploit_vuln, args=(host_id,))
             timer.start()
             return 0
         # return -1 if the host is unvisible(it will happen when some MTD executed after attacker choose a node and before him click the button)
+        # or because it is not reachable now(it will happen after a topological shuffling and no visible path from endpoints to this node)
         else:
             return -1
     
@@ -482,7 +498,7 @@ class Game:
     def start_brute_force(self, host_id):
         if host_id in self.get_current_compromised_hosts():
             return 1
-        elif host_id in self.get_visible_hosts():
+        elif host_id in self.get_visible_hosts() and self.judge_if_reachable(host_id):
             # set the brute force progress to be True before attacking
             self.brute_force_progress[host_id] = True
             # create a Timer to run finish_brute_force in BRUTE_FORCE_DURATION seconds

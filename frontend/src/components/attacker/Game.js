@@ -179,7 +179,7 @@ function Game() {
                     } else if (response.data.exploit_vuln_result === 1) {
                         setCommand("The node has been compromised");
                     } else if (response.data.exploit_vuln_result === -1) {
-                        setCommand(`Sorry, node ${selectedNodeId} can not be accessed now`);
+                        setCommand(`Sorry, node ${selectedNodeId} is not reachable now`);
                     }
                 } catch (error) {
                     console.error('Error', error);
@@ -206,7 +206,7 @@ function Game() {
                     } else if (response.data.brute_force_result === 1) {
                         setCommand("The node has been compromised");
                     } else if (response.data.brute_force_result === -1) {
-                        setCommand(`Sorry, node ${selectedNodeId} can not be accessed now`);
+                        setCommand(`Sorry, node ${selectedNodeId} is not reachable now`);
                     }
                 } catch (error) {
                     console.error('Error', error);
