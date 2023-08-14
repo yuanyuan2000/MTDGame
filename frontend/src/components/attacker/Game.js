@@ -173,13 +173,15 @@ function Game() {
                     const response = await axios.post(prefix + "/api/attacker/network_data/exploit_vuln/", {
                         nodeId: selectedNodeId,
                     });
-                    // console.log(response.data.exploit_vuln_result)
+                    console.log(response.data.exploit_vuln_result)
                     if (response.data.exploit_vuln_result === 0) {
                         setCommand("Exploit vulnerabilities start...");
                     } else if (response.data.exploit_vuln_result === 1) {
                         setCommand("The node has been compromised");
                     } else if (response.data.exploit_vuln_result === -1) {
                         setCommand(`Sorry, node ${selectedNodeId} is not reachable now`);
+                    } else if (response.data.exploit_vuln_result === -2) {
+                        setCommand(`Sorry, you haven't get the correct ports on node ${selectedNodeId}`);
                     }
                 } catch (error) {
                     console.error('Error', error);

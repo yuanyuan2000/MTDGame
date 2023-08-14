@@ -80,6 +80,7 @@ class Game:
         self.attacker_visible_nodes = []
         self.attacker_visible_edges = []
         self.diversity_scores = []     # a int list(len:TOTAL_NODE), more score a node has, more difficult to exploit
+        self.scan_port_progress = []   # a bool list(len:TOTAL_NODE), False means this node has not been scaned port(will be reset by OS/service diversity)
         self.brute_force_progress = []  # a bool list(len:TOTAL_NODE), False means the progress has been interrupt by user MTD operation
         self.attacker_new_message = deque()   # a queue that store new messages for sending to the attacker, it will be deleted after sending
         self.attacker_message_id_counter = 0
@@ -214,11 +215,13 @@ class Game:
         mtd_strategy.mtd_operation()
         # add the diversity score for hosts(maximum is MAX_DIVERSITY_SCORE), so it is more difficult for attcker to exploit vulnerabilities
         self.diversity_scores = [num + 1 if num < MAX_DIVERSITY_SCORE else num for num in self.diversity_scores]
+        self.scan_port_progress = [False for _ in range(TOTAL_NODE)]
         return True
 
     def service_diversity(self, host_id):
         mtd_strategy = ServiceDiversity(network=self.time_network)
         mtd_strategy.mtd_operation(specific_host_id=host_id)
+        self.scan_port_progress[host_id] = False
         if self.diversity_scores[host_id] < MAX_DIVERSITY_SCORE:
             self.diversity_scores[host_id] += 1
         return True
@@ -418,6 +421,7 @@ class Game:
 
             port_list = adversary.get_curr_host().port_scan()
             adversary.set_curr_ports(port_list)
+            self.scan_port_progress[host_id] = True
             # for game balance, p(reuse password) = 0+num_compromised_hosts/(2*TOTAL_NODE), so it is [0, 0.5] (depends on the numer of compromised hosts)
             def probability_function():
                 num_compromised_hosts = len(self.get_current_compromised_hosts())
@@ -439,15 +443,18 @@ class Game:
         # return 1 if the host has been compromised
         if host_id in self.get_current_compromised_hosts():
             return 1
+        # return -1 if the host is unvisible(it will happen when some MTD executed after attacker choose a node and before him click the button)
+        # or because it is not reachable now(it will happen after a topological shuffling and no visible path from endpoints to this node)
+        elif host_id not in self.get_visible_hosts() or self.judge_if_reachable(host_id) is not True:
+            return -1
+        # return -2 if no port has been scaned for this node
+        elif self.scan_port_progress[host_id] is not True:
+            return -2
         # return 0 before running finish_exploit_vuln in EXPLOIT_VULN_DURATION seconds, this node should be visible and reachable
-        elif host_id in self.get_visible_hosts() and self.judge_if_reachable(host_id):
+        else:
             timer = threading.Timer(EXPLOIT_VULN_DURATION, self.finish_exploit_vuln, args=(host_id,))
             timer.start()
             return 0
-        # return -1 if the host is unvisible(it will happen when some MTD executed after attacker choose a node and before him click the button)
-        # or because it is not reachable now(it will happen after a topological shuffling and no visible path from endpoints to this node)
-        else:
-            return -1
     
     def finish_exploit_vuln(self, host_id):
         adversary = self.adversary
@@ -482,6 +489,9 @@ class Game:
 
         if host_id in self.get_current_compromised_hosts():
             self.add_attacker_new_message(f"Message: Node {host_id} has been already compromised")
+        elif self.scan_port_progress[host_id] is not True:
+            self.add_attacker_new_message(f"Message: Exploiting vulnerability of services on node {host_id} failed")
+            self.add_attacker_new_message(f"It may because some MTD operation changed the port number.")
         else:
             if exploit_result:
                 self.__update_compromise_progress()
@@ -665,6 +675,7 @@ class Game:
         self.topo_shuffle_time = 0
         self.set_visible_hosts()
         self.set_visible_edges()
+        self.scan_port_progress = [False for _ in range(TOTAL_NODE)]
         self.brute_force_progress = [True for _ in range(TOTAL_NODE)]
         self.attacker_new_message = deque()
         self.update_network()   # get the position, color for all nodes and append them to self.nodes for frontend to access
