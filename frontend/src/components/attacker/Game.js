@@ -235,7 +235,7 @@ function Game() {
                     style={{ width: "100%", height: "70vh" }}
                 >
                     {isGameStarted && networkData && (
-                        <NetworkGraph prefix={prefix} handleNodeClick={handleNodeClick} nodes={networkData.nodes} edges={networkData.edges} visible_nodes={networkData.visible_nodes} visible_edges={networkData.visible_edges} />
+                        <NetworkGraph prefix={prefix} handleNodeClick={handleNodeClick} nodes={networkData.nodes} edges={networkData.edges} visible_nodes={networkData.visible_nodes} visible_edges={networkData.visible_edges} selectedNodeId={selectedNodeId} />
                     )}
                 </div>
                 <div

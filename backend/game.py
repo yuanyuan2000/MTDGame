@@ -293,6 +293,7 @@ class Game:
         compromised_hosts = self.adversary.get_compromised_hosts()
         return sorted(set(compromised_hosts))
     
+    # this function is not used now, can be commented
     def get_current_uncompromised_hosts(self):
         """
         return a list uncompromised host, such as [5, 7, 8], which are the set of neighbours of compromised hosts and the endpoints

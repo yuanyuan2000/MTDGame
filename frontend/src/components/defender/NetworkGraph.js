@@ -3,7 +3,7 @@ import { DataSet, Network } from 'vis-network/standalone/esm/vis-network';
 import axios from 'axios';
 
 const NetworkGraph = (props) => {
-    const { prefix , handleNodeClick, nodes: initialNodes, edges: initialEdges} = props;
+    const { prefix , handleNodeClick, nodes: initialNodes, edges: initialEdges, selectedNodeId } = props;
     const [nodes, setNodes] = useState(new DataSet(initialNodes));
     const [edges, setEdges] = useState(new DataSet(initialEdges));
     const [network, setNetwork] = useState(null);
@@ -15,7 +15,13 @@ const NetworkGraph = (props) => {
         setNodes(newNodes);
         setEdges(newEdges);
 
-    }, [initialNodes, initialEdges]);
+        newNodes.forEach((node) => {
+            if (node.id === selectedNodeId) {
+                newNodes.update({ id: node.id, color: { background: 'rgba(151, 194, 252, 0.6)' } }); 
+            }
+        });
+
+    }, [initialNodes, initialEdges, selectedNodeId]);
 
     // Create the network graph
     useEffect(() => {
