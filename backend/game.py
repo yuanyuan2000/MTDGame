@@ -11,7 +11,7 @@ import pandas as pd
 import networkx as nx
 from mtdnetwork.component.time_network import TimeNetwork
 from mtdnetwork.operation.mtd_operation import MTDOperation
-from mtdnetwork.data.constants import ATTACKER_THRESHOLD, OS_TYPES
+from mtdnetwork.data.constants import ATTACKER_THRESHOLD, OS_TYPES, NODE_COLOURS
 from mtdnetwork.component.adversary import Adversary
 from mtdnetwork.operation.attack_operation import AttackOperation
 from mtdnetwork.snapshot.snapshot_checkpoint import SnapshotCheckpoint
@@ -46,6 +46,8 @@ MAX_DIVERSITY_SCORE = 10
 EXPLOIT_VULN_DURATION = 3
 BRUTE_FORCE_DURATION = 5
 MAX_TOPO_SHUFFLE_TIME = 2
+OS_RECOVERY = 0.25
+SERVICE_RECOVERY = 0.5
 
 class Node:
 
@@ -81,6 +83,7 @@ class Game:
         self.attacker_visible_edges = []
         self.diversity_scores = []     # a int list(len:TOTAL_NODE), more score a node has, more difficult to exploit
         self.scan_port_progress = []   # a bool list(len:TOTAL_NODE), False means this node has not been scaned port(will be reset by OS/service diversity)
+        self.exploit_vuln_progress = []  # a bool list(len:TOTAL_NODE), True means this node has been compromised because of an exploited service(not brute force)
         self.brute_force_progress = []  # a bool list(len:TOTAL_NODE), False means the progress has been interrupt by user MTD operation
         self.attacker_new_message = deque()   # a queue that store new messages for sending to the attacker, it will be deleted after sending
         self.attacker_message_id_counter = 0
@@ -211,20 +214,47 @@ class Game:
             return 0
 
     def os_diversity(self):
+        someone_recovery, recovery_list, msg = False, [], f'You have finished the OS diversity for all nodes. Now they are more difficult for attacker to exploit vulnerabilities.'
         mtd_strategy = OSDiversity(network=self.time_network)
         mtd_strategy.mtd_operation()
         # add the diversity score for hosts(maximum is MAX_DIVERSITY_SCORE), so it is more difficult for attcker to exploit vulnerabilities
         self.diversity_scores = [num + 1 if num < MAX_DIVERSITY_SCORE else num for num in self.diversity_scores]
         self.scan_port_progress = [False for _ in range(TOTAL_NODE)]
-        return True
+
+        def probability_function():
+            return random.random() < OS_RECOVERY
+        for index in range(TOTAL_NODE):
+            if self.exploit_vuln_progress[index]:
+                recovery_result = probability_function()
+                if recovery_result:
+                    self.recovery_a_node(index)
+                    self.exploit_vuln_progress[index] = False
+                    someone_recovery = True
+                    recovery_list.append(index)
+
+        if someone_recovery:
+            msg = f'The node {", ".join(map(str, recovery_list))} have been set to uncompromised because you change some services on them.'
+
+        return {'message': msg, }
 
     def service_diversity(self, host_id):
+        msg = f'You have improved the services on node {host_id}. Now it is more difficult for attacker to exploit its vulnerabilities.'
         mtd_strategy = ServiceDiversity(network=self.time_network)
         mtd_strategy.mtd_operation(specific_host_id=host_id)
         self.scan_port_progress[host_id] = False
         if self.diversity_scores[host_id] < MAX_DIVERSITY_SCORE:
             self.diversity_scores[host_id] += 1
-        return True
+
+        if self.exploit_vuln_progress[host_id]:
+            def probability_function():
+                return random.random() < SERVICE_RECOVERY
+            recovery_result = probability_function()
+            if recovery_result:
+                self.recovery_a_node(host_id)
+                self.exploit_vuln_progress[host_id] = False
+                msg = f'The node {host_id} has been set to uncompromised because you change some services on it.'
+        
+        return {'message': msg, }
 
     def get_host_all_details(self, host_id):
         """
@@ -498,8 +528,8 @@ class Game:
                 self.__update_compromise_progress()
                 self.__scan_neighbors()
                 self.time_network.colour_map[adversary.get_curr_host_id()] = "red"
+                self.exploit_vuln_progress[host_id] = True
                 self.add_attacker_new_message(f"Message: Node {host_id} vulnerability exploited")
-                self.update_network()
             else:
                 self.add_attacker_new_message(f"Message: Exploiting vulnerability of services on node {host_id} failed")
                 self.add_attacker_new_message(f"It may because few services on this host are vulnerable.")
@@ -583,6 +613,19 @@ class Game:
                 if user not in adversary.get_compromised_users():
                     adversary.get_attack_stats().update_compromise_user(user)
             adversary._compromised_users = list(set(adversary.get_compromised_users() + adversary.get_curr_host().get_compromised_users()))
+
+    def recovery_a_node(self, node_id):
+        """
+        update some parameter about a node when it is set to uncompromised from conpromised
+        """
+        adversary = self.adversary
+        if node_id in adversary.get_compromised_hosts():
+            adversary.get_compromised_hosts().remove(node_id)
+            logging.info("MTD: Host %i has been set to uncompromised at %.1fs!" % (node_id, self.env.now))
+            adversary.get_network().update_reachable_compromise(node_id, adversary.get_compromised_hosts())
+            # change the node color to normal color
+            self.time_network.colour_map[node_id] = NODE_COLOURS[self.time_network.graph.nodes[node_id]['layer']]
+            self.add_attacker_new_message(f"Message: Node {node_id} was set to uncompromised because some services on it has been changed")
 
     def update_network(self):
         """
@@ -677,6 +720,7 @@ class Game:
         self.set_visible_hosts()
         self.set_visible_edges()
         self.scan_port_progress = [False for _ in range(TOTAL_NODE)]
+        self.exploit_vuln_progress = [False for _ in range(TOTAL_NODE)]
         self.brute_force_progress = [True for _ in range(TOTAL_NODE)]
         self.attacker_new_message = deque()
         self.update_network()   # get the position, color for all nodes and append them to self.nodes for frontend to access

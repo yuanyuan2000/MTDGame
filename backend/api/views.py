@@ -152,8 +152,8 @@ def os_diversity(request):
         if request.method == 'POST':
             data = json.loads(request.body)
             # node_id = data['nodeId']
-            is_sucessful = game_instance.os_diversity()
-            return JsonResponse({"is_sucessful": is_sucessful}, status=200)
+            os_diversity_result = game_instance.os_diversity()
+            return JsonResponse({"os_diversity_result": os_diversity_result}, status=200)
         else:
             return JsonResponse({"message": "Invalid request"}, status=400)
     except TypeError as e:
@@ -165,8 +165,8 @@ def service_diversity(request):
         if request.method == 'POST':
             data = json.loads(request.body)
             node_id = data['nodeId']
-            is_sucessful = game_instance.service_diversity(node_id)
-            return JsonResponse({"is_sucessful": is_sucessful}, status=200)
+            service_diversity_result = game_instance.service_diversity(node_id)
+            return JsonResponse({"service_diversity_result": service_diversity_result}, status=200)
         else:
             return JsonResponse({"message": "Invalid request"}, status=400)
     except TypeError as e:

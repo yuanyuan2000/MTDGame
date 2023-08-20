@@ -141,11 +141,7 @@ function Game() {
                 const response = await axios.post(prefix + "/api/defender/network_data/os_diversity/", {
                     nodeId: selectedNodeId,
                 });
-                if (response.data.is_sucessful) {
-                    setCommand('You have finished the OS diversity for all nodes. Now they are more difficult for attacker to exploit vulnerabilities.');
-                } else {
-                    setCommand('OS diversity failed. It may because: 1. Don\'t have enough resource to do this MTD operation');
-                }
+                setCommand(response.data.os_diversity_result.message);
             } catch (error) {
                 console.error('Error while posting os_diversity:', error);
             }
@@ -162,11 +158,7 @@ function Game() {
                     const response = await axios.post(prefix + "/api/defender/network_data/service_diversity/", {
                         nodeId: selectedNodeId,
                     });
-                    if (response.data.is_sucessful) {
-                        setCommand('You have improved the services on this node. Now it is more difficult for attacker to exploit its vulnerabilities.');
-                    } else {
-                        setCommand('Service diversity failed. It may because: 1. Don\'t choose a valid node. 2. Don\'t have enough resource to do this MTD operation');
-                    }
+                    setCommand(response.data.service_diversity_result.message);
                 } catch (error) {
                     console.error('Error while posting service_diversity:', error);
                 }
