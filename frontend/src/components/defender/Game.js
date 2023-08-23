@@ -191,22 +191,19 @@ function Game() {
                                 setTimeout(() => {
                                     setCommand(`OS Version: ${details.os_version}`);
                                     setTimeout(() => {
-                                        setCommand(`Diversity Score: ${details.diversity_score}`);
+                                        setCommand(`IP: ${details.ip}`);
                                         setTimeout(() => {
-                                            setCommand(`IP: ${details.ip}`);
+                                            setCommand(`Number of services: ${services.length}`);
+                                            services.forEach((serviceName, index) => {
                                             setTimeout(() => {
-                                                setCommand(`Number of services: ${services.length}`);
-                                                services.forEach((serviceName, index) => {
+                                                setCommand(`- ${serviceName}`);
+                                                if (index === services.length - 1) {
                                                 setTimeout(() => {
-                                                    setCommand(`- ${serviceName}`);
-                                                    if (index === services.length - 1) {
-                                                    setTimeout(() => {
-                                                        setCommand(` `);  // Add a new line at the end
-                                                    }, 30);
-                                                    }
-                                                }, (index + 4) * 30);  // Wait 30 ms for each service
-                                                });
-                                            }, 30);
+                                                    setCommand(` `);  // Add a new line at the end
+                                                }, 30);
+                                                }
+                                            }, (index + 4) * 30);  // Wait 30 ms for each service
+                                            });
                                         }, 30);
                                     }, 30);
                                 }, 30);
@@ -266,7 +263,7 @@ function Game() {
                         <Terminal command={command} />
                     </div>
                     <div style={{ display: "flex", justifyContent: "center", marginTop: "-40px" }}>
-                        <button onClick={handleDetailsClick} style={{ marginRight: "10px", width: "100px", height: "35px", backgroundColor: "#262626", color: "white", border: "none", borderRadius: "5px", cursor: "pointer", zIndex: 100 }}>Health Check</button>
+                        <button onClick={handleDetailsClick} style={{ marginRight: "10px", width: "100px", height: "35px", backgroundColor: "#262626", color: "white", border: "none", borderRadius: "5px", cursor: "pointer", zIndex: 100 }}>Host Information</button>
                         <button onClick={handleIPShufflingClick} style={{ marginRight: "10px", width: "100px", height: "35px", backgroundColor: "#262626", color: "white", border: "none", borderRadius: "5px", cursor: "pointer", zIndex: 100 }}>IP Shuffling</button>
                         <button onClick={handleTopologicalShufflingClick} style={{ marginRight: "10px", width: "120px", height: "35px", backgroundColor: "#262626", color: "white", border: "none", borderRadius: "5px", cursor: "pointer", zIndex: 100  }}>Full Topological Shuffling</button>
                         <button onClick={handleOSDiversityClick} style={{ marginRight: "10px", width: "100px", height: "35px", backgroundColor: "#262626", color: "white", border: "none", borderRadius: "5px", cursor: "pointer", zIndex: 100  }}>Full OS Diversity</button>

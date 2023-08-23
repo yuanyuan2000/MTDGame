@@ -2,6 +2,31 @@ import React, { useState, useEffect } from 'react';
 import { DataSet, Network } from 'vis-network/standalone/esm/vis-network';
 import axios from 'axios';
 
+// Convert named CSS color to RGB
+function colorToRGB(colorName) {
+    const div = document.createElement('div');
+    div.style.color = colorName;
+    document.body.appendChild(div);
+    
+    const computedStyle = window.getComputedStyle(div);
+    const computedColor = computedStyle.color;
+  
+    document.body.removeChild(div);
+    return computedColor;
+}
+  
+// Convert RGB to RGBA with new opacity
+function rgbToRGBA(rgb, opacity) {
+    return rgb.replace('rgb', 'rgba').replace(')', `, ${opacity})`);
+}
+
+// Given a nodeId and a set of edges, returns all edges connected to that node.
+function getConnectedEdges(nodeId, allEdges) {
+    return allEdges.get({
+        filter: edge => edge.from === nodeId || edge.to === nodeId
+    });
+}
+
 const NetworkGraph = (props) => {
     const { prefix , handleNodeClick, nodes: initialNodes, edges: initialEdges, visible_nodes: visibleNodes, visible_edges: visibleEdges, selectedNodeId } = props;
     const [nodes, setNodes] = useState(new DataSet(initialNodes));
@@ -17,14 +42,34 @@ const NetworkGraph = (props) => {
 
         newNodes.forEach((node) => {
             if (visibleNodes.includes(node.id)) {
-                newNodes.update({ id: node.id, hidden: false });
+              newNodes.update({ id: node.id, hidden: false });
             } else {
-                newNodes.update({ id: node.id, hidden: true });
+              newNodes.update({ id: node.id, hidden: true });
             }
             if (node.id === selectedNodeId) {
-                newNodes.update({ id: node.id, color: { background: 'rgba(151, 194, 252, 0.6)' } }); 
+              // Convert the named CSS color to RGB
+              const rgbColor = colorToRGB(node.color.background);
+              // Convert the RGB color to RGBA with the desired opacity
+              const rgbaColor = rgbToRGBA(rgbColor, 0.5);
+              newNodes.update({ id: node.id, color: { background: rgbaColor } });
+
+              // Identify edges connected to the selected node
+              const connectedEdges = getConnectedEdges(node.id, newEdges);
+  
+              // Change the color of these edges
+              connectedEdges.forEach(edge => {
+                newEdges.update({
+                  id: edge.id,
+                  color: {
+                    color: '#D2E5FF',       // Default blue-ish color
+                    highlight: '#D2E5FF',  // Highlight color when selected
+                    hover: '#D2E5FF'       // Color when hovered over
+                  }
+                });
+              });
             }
-        });
+          });
+          
 
         newEdges.forEach((edge) => {
             if (visibleEdges.includes(edge.id)) {

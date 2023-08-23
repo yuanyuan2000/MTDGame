@@ -42,9 +42,8 @@ SPEED_RATIO = 10    # it means that one physcial second equal to SPEED_RATIO sim
 TOTAL_NODE = 32
 TOTAL_TARGET_NODE_NUM = 3
 
-MAX_DIVERSITY_SCORE = 10
-EXPLOIT_VULN_DURATION = 3
-BRUTE_FORCE_DURATION = 5
+EXPLOIT_VULN_DURATION = 3   # physical second
+BRUTE_FORCE_DURATION = 5   # physical second
 MAX_TOPO_SHUFFLE_TIME = 2
 OS_RECOVERY = 0.25
 SERVICE_RECOVERY = 0.5
@@ -81,7 +80,6 @@ class Game:
         self.target_node_num_list = []
         self.attacker_visible_nodes = []
         self.attacker_visible_edges = []
-        self.diversity_scores = []     # a int list(len:TOTAL_NODE), more score a node has, more difficult to exploit
         self.scan_port_progress = []   # a bool list(len:TOTAL_NODE), False means this node has not been scaned port(will be reset by OS/service diversity)
         self.exploit_vuln_progress = []  # a bool list(len:TOTAL_NODE), True means this node has been compromised because of an exploited service(not brute force)
         self.brute_force_progress = []  # a bool list(len:TOTAL_NODE), False means the progress has been interrupt by user MTD operation
@@ -217,8 +215,6 @@ class Game:
         someone_recovery, recovery_list, msg = False, [], f'You have finished the OS diversity for all nodes. Now they are more difficult for attacker to exploit vulnerabilities.'
         mtd_strategy = OSDiversity(network=self.time_network)
         mtd_strategy.mtd_operation()
-        # add the diversity score for hosts(maximum is MAX_DIVERSITY_SCORE), so it is more difficult for attcker to exploit vulnerabilities
-        self.diversity_scores = [num + 1 if num < MAX_DIVERSITY_SCORE else num for num in self.diversity_scores]
         self.scan_port_progress = [False for _ in range(TOTAL_NODE)]
 
         def probability_function():
@@ -242,8 +238,6 @@ class Game:
         mtd_strategy = ServiceDiversity(network=self.time_network)
         mtd_strategy.mtd_operation(specific_host_id=host_id)
         self.scan_port_progress[host_id] = False
-        if self.diversity_scores[host_id] < MAX_DIVERSITY_SCORE:
-            self.diversity_scores[host_id] += 1
 
         if self.exploit_vuln_progress[host_id]:
             def probability_function():
@@ -294,7 +288,6 @@ class Game:
                 'os_version': self.time_network.graph.nodes[host_id]["host"].os_version,
                 'ip': self.time_network.graph.nodes[host_id]["host"].ip,
                 'is_compromised': host.is_compromised(),
-                'diversity_score': self.diversity_scores[host_id],
                 'service_info': services_info,
             }
 
@@ -449,6 +442,7 @@ class Game:
             adversary.set_curr_ports([])
             adversary.set_curr_vulns([])           
             adversary.get_attack_counter()[adversary.get_curr_host_id()] += 1
+            adversary.get_attack_stats().append_attack_operation_record('SCAN_PORT', self.env.now, self.env.now, adversary)
 
             port_list = adversary.get_curr_host().port_scan()
             adversary.set_curr_ports(port_list)
@@ -496,27 +490,16 @@ class Game:
         adversary.get_attack_counter()[adversary.get_curr_host_id()] += 1
         adversary.set_curr_ports(adversary.get_curr_host().port_scan())
         adversary.set_curr_vulns(adversary.get_curr_host().get_vulns(adversary.get_curr_ports()))
+        adversary.get_attack_stats().append_attack_operation_record('EXPLOIT_VULN', self.env.now - SPEED_RATIO * EXPLOIT_VULN_DURATION, self.env.now, adversary)
         
-        # for game balance, p(exploit) = 0.7-diversity_score/(2*MAX_DIVERSITY_SCORE), so it is [0.2, 0.7] (depends on the diversity score)
-        def probability_function():
-            x = 0.7 - self.diversity_scores[host_id] / (2 * MAX_DIVERSITY_SCORE)
-            random_number = random.random()
-            return random_number < x
-        
-        # vulns = adversary.get_curr_vulns()
-        # for vuln in vulns:
-        #     logging.info("Adversary: Processed %s %s on host %s at %.1fs." % (adversary.get_curr_process(), vuln.id,
-        #                                                              adversary.get_curr_host_id(), self.env.now))
-        #     vuln.network(host=adversary.get_curr_host())
-        #     adversary.set_curr_attempts(adversary.get_curr_attempts() + 1)
-        # if adversary.get_curr_host().check_compromised():
-        #     for vuln in adversary.get_curr_vulns():
-        #         if vuln.is_exploited():
-        #             if vuln.exploitability == vuln.cvss / 5.5:
-        #                 vuln.exploitability = (1 - vuln.exploitability) / 2 + vuln.exploitability
-        #                 if vuln.exploitability > 1:
-        #                     vuln.exploitability = 1
-        exploit_result = probability_function()
+        vulns = adversary.get_curr_vulns()
+        for vuln in vulns:
+            # logging.info("Adversary: Processed %s %s on host %s at %.1fs." % (adversary.get_curr_process(), vuln.id,
+            #                                                          adversary.get_curr_host_id(), self.env.now))
+            vuln.network(host=adversary.get_curr_host())
+            adversary.set_curr_attempts(adversary.get_curr_attempts() + 1)
+            
+        exploit_result = adversary.get_curr_host().check_compromised()
 
         if host_id in self.get_current_compromised_hosts():
             self.add_attacker_new_message(f"Message: Node {host_id} has been already compromised")
@@ -525,6 +508,13 @@ class Game:
             self.add_attacker_new_message(f"It may because some MTD operation changed the port number.")
         else:
             if exploit_result:
+                for vuln in adversary.get_curr_vulns():
+                    if vuln.is_exploited():
+                        if vuln.exploitability == vuln.cvss / 5.5:
+                            vuln.exploitability = (1 - vuln.exploitability) / 2 + vuln.exploitability
+                            if vuln.exploitability > 1:
+                                vuln.exploitability = 1
+
                 self.__update_compromise_progress()
                 self.__scan_neighbors()
                 self.time_network.colour_map[adversary.get_curr_host_id()] = "red"
@@ -556,6 +546,7 @@ class Game:
         adversary.set_curr_ports([])
         adversary.set_curr_vulns([])           
         adversary.get_attack_counter()[adversary.get_curr_host_id()] += 1
+        adversary.get_attack_stats().append_attack_operation_record('BRUTE_FORCE', self.env.now - SPEED_RATIO * BRUTE_FORCE_DURATION, self.env.now, adversary)
 
         # for game balance, p(brute force) = 0.4+num_compromised_hosts/(2*TOTAL_NODE), so it is [0.4, 0.9] (depends on the numer of compromised hosts)
         def probability_function():
@@ -605,6 +596,7 @@ class Game:
         adversary._pivot_host_id = adversary.get_curr_host_id()
         if adversary.get_curr_host_id() not in adversary.get_compromised_hosts():
             adversary.get_compromised_hosts().append(adversary.get_curr_host_id())
+            adversary.get_attack_stats().update_compromise_host(adversary.curr_host)
             logging.info("Adversary: Host %i has been compromised at %.1fs!" % (adversary.get_curr_host_id(), self.env.now))
             adversary.get_network().update_reachable_compromise(adversary.get_curr_host_id(), adversary.get_compromised_hosts())
 
@@ -715,7 +707,6 @@ class Game:
 
         # init some game parameters and update network
         self.target_node_num_list = random.sample(range(TOTAL_NODE - 9, TOTAL_NODE - 1), TOTAL_TARGET_NODE_NUM)
-        self.diversity_scores = [0 for _ in range(TOTAL_NODE)]
         self.topo_shuffle_time = 0
         self.set_visible_hosts()
         self.set_visible_edges()
