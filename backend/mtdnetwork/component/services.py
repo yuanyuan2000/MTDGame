@@ -315,6 +315,75 @@ class ServicesGenerator:
         """
         return service in list(self.os_services[os_type][os_version].keys())
 
+    # def gen_services(self):
+    #     """
+    #     Generates all of the services for each OS type and version for the simulation
+    #     """
+    #     self.os_services = {os_name: {} for os_name in constants.OS_TYPES}
+
+    #     for os_type in constants.OS_TYPES:
+    #         for os_version in constants.OS_VERSION_DICT[os_type]:
+    #             self.os_services[os_type][os_version] = {}
+
+    #     wordlist = ServicesGenerator.get_service_name_list()
+    #     types_of_os = len(constants.OS_TYPES)
+    #     total_services = self.services_per_os * types_of_os
+    #     self.service_names = random.choices(wordlist, k=total_services)
+
+    #     s_versions = constants.SERVICE_VERSIONS
+    #     s_versions_len = len(s_versions)
+
+    #     self.services = {}
+    #     # os_list = constants.OS_TYPES
+    #     for s_index, service in enumerate(self.service_names):
+    #         os_list = [constants.OS_TYPES[s_index // self.services_per_os]]
+
+    #         if random.random() < self.percent_cross_platform:
+    #             os_list = constants.OS_TYPES
+
+    #         # can_have_os_depend_vuln = len(os_list) > 1
+    #         can_have_os_depend_vuln = True
+
+    #         self.services[service] = []
+    #         vulns = {}
+
+    #         # Code for vulnerability generation, commented out double generation from original code
+    #         for i in range(self.vuln_initial_chances):
+    #             if random.random() < self.max_vuln_probability:
+    #                 vuln_patch_dist = i + random.randint(-self.vuln_patch_range, self.vuln_patch_range)
+    #                 vulns[vuln_patch_dist] = Vulnerability(
+    #                     can_have_os_dependency=can_have_os_depend_vuln,
+    #                     os_list=os_list
+    #                 )
+
+    #         # Adding Vuln at version 99 to ensure there is a vuln in every version
+    #         vulns[99] = Vulnerability(
+    #             can_have_os_dependency=can_have_os_depend_vuln,
+    #             os_list=os_list
+    #         )
+    #         for sv_index in range(s_versions_len):
+    #             service_version = s_versions[sv_index]
+    #             # version_scale = (s_versions_len - sv_index)/s_versions_len
+    #             # print("service version: ", service_version, "version scale", version_scale)
+    #             # if random.random() < self.max_vuln_probability*version_scale:
+    #             #     vuln_patch_dist = self.vuln_patch_mean + random.randint(-self.vuln_patch_range, self.vuln_patch_range)
+    #             #     vulns[sv_index+vuln_patch_dist] = Vulnerability(
+    #             #         can_have_os_dependency=can_have_os_depend_vuln, 
+    #             #         os_list=os_list
+    #             #     )
+
+    #             active_vulns = [vulns[i] for i in vulns if i >= sv_index]
+    #             self.services[service] = self.services[service] + [Service(service, service_version, active_vulns)]
+
+    #         for os_name in os_list:
+    #             os_versions = constants.OS_VERSION_DICT[os_name]
+    #             total_os_versions = len(os_versions)
+    #             version_split = s_versions_len // total_os_versions
+    #             for os_version_index, os_version in enumerate(os_versions):
+    #                 service_versions = self.services[service][s_versions_len - (
+    #                         os_version_index + 1) * version_split:s_versions_len - os_version_index * version_split]
+    #                 self.os_services[os_name][os_version][service] = service_versions
+
     def gen_services(self):
         """
         Generates all of the services for each OS type and version for the simulation
@@ -325,64 +394,60 @@ class ServicesGenerator:
             for os_version in constants.OS_VERSION_DICT[os_type]:
                 self.os_services[os_type][os_version] = {}
 
-        wordlist = ServicesGenerator.get_service_name_list()
-        types_of_os = len(constants.OS_TYPES)
-        total_services = self.services_per_os * types_of_os
-        self.service_names = random.choices(wordlist, k=total_services)
-
         s_versions = constants.SERVICE_VERSIONS
         s_versions_len = len(s_versions)
 
         self.services = {}
-        # os_list = constants.OS_TYPES
-        for s_index, service in enumerate(self.service_names):
-            os_list = [constants.OS_TYPES[s_index // self.services_per_os]]
 
-            if random.random() < self.percent_cross_platform:
-                os_list = constants.OS_TYPES
+        cross_platform_services_count = int(self.services_per_os * self.percent_cross_platform)
+        os_specific_services_count = self.services_per_os - cross_platform_services_count
 
-            # can_have_os_depend_vuln = len(os_list) > 1
-            can_have_os_depend_vuln = True
+        for os_type in constants.OS_TYPES:
+            selected_cross_platform_services = random.sample(constants.OS_SERVICE_NAMES["cross_platform"], cross_platform_services_count)
+            selected_os_services = random.sample(constants.OS_SERVICE_NAMES[os_type], os_specific_services_count)
+            all_selected_services = selected_cross_platform_services + selected_os_services
+            # print(all_selected_services)
 
-            self.services[service] = []
-            vulns = {}
+            for service in all_selected_services:
+                os_list = [os_type]
 
-            # Code for vulnerability generation, commented out double generation from original code
-            for i in range(self.vuln_initial_chances):
-                if random.random() < self.max_vuln_probability:
-                    vuln_patch_dist = i + random.randint(-self.vuln_patch_range, self.vuln_patch_range)
-                    vulns[vuln_patch_dist] = Vulnerability(
-                        can_have_os_dependency=can_have_os_depend_vuln,
-                        os_list=os_list
-                    )
+                if service in selected_cross_platform_services:
+                    os_list = constants.OS_TYPES
 
-            # Adding Vuln at version 99 to ensure there is a vuln in every version
-            vulns[99] = Vulnerability(
-                can_have_os_dependency=can_have_os_depend_vuln,
-                os_list=os_list
-            )
-            for sv_index in range(s_versions_len):
-                service_version = s_versions[sv_index]
-                # version_scale = (s_versions_len - sv_index)/s_versions_len
-                # print("service version: ", service_version, "version scale", version_scale)
-                # if random.random() < self.max_vuln_probability*version_scale:
-                #     vuln_patch_dist = self.vuln_patch_mean + random.randint(-self.vuln_patch_range, self.vuln_patch_range)
-                #     vulns[sv_index+vuln_patch_dist] = Vulnerability(
-                #         can_have_os_dependency=can_have_os_depend_vuln, 
-                #         os_list=os_list
-                #     )
+                # if the service already exists in self.services, skip to the next one
+                if service in self.services:
+                    continue
 
-                active_vulns = [vulns[i] for i in vulns if i >= sv_index]
-                self.services[service] = self.services[service] + [Service(service, service_version, active_vulns)]
+                self.services[service] = []
+                vulns = {}
 
-            for os_name in os_list:
-                os_versions = constants.OS_VERSION_DICT[os_name]
-                total_os_versions = len(os_versions)
-                version_split = s_versions_len // total_os_versions
-                for os_version_index, os_version in enumerate(os_versions):
-                    service_versions = self.services[service][s_versions_len - (
-                            os_version_index + 1) * version_split:s_versions_len - os_version_index * version_split]
-                    self.os_services[os_name][os_version][service] = service_versions
+                for i in range(self.vuln_initial_chances):
+                    if random.random() < self.max_vuln_probability:
+                        vuln_patch_dist = i + random.randint(-self.vuln_patch_range, self.vuln_patch_range)
+                        vulns[vuln_patch_dist] = Vulnerability(
+                            can_have_os_dependency=(service not in selected_cross_platform_services),
+                            os_list=os_list
+                        )
+
+                vulns[99] = Vulnerability(
+                    can_have_os_dependency=(service not in selected_cross_platform_services),
+                    os_list=os_list
+                )
+                
+                for sv_index in range(s_versions_len):
+                    service_version = s_versions[sv_index]
+                    active_vulns = [vulns[i] for i in vulns if i >= sv_index]
+                    self.services[service] = self.services[service] + [Service(service, service_version, active_vulns)]
+
+                for os_name in os_list:
+                    os_versions = constants.OS_VERSION_DICT[os_name]
+                    total_os_versions = len(os_versions)
+                    version_split = s_versions_len // total_os_versions
+                    for os_version_index, os_version in enumerate(os_versions):
+                        service_versions = self.services[service][s_versions_len - (
+                                os_version_index + 1) * version_split:s_versions_len - os_version_index * version_split]
+                        self.os_services[os_name][os_version][service] = service_versions
+
 
     @staticmethod
     def get_service_name_list():
