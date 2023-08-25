@@ -355,7 +355,6 @@ class AttackOperation:
             #     self.target_compromised = True
             #     self.end_event.succeed()
             #     return
-            #
 
     def get_proceed_time(self):
         return self._proceed_time

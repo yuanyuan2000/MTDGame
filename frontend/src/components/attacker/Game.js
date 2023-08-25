@@ -65,8 +65,13 @@ function Game() {
             }
 
             if (!networkData.is_running && networkData.winner) {
-                alert(`Game over! The ${networkData.winner} win.`);
-                navigate('/');
+                if (networkData.winner === 'Attacker'){
+                    alert(`Target node is compromised. You win!`);
+                    navigate('/');
+                } else if (networkData.winner === 'Defender'){
+                    alert(`Time is up! You lose.`);
+                    navigate('/');
+                }
             }
         };
 
@@ -262,10 +267,11 @@ function Game() {
                         <Terminal command={command} />
                     </div>
                     <div style={{ display: "flex", justifyContent: "center", marginTop: "-40px" }}>
-                        <button onClick={handleScanHostClick} style={{ marginRight: "10px", width: "100px", height: "35px", backgroundColor: "#262626", color: "white", border: "none", borderRadius: "5px", cursor: "pointer", zIndex: 100 }}>Scan Host</button>
+                        
                         <button onClick={handleScanPortClick} style={{ marginRight: "10px", width: "100px", height: "35px", backgroundColor: "#262626", color: "white", border: "none", borderRadius: "5px", cursor: "pointer", zIndex: 100 }}>Scan Port</button>
                         <button onClick={handleExploitVulnClick} style={{ marginRight: "10px", width: "100px", height: "35px", backgroundColor: "#262626", color: "white", border: "none", borderRadius: "5px", cursor: "pointer", zIndex: 100  }}>Exploit Vuln</button>
-                        <button onClick={handleBruteForceClick} style={{ width: "100px", height: "35px", backgroundColor: "#262626", color: "white", border: "none", borderRadius: "5px", cursor: "pointer", zIndex: 100  }}>Brute force</button>
+                        <button onClick={handleBruteForceClick} style={{ marginRight: "10px", width: "100px", height: "35px", backgroundColor: "#262626", color: "white", border: "none", borderRadius: "5px", cursor: "pointer", zIndex: 100 }}>Brute force</button>
+                        <button onClick={handleScanHostClick} style={{ width: "100px", height: "35px", backgroundColor: "#262626", color: "white", border: "none", borderRadius: "5px", cursor: "pointer", zIndex: 100  }}>Scan Neighbor</button>
                     </div>
                     <div>
                         <p style={{ fontSize: "18px", color: "blue" }}>Resources: {resource}</p>

@@ -50,8 +50,13 @@ function Game() {
             setNetworkData(networkData);
 
             if (!networkData.is_running && networkData.winner) {
-                alert(`Game over! The ${networkData.winner} win.`);
-                navigate('/');
+                if (networkData.winner === 'Attacker'){
+                    alert(`Target node is compromised. You lose.`);
+                    navigate('/');
+                } else if (networkData.winner === 'Defender'){
+                    alert(`Time is up. You win!`);
+                    navigate('/');
+                }
             }
         };
 
