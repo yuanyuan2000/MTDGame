@@ -86,6 +86,7 @@ class Game:
         self.attacker_new_message = deque()   # a queue that store new messages for sending to the attacker, it will be deleted after sending
         self.attacker_message_id_counter = 0
         self.topo_shuffle_time = 0
+        self.compromised_services = []   # a list to store all the compromised service name
         
     def get_isrunning(self):
         return self.isrunning
@@ -217,11 +218,9 @@ class Game:
         mtd_strategy.mtd_operation()
         self.scan_port_progress = [False for _ in range(TOTAL_NODE)]
 
-        def probability_function():
-            return random.random() < OS_RECOVERY
         for index in range(TOTAL_NODE):
             if self.exploit_vuln_progress[index]:
-                recovery_result = probability_function()
+                recovery_result = not self.judge_if_still_exploited(index)
                 if recovery_result:
                     self.recovery_a_node(index)
                     self.exploit_vuln_progress[index] = False
@@ -234,21 +233,39 @@ class Game:
         return {'message': msg, }
 
     def service_diversity(self, host_id):
-        msg = f'You have improved the services on node {host_id}. Now it is more difficult for attacker to exploit its vulnerabilities.'
-        mtd_strategy = ServiceDiversity(network=self.time_network)
-        mtd_strategy.mtd_operation(specific_host_id=host_id)
-        self.scan_port_progress[host_id] = False
+        if host_id in self.time_network.exposed_endpoints:
+            msg = f'You can not change the services on an endpoint(green node). Because it need to keep running for your users.'
+        else:
+            if host_id in self.get_current_compromised_hosts():
+                msg = f'You have changed some services on node {host_id} but it is still compromised. There are 2 reasons: 1. Compromised is not because some services on OS is exploited. 2. Some exploited services are still running on it.'
+            else:
+                msg = f'You have changed some services on node {host_id}.'
+            mtd_strategy = ServiceDiversity(network=self.time_network)
+            mtd_strategy.mtd_operation(specific_host_id=host_id)
+            self.scan_port_progress[host_id] = False
 
-        if self.exploit_vuln_progress[host_id]:
-            def probability_function():
-                return random.random() < SERVICE_RECOVERY
-            recovery_result = probability_function()
-            if recovery_result:
-                self.recovery_a_node(host_id)
-                self.exploit_vuln_progress[host_id] = False
-                msg = f'The node {host_id} has been set to uncompromised because you change some services on it.'
+            if self.exploit_vuln_progress[host_id]:
+                recovery_result = not self.judge_if_still_exploited(host_id)
+                if recovery_result:
+                    self.recovery_a_node(host_id)
+                    self.exploit_vuln_progress[host_id] = False
+                    msg = f'The node {host_id} has been set to uncompromised because you change some services on it.'
         
         return {'message': msg, }
+    
+    def judge_if_still_exploited(self, host_id):
+        """
+        judge if a node is still exploited after diversity
+        """
+        hosts = self.time_network.get_hosts()
+        if host_id in hosts:
+            host = hosts[host_id]
+            all_services = host.get_all_services()
+            for service in all_services:
+                service_name = service.name
+                if service_name in self.compromised_services:
+                    return True
+        return False
 
     def get_host_all_details(self, host_id):
         """
@@ -508,6 +525,15 @@ class Game:
             self.add_attacker_new_message(f"It may because some MTD operation changed the port number.")
         else:
             if exploit_result:
+                # get the exploited services
+                exploited_services = adversary.get_curr_host().get_services(just_exploited=True)
+                service_names = [service.name for service in exploited_services.values()]
+
+                # add the new exploited service name to the compromised_services list
+                compromised_services_set = set(self.compromised_services)
+                compromised_services_set.update(service_names)
+                self.compromised_services = list(compromised_services_set)
+
                 for vuln in adversary.get_curr_vulns():
                     if vuln.is_exploited():
                         if vuln.exploitability == vuln.cvss / 5.5:
@@ -520,6 +546,7 @@ class Game:
                 self.time_network.colour_map[adversary.get_curr_host_id()] = "red"
                 self.exploit_vuln_progress[host_id] = True
                 self.add_attacker_new_message(f"Message: Node {host_id} vulnerability exploited")
+                self.add_attacker_new_message(f'Current exploited services: {", ".join(map(str, self.compromised_services))}')
             else:
                 self.add_attacker_new_message(f"Message: Exploiting vulnerability of services on node {host_id} failed")
                 self.add_attacker_new_message(f"It may because few services on this host are vulnerable.")
@@ -612,6 +639,7 @@ class Game:
         """
         adversary = self.adversary
         if node_id in adversary.get_compromised_hosts():
+            self.time_network.get_hosts()[node_id].compromised = False
             adversary.get_compromised_hosts().remove(node_id)
             logging.info("MTD: Host %i has been set to uncompromised at %.1fs!" % (node_id, self.env.now))
             adversary.get_network().update_reachable_compromise(node_id, adversary.get_compromised_hosts())
@@ -714,6 +742,7 @@ class Game:
         self.exploit_vuln_progress = [False for _ in range(TOTAL_NODE)]
         self.brute_force_progress = [True for _ in range(TOTAL_NODE)]
         self.attacker_new_message = deque()
+        self.compromised_services = []
         self.update_network()   # get the position, color for all nodes and append them to self.nodes for frontend to access
 
         # start attack

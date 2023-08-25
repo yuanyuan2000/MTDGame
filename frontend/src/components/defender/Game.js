@@ -90,7 +90,10 @@ function Game() {
     }, []);
 
     const handleNodeClick = (node_info, nodeId) => {
-        setCommand(`Select node ${nodeId} (IP: ${node_info.ip})`);
+        setCommand(` `);
+        setTimeout(() => {
+            setCommand(`Select node ${nodeId} (IP: ${node_info.ip})`);
+        }, 30);
         selectedNodeId = nodeId;
     };
 
@@ -186,34 +189,35 @@ function Game() {
                     if (response.data.all_details) {
                         const details = response.data.all_details;
                         if (details.is_compromised) {
-                            setCommand(`Node ${selectedNodeId} has been compromised.`);
+                            setCommand(`Node ${selectedNodeId} has been compromised now:`);
                         }
                         else{
-                            let services = Object.keys(details.service_info);
                             setCommand(`Node ${selectedNodeId} is healthy now:`);
+                        }
+                        let services = Object.keys(details.service_info);
+                        setTimeout(() => {
+                            setCommand(`OS Type: ${details.os_type}`);
                             setTimeout(() => {
-                                setCommand(`OS Type: ${details.os_type}`);
+                                setCommand(`OS Version: ${details.os_version}`);
                                 setTimeout(() => {
-                                    setCommand(`OS Version: ${details.os_version}`);
+                                    setCommand(`IP: ${details.ip}`);
                                     setTimeout(() => {
-                                        setCommand(`IP: ${details.ip}`);
+                                        setCommand(`Number of services: ${services.length}`);
+                                        services.forEach((serviceName, index) => {
                                         setTimeout(() => {
-                                            setCommand(`Number of services: ${services.length}`);
-                                            services.forEach((serviceName, index) => {
+                                            setCommand(`- ${serviceName}`);
+                                            if (index === services.length - 1) {
                                             setTimeout(() => {
-                                                setCommand(`- ${serviceName}`);
-                                                if (index === services.length - 1) {
-                                                setTimeout(() => {
-                                                    setCommand(` `);  // Add a new line at the end
-                                                }, 30);
-                                                }
-                                            }, (index + 4) * 30);  // Wait 30 ms for each service
-                                            });
-                                        }, 30);
+                                                setCommand(` `);  // Add a new line at the end
+                                            }, 30);
+                                            }
+                                        }, (index + 4) * 30);  // Wait 30 ms for each service
+                                        });
                                     }, 30);
                                 }, 30);
                             }, 30);
-                            }
+                        }, 30);
+                            
                     } else {
                         setCommand("Error: Details not found.");
                     }

@@ -105,7 +105,10 @@ function Game() {
     }, []);
 
     const handleNodeClick = (node_info, nodeId) => {
-        setCommand(`Select node ${nodeId} (IP: ${node_info.ip})`);
+        setCommand(` `);
+        setTimeout(() => {
+            setCommand(`Select node ${nodeId} (IP: ${node_info.ip})`);
+        }, 30);
         selectedNodeId = nodeId;
     };
 
