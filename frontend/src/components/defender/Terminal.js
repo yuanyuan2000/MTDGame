@@ -3,7 +3,7 @@ import { Terminal as XTerm } from 'xterm';
 import { FitAddon } from 'xterm-addon-fit';
 import 'xterm/css/xterm.css';
 
-const Terminal = ({ command }) => {
+const Terminal = ({ command , color = '37' }) => {
   const terminalRef = useRef(null);
   const xtermRef = useRef(null);
   const fitAddon = useRef(new FitAddon());
@@ -32,9 +32,9 @@ const Terminal = ({ command }) => {
 
   useEffect(() => {
     if (xtermRef.current && command) {
-      xtermRef.current.writeln(command);
+      xtermRef.current.writeln(`\x1b[${color}m${command}\x1b[0m`);
     }
-  }, [command]);
+  }, [command, color]);
 
   return (
     <div

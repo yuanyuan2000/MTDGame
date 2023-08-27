@@ -20,6 +20,7 @@ function Game() {
     const [isGameStarted, setIsGameStarted] = useState(false);
     // command is a terminal state variable, when it is changed the terminal is updated
     const [command, setCommand] = useState(null);
+    const [commandcolor, setCommandcolor] = useState(37);
     const [resource, setResource] = useState(0);
     const [networkData, setNetworkData] = useState(null);
     const [gameTime, setGameTime] = useState(0.0);
@@ -92,6 +93,7 @@ function Game() {
     const handleNodeClick = (node_info, nodeId) => {
         setCommand(` `);
         setTimeout(() => {
+            setCommandcolor(33);
             setCommand(`Select node ${nodeId} (IP: ${node_info.ip})`);
         }, 30);
         selectedNodeId = nodeId;
@@ -106,17 +108,21 @@ function Game() {
                         nodeId: selectedNodeId,
                     });
                     if (response.data.is_shuffled) {
+                        setCommandcolor(37);
                         setCommand('You have changed the IP of this node. All attack progresses on this node are interrupt.');
                     } else {
-                        setCommand('IP shuffling failed. It may because: 1. Don\'t choose a valid node. 2. Don\'t have enough resource to do this MTD operation');
+                        setCommandcolor(31);
+                        setCommand('IP shuffling failed. It may because this node is invalid.');
                     }
                 } catch (error) {
                     console.error('Error while posting ip_shuffling:', error);
                 }
             } else{
+                setCommandcolor(31);
                 setCommand(`Insufficient resources (< ${RES_IP_SHUFFLING})`);
             }
         } else {
+            setCommandcolor(31);
             setCommand('No node selected.');
         }
     };
@@ -129,8 +135,10 @@ function Game() {
                     nodeId: selectedNodeId,
                 });
                 if (response.data.topo_shuffle_result === 1) {
+                    setCommandcolor(37);
                     setCommand('You have completely changed the total topological network.');
                 } else {
+                    setCommandcolor(31);
                     setCommand('Sorry, there are only two chances to do full topological shuffling in a game.');
                     setResource((prevResource) => Math.min(prevResource + 60, 100));
                 }
@@ -138,6 +146,7 @@ function Game() {
                 console.error('Error while posting topological_shuffling:', error);
             }
         } else{
+            setCommandcolor(31);
             setCommand(`Insufficient resources (< ${RES_TOPO_SHUFFLING})`);
         }
     };
@@ -149,11 +158,13 @@ function Game() {
                 const response = await axios.post(prefix + "/api/defender/network_data/os_diversity/", {
                     nodeId: selectedNodeId,
                 });
+                setCommandcolor(37);
                 setCommand(response.data.os_diversity_result.message);
             } catch (error) {
                 console.error('Error while posting os_diversity:', error);
             }
         } else{
+            setCommandcolor(31);
             setCommand(`Insufficient resources (< ${RES_OS_DIVERSITY})`);
         }
     };
@@ -166,14 +177,17 @@ function Game() {
                     const response = await axios.post(prefix + "/api/defender/network_data/service_diversity/", {
                         nodeId: selectedNodeId,
                     });
+                    setCommandcolor(37);
                     setCommand(response.data.service_diversity_result.message);
                 } catch (error) {
                     console.error('Error while posting service_diversity:', error);
                 }
             } else{
+                setCommandcolor(31);
                 setCommand(`Insufficient resources (< ${RES_SERVICE_DIVERSITY})`);
             }
         } else {
+            setCommandcolor(31);
             setCommand('No node selected.');
         }
     };
@@ -189,9 +203,11 @@ function Game() {
                     if (response.data.all_details) {
                         const details = response.data.all_details;
                         if (details.is_compromised) {
+                            setCommandcolor(37);
                             setCommand(`Node ${selectedNodeId} has been compromised now:`);
                         }
                         else{
+                            setCommandcolor(37);
                             setCommand(`Node ${selectedNodeId} is healthy now:`);
                         }
                         let services = Object.keys(details.service_info);
@@ -219,15 +235,18 @@ function Game() {
                         }, 30);
                             
                     } else {
+                        setCommandcolor(31);
                         setCommand("Error: Details not found.");
                     }
                 } catch (error) {
                     console.error('Error while posting get_details:', error);
                 }
             } else{
+                setCommandcolor(31);
                 setCommand(`Insufficient resources (< ${RES_GET_DETAIL})`);
             }
         } else {
+            setCommandcolor(31);
             setCommand("No node selected.");
         }
     };
@@ -269,7 +288,7 @@ function Game() {
                             paddingBottom: "10px", 
                         }}
                     >
-                        <Terminal command={command} />
+                        <Terminal command={command}  color={commandcolor}/>
                     </div>
                     <div style={{ display: "flex", justifyContent: "center", marginTop: "-40px" }}>
                         <button onClick={handleDetailsClick} style={{ marginRight: "10px", width: "100px", height: "35px", backgroundColor: "#262626", color: "white", border: "none", borderRadius: "5px", cursor: "pointer", zIndex: 100 }}>Host Information</button>

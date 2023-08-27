@@ -45,8 +45,8 @@ TOTAL_TARGET_NODE_NUM = 3
 EXPLOIT_VULN_DURATION = 3   # physical second
 BRUTE_FORCE_DURATION = 5   # physical second
 MAX_TOPO_SHUFFLE_TIME = 2
-OS_RECOVERY = 0.25
-SERVICE_RECOVERY = 0.5
+OS_RECOVERY = 0.15       # the probability to recover a node when OS diversity in human vs computer mode
+SERVICE_RECOVERY = 0.3    # the probability to recover a node when service diversity in human vs computer mode
 
 class Node:
 
@@ -194,6 +194,7 @@ class Game:
             target_host.ip = new_ip
             # Interrupt the brute force progress for this IP
             self.brute_force_progress[host_id] = False
+            self._interrupt_adversary(mtd_type=0)
             return True
         else:
             return False
@@ -202,6 +203,7 @@ class Game:
         if self.topo_shuffle_time < MAX_TOPO_SHUFFLE_TIME:
             mtd_strategy = CompleteTopologyShuffle(network=self.time_network)
             mtd_strategy.mtd_operation()
+            self._interrupt_adversary(mtd_type=1)
             self.update_network()
             self.topo_shuffle_time += 1
             self.set_visible_hosts()
@@ -219,13 +221,20 @@ class Game:
         self.scan_port_progress = [False for _ in range(TOTAL_NODE)]
 
         for index in range(TOTAL_NODE):
-            if self.exploit_vuln_progress[index]:
+            recovery_result = False
+            # when human vs human, get recovery result by judging if the node is still exploited when the node is compromised because of exploit
+            if self.get_game_mode() == 'Human' and self.exploit_vuln_progress[index]:
                 recovery_result = not self.judge_if_still_exploited(index)
-                if recovery_result:
-                    self.recovery_a_node(index)
-                    self.exploit_vuln_progress[index] = False
-                    someone_recovery = True
-                    recovery_list.append(index)
+            # when human vs computer, get recovery result by probability when the node is compromised
+            if self.get_game_mode() == 'Computer' and index in self.get_current_compromised_hosts():
+                recovery_result = random.random() < OS_RECOVERY
+            if recovery_result:
+                self.recovery_a_node(index)
+                self.exploit_vuln_progress[index] = False
+                someone_recovery = True
+                recovery_list.append(index)
+
+        self._interrupt_adversary(mtd_type=2)
 
         if someone_recovery:
             msg = f'The node {", ".join(map(str, recovery_list))} have been set to uncompromised because you change some services on them.'
@@ -244,12 +253,17 @@ class Game:
             mtd_strategy.mtd_operation(specific_host_id=host_id)
             self.scan_port_progress[host_id] = False
 
-            if self.exploit_vuln_progress[host_id]:
+            recovery_result = False
+            if self.get_game_mode() == 'Human' and self.exploit_vuln_progress[host_id]:
                 recovery_result = not self.judge_if_still_exploited(host_id)
-                if recovery_result:
-                    self.recovery_a_node(host_id)
-                    self.exploit_vuln_progress[host_id] = False
-                    msg = f'The node {host_id} has been set to uncompromised because you change some services on it.'
+            if self.get_game_mode() == 'Computer' and host_id in self.get_current_compromised_hosts():
+                recovery_result = random.random() < SERVICE_RECOVERY
+            if recovery_result:
+                self.recovery_a_node(host_id)
+                self.exploit_vuln_progress[host_id] = False
+                msg = f'The node {host_id} has been set to uncompromised because you change some services on it.'
+
+            self._interrupt_adversary(mtd_type=3)
         
         return {'message': msg, }
     
@@ -266,6 +280,29 @@ class Game:
                 if service_name in self.compromised_services:
                     return True
         return False
+    
+    def _interrupt_adversary(self, mtd_type):
+        """
+        interrupt the attack process of the adversary, only used when the computer is attacker
+        mtd_type: IP shuffling, topological shuffling, OS diversity, service diversity -> 0, 1, 2, 3
+        """
+        return   # there is still some bugs in this part will terminate the whole simulation when we interrupt
+        if self.get_game_mode() == 'Computer' and self.get_creator_role() == 'defender':
+            attack_process = self.attack_operation.get_attack_process()
+            if attack_process is not None and attack_process.is_alive:
+                logging.info('MTD: Interrupted %s at %.1fs!' % (self.attack_operation.get_adversary().get_curr_process(), self.env.now))
+                if mtd_type == 0 or mtd_type == 1:
+                    self._interrupted_mtd = None
+                    self.adversary.set_curr_host_id(-1)
+                    self.adversary.set_curr_host(None)
+                    logging.info('Adversary: Restarting with SCAN_HOST at %.1fs!' % (self.env.now))
+                    self.attack_operation._scan_host()
+                elif mtd_type == 2 or mtd_type == 3:
+                    self._interrupted_mtd = None
+                    logging.info('Adversary: Restarting with SCAN_PORT at %.1fs!' % (self.env.now))
+                    self.attack_operation._scan_port()
+                
+                self.time_network.get_mtd_stats().add_total_attack_interrupted()
 
     def get_host_all_details(self, host_id):
         """
@@ -721,6 +758,13 @@ class Game:
         :param terminate_compromise_ratio: terminate the simulation if reached compromise ratio
         :param new_network: True: create new snapshots based on network size, False: load snapshots based on network size
         """
+        # if some error happen and the game mode or create role have not been set, automatically set it
+        if self.get_game_mode() == None:
+            self.set_game_mode('Computer')
+        if self.get_creator_role() == None:
+            self.set_creator_role('defender')
+        logging.info(f"Game mode: {self.game_mode}; Creator role: {self.creator_role}")
+
         self.env = simpy.Environment()
         end_event = self.env.event()
 
@@ -728,8 +772,6 @@ class Game:
                                 total_subnets=total_subnets, total_layers=total_layers,
                                 target_layer=target_layer, total_database=total_database,
                                 terminate_compromise_ratio=terminate_compromise_ratio)
-        
-        logging.info(f"Game mode: {self.game_mode}; Creator role: {self.creator_role}")
 
         self.adversary = Adversary(network=self.time_network, attack_threshold=ATTACKER_THRESHOLD)
 

@@ -1,25 +1,54 @@
-import React, { useState, useContext } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { UrlPrefixContext } from '../App';
 import { Collapse } from 'react-collapse';
 import backgroundImage from './background.png';
-import pngq1p1 from './q1p1.png'
-import pngq1p2 from './q1p2.png'
-import pngq1p3 from './q1p3.png'
-import pngq1p4 from './q1p4.png'
-import pngq2p1 from './q2p1.png'
-import pngq2p2 from './q2p2.png'
-import pngq2p3 from './q2p3.png'
-import pngq2p4 from './q2p4.png'
+import pngq1p1 from './img/q1p1.png'
+import pngq1p2 from './img/q1p2.png'
+import pngq1p3 from './img/q1p3.png'
+import pngq1p4 from './img/q1p4.png'
+import pngq2p1 from './img/q2p1.png'
+import pngq2p2 from './img/q2p2.png'
+import pngq2p3 from './img/q2p3.png'
+import pngq2p4 from './img/q2p4.png'
+import pngq3p1 from './img/q3p1.png'
+import pngq3p2 from './img/q3p2.png'
+import pngq3p3 from './img/q3p3.png'
+import pngq4p1 from './img/q4p1.png'
+import pngq4p2 from './img/q4p2.png'
+import pngq4p3 from './img/q4p3.png'
+import pngq4p4 from './img/q4p4.png'
+import pngq4p5 from './img/q4p5.png'
+import pngq5p1 from './img/q5p1.png'
+import pngq5p2 from './img/q5p2.png'
+import pngq5p3 from './img/q5p3.png'
+import pngq6p1 from './img/q6p1.png'
+import pngq6p2 from './img/q6p2.png'
+import pngq6p3 from './img/q6p3.png'
+import pngq7p1 from './img/q7p1.png'
+import pngq7p2 from './img/q7p2.png'
+import pngq8p1 from './img/q8p1.png'
+import pngq8p2 from './img/q8p2.png'
+import pngq9p1 from './img/q9p1.png'
+import pngq9p2 from './img/q9p2.png'
 
 const GameSelection = () => {
   const prefix = useContext(UrlPrefixContext);
+  const [backgroundLoaded, setBackgroundLoaded] = useState(false);
   const [gameMode, setGameMode] = useState("Human");
   const [role, setRole] = useState("attacker");
   const [roomId, setRoomId] = useState("");
   const navigate = useNavigate();
   const [activeQuestion, setActiveQuestion] = useState(null); // Track the currently open question
+
+  useEffect(() => {
+    const img = new Image();
+    img.src = backgroundImage;
+    img.onload = () => {
+      setBackgroundLoaded(true);
+    };
+  }, []);  // Empty dependencies array ensures useEffect is only run when the component is first mounted
 
   const createGame = async () => {
     try {
@@ -145,6 +174,10 @@ const GameSelection = () => {
       backgroundColor: 'white',
     }
   };  
+
+  if (!backgroundLoaded) {
+    return null;  // If the background image has not been loaded, render nothing
+  }
   
   return (
     <div style={containerStyle}>
@@ -202,6 +235,7 @@ const GameSelection = () => {
               <img src={pngq1p3} alt="Game guide"  style={{ maxWidth: '500px', width: '100%', height: 'auto' }} />
               <p>After comprmise one of the target nodes, attacker can win.</p>
               <img src={pngq1p4} alt="Game guide"  style={{ maxWidth: '400px', width: '100%', height: 'auto' }} />
+              <p></p>
             </div>
           </Collapse>
           <button style={activeQuestion === 1 ? accordionStyle : accordionStyleWithBorder} onClick={() => toggleAnswer(1)}>
@@ -217,6 +251,107 @@ const GameSelection = () => {
               <img src={pngq2p3} alt="Game guide"  style={{ maxWidth: '500px', width: '100%', height: 'auto' }} />
               <p>As long as the target node is not compromised within the specified time, defender can win.</p>
               <img src={pngq2p4} alt="Game guide"  style={{ maxWidth: '400px', width: '100%', height: 'auto' }} />
+              <p></p>
+            </div>
+          </Collapse>
+          <button style={activeQuestion === 2 ? accordionStyle : accordionStyleWithBorder} onClick={() => toggleAnswer(2)}>
+            Attcker operation: Scan Port
+          </button>
+          <Collapse isOpened={activeQuestion === 2}>
+            <div>
+              <p>As an attacker, you can select a node and click the "Scan Port" button, then you will get all accessible port numbers about this node.</p>
+              <img src={pngq3p1} alt="Game guide"  style={{ maxWidth: '400px', width: '100%', height: 'auto' }} />
+              <p>This step is necessary before exploiting the vulnerabilities. Because you need to use the port number access the services.</p>
+              <img src={pngq3p2} alt="Game guide"  style={{ maxWidth: '550px', width: '100%', height: 'auto' }} />
+              <p>In addition, this step will try to use some common passwords to compromise. It might be the correct password if you are very lucky.</p>
+              <img src={pngq3p3} alt="Game guide"  style={{ maxWidth: '550px', width: '100%', height: 'auto' }} />
+              <p>"Scan Port" will consume 5 resources. </p>
+            </div>
+          </Collapse>
+          <button style={activeQuestion === 3 ? accordionStyle : accordionStyleWithBorder} onClick={() => toggleAnswer(3)}>
+            Attcker operation: Exploit vulnerability
+          </button>
+          <Collapse isOpened={activeQuestion === 3}>
+            <div>
+              <p>As an attacker, you can select a node and click the "Exploit Vuln" button, then it will exploit the vulnerabilities, which may exist on the services running on this host.</p>
+              <img src={pngq4p1} alt="Game guide"  style={{ maxWidth: '550px', width: '100%', height: 'auto' }} />
+              <p>This action consumes 15 resources and will finish in 3 seconds. If any vulnerability has been exploited, the node will be compromised.</p>
+              <img src={pngq4p2} alt="Game guide"  style={{ maxWidth: '550px', width: '100%', height: 'auto' }} />
+              <p>Before doing this operation, you should scan port on this node, because accessing the services needs the port number. Otherwise it will fail.</p>
+              <img src={pngq4p3} alt="Game guide"  style={{ maxWidth: '550px', width: '100%', height: 'auto' }} />
+              <p>However, if any defender operation interrupt this progress, or no vulnerability has been exploited, the node will still keep health.</p>
+              <img src={pngq4p4} alt="Game guide"  style={{ maxWidth: '550px', width: '100%', height: 'auto' }} />
+              <p>Besides, because every vulnerability depends on a service, if the exploited service on that node is removed by defender, the node will be set back to uncompromised.</p>
+              <img src={pngq4p5} alt="Game guide"  style={{ maxWidth: '550px', width: '100%', height: 'auto' }} />
+              <p></p>
+            </div>
+          </Collapse>
+          <button style={activeQuestion === 4 ? accordionStyle : accordionStyleWithBorder} onClick={() => toggleAnswer(4)}>
+            Attcker operation: Brute Force
+          </button>
+          <Collapse isOpened={activeQuestion === 4}>
+            <div>
+              <p>Brute force is also a very common attack method, which exhausts all possible passwords to attack a host.</p>
+              <img src={pngq5p1} alt="Game guide"  style={{ maxWidth: '500px', width: '100%', height: 'auto' }} />
+              <p>You just need to select a node and click the "Brute Force" button. It consumes 30 resources and will finish in 5 seconds.</p>
+              <img src={pngq5p2} alt="Game guide"  style={{ maxWidth: '550px', width: '100%', height: 'auto' }} />
+              <p>It seems that this method take more time and resources, but the node compromised by this method can't be set back to uncompromised. Because if you get the password of the super user on a host, you can do everything on it.</p>
+              <p>And the more passwords you get, the easier to successfully brute force.</p>
+              <img src={pngq5p3} alt="Game guide"  style={{ maxWidth: '550px', width: '100%', height: 'auto' }} />
+              <p></p>
+            </div>
+          </Collapse>
+          <button style={activeQuestion === 5 ? accordionStyle : accordionStyleWithBorder} onClick={() => toggleAnswer(5)}>
+            MTD operation: IP shuffling
+          </button>
+          <Collapse isOpened={activeQuestion === 5}>
+            <div>
+              <p>"IP shuffling" is a good MTD operation on network layer, it can interrupt any running attack progress on a host such as brute force.</p>
+              <img src={pngq6p1} alt="Game guide"  style={{ maxWidth: '550px', width: '100%', height: 'auto' }} />
+              <p>You just need to select the node and click the button. It comsumes 30 resources and works immediately.</p>
+              <img src={pngq6p2} alt="Game guide"  style={{ maxWidth: '550px', width: '100%', height: 'auto' }} />
+              <p>As a result, it will change the IP of a node and interrupt all attack progress on this node. </p>
+              <img src={pngq6p3} alt="Game guide"  style={{ maxWidth: '600px', width: '100%', height: 'auto' }} />
+              <p></p>
+            </div>
+          </Collapse>
+          <button style={activeQuestion === 6 ? accordionStyle : accordionStyleWithBorder} onClick={() => toggleAnswer(6)}>
+            MTD operation: Topological Shuffling
+          </button>
+          <Collapse isOpened={activeQuestion === 6}>
+            <div>
+              <p>"Topological shuffling" is the most terrible thing for the attacker. </p>
+              <img src={pngq7p1} alt="Game guide"  style={{ maxWidth: '650px', width: '100%', height: 'auto' }} />
+              <p>It comsumes 60 resources. As a result, it will suddenly change the connection of the whole network including the target nodes.</p>
+              <img src={pngq7p2} alt="Game guide"  style={{ maxWidth: '650px', width: '100%', height: 'auto' }} />
+              <p>However, This action can be used up to two times in a game, because it is too strong.</p>
+              <p></p>
+            </div>
+          </Collapse>
+          <button style={activeQuestion === 7 ? accordionStyle : accordionStyleWithBorder} onClick={() => toggleAnswer(7)}>
+            MTD operation: OS Diversity
+          </button>
+          <Collapse isOpened={activeQuestion === 7}>
+            <div>
+              <p>"OS diversity" can help defender change the OS for all nodes(not include endpoints) at the same time.</p>
+              <img src={pngq8p1} alt="Game guide"  style={{ maxWidth: '550px', width: '100%', height: 'auto' }} />
+              <p>If the attacker has compromised a node depends on a exploited service, and this service is OS service and it has been changed, then this node can be set back to uncompromised.</p>
+              <img src={pngq8p2} alt="Game guide"  style={{ maxWidth: '550px', width: '100%', height: 'auto' }} />
+              <p>This operation comsumes 45 resources. Just click the button it will start.</p>
+              <p></p>
+            </div>
+          </Collapse>
+          <button style={activeQuestion === 8 ? accordionStyle : accordionStyleWithBorder} onClick={() => toggleAnswer(8)}>
+            MTD operation: Service Diversity
+          </button>
+          <Collapse isOpened={activeQuestion === 8}>
+            <div>
+              <p>"Service diversity" can help defender change the services for a nodes(can't do at the endpoints).</p>
+              <img src={pngq9p1} alt="Game guide"  style={{ maxWidth: '550px', width: '100%', height: 'auto' }} />
+              <p>If the attacker has compromised this node depends on a exploited service, and this service has been changed, then this node can be set back to uncompromised.</p>
+              <img src={pngq9p2} alt="Game guide"  style={{ maxWidth: '550px', width: '100%', height: 'auto' }} />
+              <p>This operation comsumes 15 resources. Just click the button it will start.</p>
+              <p></p>
             </div>
           </Collapse>
         </div>

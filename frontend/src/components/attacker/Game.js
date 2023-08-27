@@ -19,6 +19,7 @@ function Game() {
     const [isGameStarted, setIsGameStarted] = useState(false);
     // command is a terminal state variable, when it is changed the terminal is updated
     const [command, setCommand] = useState(null);
+    const [commandcolor, setCommandcolor] = useState(37);
     const [resource, setResource] = useState(0);
     const [networkData, setNetworkData] = useState(null);
     const [gameTime, setGameTime] = useState(0.0);
@@ -49,6 +50,7 @@ function Game() {
             const newMessages = messages.filter(msg => !displayedMessageIds.includes(msg.id));
             newMessages.forEach((message, index) => {
                 setTimeout(() => {
+                    setCommandcolor(37);
                     setCommand(message.content);
                 }, index * 30);
             });
@@ -107,6 +109,7 @@ function Game() {
     const handleNodeClick = (node_info, nodeId) => {
         setCommand(` `);
         setTimeout(() => {
+            setCommandcolor(33);
             setCommand(`Select node ${nodeId} (IP: ${node_info.ip})`);
         }, 30);
         selectedNodeId = nodeId;
@@ -120,7 +123,7 @@ function Game() {
                     const response = await axios.post(prefix + "/api/attacker/network_data/scan_host/", {
                         nodeId: selectedNodeId,
                     });
-                    
+                    setCommandcolor(37);
                     if (response.data.scan_host_result === 1) {
                         setCommand(`You have scaned the hosts connected with node ${selectedNodeId}, now you can attack these nodes`);
                     } else if (response.data.scan_host_result === 0){
@@ -132,9 +135,11 @@ function Game() {
                     console.error('Error in scan host:', error);
                 }
             } else{
+                setCommandcolor(31);
                 setCommand(`Insufficient resources (< ${RES_SCAN_HOST})`);
             }
         } else {
+            setCommandcolor(31);
             setCommand('No node selected.');
         }
     };
@@ -147,16 +152,16 @@ function Game() {
                     const response = await axios.post(prefix + "/api/attacker/network_data/scan_port/", {
                         nodeId: selectedNodeId,
                     });
-                    
                     let scanResult = response.data.scan_port_result;
-                    
                     if (scanResult.user_reuse === -1) {
                         setCommand(scanResult.message);
                     } else {
                         if (scanResult.port_list !== null) {
+                            setCommandcolor(37);
                             // let portsStr = scanResult.port_list.join(', ');
                             setCommand(`${scanResult.message}`);
                         } else {
+                            setCommandcolor(31);
                             setCommand(scanResult.message);
                         }
                     }
@@ -165,9 +170,11 @@ function Game() {
                     console.error('Error', error);
                 }
             } else {
+                setCommandcolor(31);
                 setCommand(`Insufficient resources (< ${RES_SCAN_PORT})`);
             }
         } else {
+            setCommandcolor(31);
             setCommand('No node selected.');
         }
     };
@@ -183,21 +190,27 @@ function Game() {
                     });
                     console.log(response.data.exploit_vuln_result)
                     if (response.data.exploit_vuln_result === 0) {
+                        setCommandcolor(37);
                         setCommand("Exploit vulnerabilities start...");
                     } else if (response.data.exploit_vuln_result === 1) {
+                        setCommandcolor(37);
                         setCommand("The node has been compromised");
                     } else if (response.data.exploit_vuln_result === -1) {
+                        setCommandcolor(31);
                         setCommand(`Sorry, node ${selectedNodeId} is not reachable now`);
                     } else if (response.data.exploit_vuln_result === -2) {
+                        setCommandcolor(31);
                         setCommand(`Sorry, you haven't get the correct ports on node ${selectedNodeId}`);
                     }
                 } catch (error) {
                     console.error('Error', error);
                 }
             } else{
+                setCommandcolor(31);
                 setCommand(`Insufficient resources (< ${RES_EXPLOIT_VULN})`);
             }
         } else {
+            setCommandcolor(31);
             setCommand("No node selected.");
         }
     };
@@ -212,19 +225,24 @@ function Game() {
                     });
                     // console.log(response.data.brute_force_result)
                     if (response.data.brute_force_result === 0) {
+                        setCommandcolor(37);
                         setCommand("Brute force compromising start...");
                     } else if (response.data.brute_force_result === 1) {
+                        setCommandcolor(37);
                         setCommand("The node has been compromised");
                     } else if (response.data.brute_force_result === -1) {
+                        setCommandcolor(31);
                         setCommand(`Sorry, node ${selectedNodeId} is not reachable now`);
                     }
                 } catch (error) {
                     console.error('Error', error);
                 }
             } else{
+                setCommandcolor(31);
                 setCommand(`Insufficient resources (< ${RES_BRUTE_FORCE})`);
             }
         } else {
+            setCommandcolor(31);
             setCommand('No node selected.');
         }
     };
@@ -267,7 +285,7 @@ function Game() {
                             paddingBottom: "10px", 
                         }}
                     >
-                        <Terminal command={command} />
+                        <Terminal command={command} color={commandcolor}/>
                     </div>
                     <div style={{ display: "flex", justifyContent: "center", marginTop: "-40px" }}>
                         
