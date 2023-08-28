@@ -4,6 +4,7 @@ import Terminal from "./Terminal";
 import axios from "axios";
 import { useNavigate } from 'react-router-dom';
 import { UrlPrefixContext } from '../../App';
+import { useParams } from 'react-router-dom';
 
 var selectedNodeId = null;
 var RES_ADD_STEP = 60;
@@ -15,6 +16,7 @@ var RES_BRUTE_FORCE = 30;
 
 function Game() {
     const prefix = useContext(UrlPrefixContext);
+    const { roomId } = useParams();
     // isGameStarted is a game state variable, NetworkGraph is rendered when it is true
     const [isGameStarted, setIsGameStarted] = useState(false);
     // command is a terminal state variable, when it is changed the terminal is updated
@@ -29,7 +31,7 @@ function Game() {
     useEffect(() => {
         const startGame = async () => {
             try {
-                const response = await axios.get(prefix + "/api/start_game/");
+                const response = await axios.get(`${prefix}/api/start_game/?room_id=${roomId}`);
                 console.log("/api/start_game response:", response.data.message);
                 setIsGameStarted(true);
             } catch (error) {
@@ -37,12 +39,12 @@ function Game() {
             }
         };
         startGame();
-    }, [prefix]);
+    }, [prefix, roomId]);
 
     useEffect(() => {
         // Fetch network data from the API
         const fetchNetworkData = async (prefix) => {
-            const response = await axios.get(prefix + '/api/attacker/network_data/');
+            const response = await axios.get(`${prefix}/api/attacker/network_data/?room_id=${roomId}`);
             return response.data;
         };
 
@@ -91,7 +93,7 @@ function Game() {
                 clearInterval(intervalId);
             }
         };
-    }, [prefix, navigate, displayedMessageIds]);
+    }, [prefix, roomId, navigate, displayedMessageIds]);
 
     useEffect(() => {
         if (networkData && typeof networkData.time_used === "number" && typeof networkData.total_time === "number") {
@@ -121,6 +123,7 @@ function Game() {
                 setResource(resource - RES_SCAN_HOST);
                 try {
                     const response = await axios.post(prefix + "/api/attacker/network_data/scan_host/", {
+                        roomId: roomId,
                         nodeId: selectedNodeId,
                     });
                     setCommandcolor(37);
@@ -150,6 +153,7 @@ function Game() {
                 setResource(resource - RES_SCAN_PORT);
                 try {
                     const response = await axios.post(prefix + "/api/attacker/network_data/scan_port/", {
+                        roomId: roomId,
                         nodeId: selectedNodeId,
                     });
                     let scanResult = response.data.scan_port_result;
@@ -186,6 +190,7 @@ function Game() {
                 setResource(resource - RES_EXPLOIT_VULN);
                 try {
                     const response = await axios.post(prefix + "/api/attacker/network_data/exploit_vuln/", {
+                        roomId: roomId,
                         nodeId: selectedNodeId,
                     });
                     console.log(response.data.exploit_vuln_result)
@@ -221,6 +226,7 @@ function Game() {
                 setResource(resource - RES_BRUTE_FORCE);
                 try {
                     const response = await axios.post(prefix + "/api/attacker/network_data/brute_force/", {
+                        roomId: roomId,
                         nodeId: selectedNodeId,
                     });
                     // console.log(response.data.brute_force_result)
@@ -261,7 +267,7 @@ function Game() {
                     style={{ width: "100%", height: "70vh" }}
                 >
                     {isGameStarted && networkData && (
-                        <NetworkGraph prefix={prefix} handleNodeClick={handleNodeClick} nodes={networkData.nodes} edges={networkData.edges} visible_nodes={networkData.visible_nodes} visible_edges={networkData.visible_edges} selectedNodeId={selectedNodeId} />
+                        <NetworkGraph prefix={prefix} roomId={roomId} handleNodeClick={handleNodeClick} nodes={networkData.nodes} edges={networkData.edges} visible_nodes={networkData.visible_nodes} visible_edges={networkData.visible_edges} selectedNodeId={selectedNodeId} />
                     )}
                 </div>
                 <div

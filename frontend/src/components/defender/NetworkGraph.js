@@ -28,7 +28,7 @@ function getConnectedEdges(nodeId, allEdges) {
 }
 
 const NetworkGraph = (props) => {
-    const { prefix , handleNodeClick, nodes: initialNodes, edges: initialEdges, selectedNodeId } = props;
+    const { prefix , roomId, handleNodeClick, nodes: initialNodes, edges: initialEdges, selectedNodeId } = props;
     const [nodes, setNodes] = useState(new DataSet(initialNodes));
     const [edges, setEdges] = useState(new DataSet(initialEdges));
     const [network, setNetwork] = useState(null);
@@ -189,9 +189,10 @@ const NetworkGraph = (props) => {
                     // send a POST request about click event to the API
                     try {
                         const response = await axios.post(prefix + "/api/defender/network_data/clicked_node/", {
+                            roomId: roomId,
                             nodeId: nodeId,
                         });
-                        // console.log('POST /api/defender/network_data/clicked_node/:', response.data);
+                        // console.log(response.data);
                         // Call handleNodeClick after getting the IP of the clicked node
                         if (response.data.nodeinfo) {
                             handleNodeClick(response.data.nodeinfo, nodeId); 
@@ -207,7 +208,7 @@ const NetworkGraph = (props) => {
             // Update the network instance with the new nodes and edges
             network.setData({ nodes: nodes, edges: edges });
         }
-    }, [nodes, edges, network, handleNodeClick, prefix]);
+    }, [nodes, edges, network, handleNodeClick, prefix, roomId]);
 
     // Render the network graph container
     return <div id="network-graph" style={{ width: '100%', height: '100%' }} />;

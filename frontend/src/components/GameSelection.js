@@ -60,7 +60,7 @@ const GameSelection = () => {
         navigate(`/game/${response.data.creator_role}/${response.data.room_id}`);
     } catch (error) {
         // console.error("Error create room:", error);
-        alert(`Your game room has been created. Please input right room number and click Join Game.`);
+        alert(`Max rooms limit reached or the room already exists.`);
     }
     
   };
@@ -74,7 +74,7 @@ const GameSelection = () => {
         navigate(`/game/${response.data.joiner_role}/${response.data.room_id}`);
     } catch (error) {
         // console.error("Error join room:", error);
-        alert(`Join game failed. It may because the room has not been created.`);
+        alert(`Invalid room.`);
     } 
   };
 

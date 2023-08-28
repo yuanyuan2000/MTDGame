@@ -70,6 +70,7 @@ class Game:
         self.env = None
         self.sim_time = 0
         self.total_time = GAME_TOTAL_TIME / SPEED_RATIO
+        self.finished_event = None
 
         self.time_network = None
         self.adversary = None
@@ -712,6 +713,7 @@ class Game:
 
     def start_real_time_simulation(self, period):
         # create a threading for real time simulation
+        self.finished_event = threading.Event()
         self.real_time_thread = threading.Thread(target=self._real_time_simulation, args=(period,))
         self.real_time_thread.start()
 
@@ -734,7 +736,8 @@ class Game:
                     logging.info(f"Now the target node has been compromised, the attackers win at {self.env.now:.1f}s!")
                     self.winner = 'Attacker'
                     self.isrunning = False
-            
+
+        self.finished_event.set()  # set the event when simulation stop
         logging.info("Simulation thread has stopped.")
 
     

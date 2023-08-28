@@ -4,6 +4,7 @@ import Terminal from "./Terminal";
 import axios from "axios";
 import { useNavigate } from 'react-router-dom';
 import { UrlPrefixContext } from '../../App';
+import { useParams } from 'react-router-dom';
 
 var selectedNodeId = null;
 var RES_ADD_STEP = 60;
@@ -16,6 +17,7 @@ var RES_SERVICE_DIVERSITY = 15;
 
 function Game() {
     const prefix = useContext(UrlPrefixContext);
+    const { roomId } = useParams();
     // isGameStarted is a game state variable, NetworkGraph is rendered when it is true
     const [isGameStarted, setIsGameStarted] = useState(false);
     // command is a terminal state variable, when it is changed the terminal is updated
@@ -29,7 +31,7 @@ function Game() {
     useEffect(() => {
         const startGame = async () => {
             try {
-                const response = await axios.get(prefix + "/api/start_game/");
+                const response = await axios.get(`${prefix}/api/start_game/?room_id=${roomId}`);
                 console.log("/api/start_game response:", response.data.message);
                 setIsGameStarted(true);
             } catch (error) {
@@ -37,12 +39,12 @@ function Game() {
             }
         };
         startGame();
-    }, [prefix]);
+    }, [prefix, roomId]);
 
     useEffect(() => {
         // Fetch network data from the API
         const fetchNetworkData = async (prefix) => {
-            const response = await axios.get(prefix + '/api/attacker/network_data/');
+            const response = await axios.get(`${prefix}/api/defender/network_data/?room_id=${roomId}`);
             return response.data;
         };
 
@@ -75,7 +77,7 @@ function Game() {
                 clearInterval(intervalId);
             }
         };
-    }, [prefix, navigate]);
+    }, [prefix, roomId, navigate]);
 
     useEffect(() => {
         if (networkData && typeof networkData.time_used === "number" && typeof networkData.total_time === "number") {
@@ -105,6 +107,7 @@ function Game() {
                 setResource(resource - RES_IP_SHUFFLING);
                 try {
                     const response = await axios.post(prefix + "/api/defender/network_data/ip_shuffling/", {
+                        roomId: roomId,
                         nodeId: selectedNodeId,
                     });
                     if (response.data.is_shuffled) {
@@ -132,6 +135,7 @@ function Game() {
             setResource(resource - RES_TOPO_SHUFFLING);
             try {
                 const response = await axios.post(prefix + "/api/defender/network_data/topological_shuffling/", {
+                    roomId: roomId,
                     nodeId: selectedNodeId,
                 });
                 if (response.data.topo_shuffle_result === 1) {
@@ -156,6 +160,7 @@ function Game() {
             setResource(resource - RES_OS_DIVERSITY);
             try {
                 const response = await axios.post(prefix + "/api/defender/network_data/os_diversity/", {
+                    roomId: roomId,
                     nodeId: selectedNodeId,
                 });
                 setCommandcolor(37);
@@ -175,6 +180,7 @@ function Game() {
                 setResource(resource - RES_SERVICE_DIVERSITY);
                 try {
                     const response = await axios.post(prefix + "/api/defender/network_data/service_diversity/", {
+                        roomId: roomId,
                         nodeId: selectedNodeId,
                     });
                     setCommandcolor(37);
@@ -198,6 +204,7 @@ function Game() {
                 setResource(resource - RES_GET_DETAIL);
                 try {
                     const response = await axios.post(prefix + "/api/defender/network_data/get_details/", {
+                        roomId: roomId,
                         nodeId: selectedNodeId,
                     });
                     if (response.data.all_details) {
@@ -264,7 +271,7 @@ function Game() {
                     style={{ width: "100%", height: "70vh" }}
                 >
                     {isGameStarted && networkData && (
-                        <NetworkGraph prefix={prefix} handleNodeClick={handleNodeClick} nodes={networkData.nodes} edges={networkData.edges} selectedNodeId={selectedNodeId} />
+                        <NetworkGraph prefix={prefix} roomId={roomId} handleNodeClick={handleNodeClick} nodes={networkData.nodes} edges={networkData.edges} selectedNodeId={selectedNodeId} />
                     )}
                 </div>
                 <div
