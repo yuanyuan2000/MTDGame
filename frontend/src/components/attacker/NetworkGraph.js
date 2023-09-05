@@ -50,8 +50,16 @@ const NetworkGraph = (props) => {
               // Convert the named CSS color to RGB
               const rgbColor = colorToRGB(node.color.background);
               // Convert the RGB color to RGBA with the desired opacity
-              const rgbaColor = rgbToRGBA(rgbColor, 0.5);
-              newNodes.update({ id: node.id, color: { background: rgbaColor } });
+              const rgbaColor = rgbToRGBA(rgbColor, 0.9);
+              newNodes.update({
+                id: node.id,
+                color: {
+                  background: rgbaColor,
+                  // Add these to change the border color and thickness for selected node
+                  border: '#FFFFFF', // Red border for selected node
+                },
+                borderWidth: 1.3, // Thickness for selected node's border
+              });
 
               // Identify edges connected to the selected node
               const connectedEdges = getConnectedEdges(node.id, newEdges);
