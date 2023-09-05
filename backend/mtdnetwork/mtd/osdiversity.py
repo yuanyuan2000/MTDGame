@@ -22,7 +22,11 @@ class OSDiversity(MTD):
             prev_os = host_instance.os_type
             prev_os_version = host_instance.os_version
             prev_os_version_index = constants.OS_VERSION_DICT[prev_os].index(prev_os_version)
-            new_os = random.choice(constants.OS_TYPES)
+            
+            # Make a copy of OS_TYPES and remove prev_os from it, so the type of the new OS will be changed
+            available_os_choices = [os_type for os_type in constants.OS_TYPES if os_type != prev_os]
+            
+            new_os = random.choice(available_os_choices)
             new_os_version = constants.OS_VERSION_DICT[new_os][prev_os_version_index]
 
             host_instance.os_type = new_os
@@ -41,3 +45,4 @@ class OSDiversity(MTD):
         # Update Attack Path Exposure for target networks
         if self.network.get_network_type() == 0:
             self.network.add_attack_path_exposure()
+
