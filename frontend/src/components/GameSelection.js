@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { UrlPrefixContext } from '../App';
 import { Collapse } from 'react-collapse';
-import backgroundImage from './background.png';
+import backgroundImage from './background3.png';
 import pngq1p1 from './img/q1p1.png'
 import pngq1p2 from './img/q1p2.png'
 import pngq1p3 from './img/q1p3.png'
