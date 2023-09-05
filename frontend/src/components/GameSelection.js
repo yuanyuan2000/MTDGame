@@ -115,7 +115,7 @@ const GameSelection = () => {
   };
 
   const formStyle = {
-    width: "30%",
+    width: "40%",
     height: "25%",
     marginLeft: "10%",
     backgroundColor: "#eeeeee",
