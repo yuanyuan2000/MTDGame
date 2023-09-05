@@ -53,7 +53,7 @@ const NetworkGraph = (props) => {
                       // Add these to change the border color and thickness for selected node
                       border: '#FFFFFF', // Red border for selected node
                     },
-                    borderWidth: 1.3, // Thickness for selected node's border
+                    borderWidth: 1.2, // Thickness for selected node's border
                   });
   
                 // Identify edges connected to the selected node

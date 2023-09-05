@@ -7,7 +7,7 @@ import { UrlPrefixContext } from '../../App';
 import { useParams } from 'react-router-dom';
 
 var selectedNodeId = null;
-var RES_ADD_STEP = 60;
+var RES_ADD_STEP = 7;
 var RES_REFRESH_DURATION = 3500;
 var RES_GET_DETAIL = 5;
 var RES_IP_SHUFFLING = 30;
