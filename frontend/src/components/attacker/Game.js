@@ -70,13 +70,15 @@ function Game() {
             if (!networkData.is_running && networkData.winner) {
                 if (networkData.winner === 'Attacker'){
                     alert(`Target node is compromised. You win!`);
+                    setTimeout(() => {
+                        navigate('/');
+                    }, 1000);
                 } else if (networkData.winner === 'Defender'){
                     alert(`Time is up! You lose.`);
+                    setTimeout(() => {
+                        navigate('/');
+                    }, 1000);
                 }
-                setTimeout(() => {
-                    navigate('/');
-                }, 300);
-                navigate('/');
             }            
         };
 
