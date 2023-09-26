@@ -36,7 +36,7 @@ NODE_RADIUS = 12
 EDGE_WIDTH = 1
 
 SIMULATION_INTERVAL = 0.5    # the simpy will run in every SIMULATION_INTERVAL second
-GAME_TOTAL_TIME = 3000    # the game will end in GAME_TOTAL_TIME simulation seconds
+GAME_TOTAL_TIME = 300    # the game will end in GAME_TOTAL_TIME simulation seconds
 SPEED_RATIO = 10    # it means that one physcial second equal to SPEED_RATIO simulation seconds
 
 TOTAL_NODE = 32

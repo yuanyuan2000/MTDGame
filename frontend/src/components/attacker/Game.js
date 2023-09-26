@@ -73,6 +73,9 @@ function Game() {
                 } else if (networkData.winner === 'Defender'){
                     alert(`Time is up! You lose.`);
                 }
+                setTimeout(() => {
+                    navigate('/');
+                }, 300);
                 navigate('/');
             }            
         };
