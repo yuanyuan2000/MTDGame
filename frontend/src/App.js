@@ -10,7 +10,7 @@ function App() {
   // const prefix = "http://localhost:8000";
   // const prefix = "http://192.168.137.23:8000";
   // const prefix = "http://192.168.43.15:8000";
-  const prefix = "http://34.151.70.209:8000"
+  const prefix = "http://35.189.30.150:8000"
   
   return (
     <UrlPrefixContext.Provider value={prefix}>

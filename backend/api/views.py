@@ -3,6 +3,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 import threading
+import time
 from game import Game
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -55,6 +56,8 @@ def join_game_room(request):
 def cleanup_thread(game_instance, room_id):
     # wait for the game stop
     game_instance.finished_event.wait()
+    # sleep for 10 seconds to allow the frontend to get the final state of the game
+    time.sleep(10)
     # clean the game instance
     game_instances.pop(room_id, None)
 
