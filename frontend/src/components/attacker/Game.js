@@ -7,12 +7,12 @@ import { UrlPrefixContext } from '../../App';
 import { useParams } from 'react-router-dom';
 
 var selectedNodeId = null;
-var RES_ADD_STEP = 7;
+var RES_ADD_STEP = 7
 var RES_REFRESH_DURATION = 3500;
 var RES_SCAN_HOST = 5;
 var RES_SCAN_PORT = 5;
 var RES_EXPLOIT_VULN = 15;
-var RES_BRUTE_FORCE = 30;
+var RES_BRUTE_FORCE = 25;
 
 function Game() {
     const prefix = useContext(UrlPrefixContext);
