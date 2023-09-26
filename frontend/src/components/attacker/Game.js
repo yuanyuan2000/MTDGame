@@ -67,16 +67,14 @@ function Game() {
             if (networkData.new_message && networkData.new_message.length > 0) {
                 displayMessages(networkData.new_message);
             }
-
             if (!networkData.is_running && networkData.winner) {
                 if (networkData.winner === 'Attacker'){
                     alert(`Target node is compromised. You win!`);
-                    navigate('/');
                 } else if (networkData.winner === 'Defender'){
                     alert(`Time is up! You lose.`);
-                    navigate('/');
                 }
-            }
+                navigate('/');
+            }            
         };
 
         let intervalId = null;
