@@ -13,7 +13,7 @@ from rest_framework.decorators import api_view
 # from .serializers import GameRoomSerializer
 
 game_instances = {}
-MAX_ROOMS = 4
+MAX_ROOMS = 20
 
 @api_view(['POST'])
 def create_game_room(request):
